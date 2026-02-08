@@ -1,0 +1,10 @@
+{
+    "name": "Users",
+    "description": "User management and authentication module",
+    "version": "1.0.0",
+    "providers": [
+        "Modules\\Users\\Infrastructure\\Providers\\UsersServiceProvider"
+    ],
+    "aliases": {},
+    "files": []
+}
