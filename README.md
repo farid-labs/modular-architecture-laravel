@@ -1,59 +1,157 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Modular Monolith API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![CI](https://github.com/farid-labs/modular-architecture-laravel/workflows/CI/badge.svg)](https://github.com/farid-labs/modular-architecture-laravel/actions)
 
-## About Laravel
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+A production-grade Laravel modular monolith demonstrating **Domain-Driven Design**, **Clean Architecture**, and **Enterprise Patterns**. Built for scalability, maintainability, and developer experience.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🎯 Architecture Highlights
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🏗️ Modular Monolith Structure
 
-## Learning Laravel
+- **Bounded Contexts**: Users, Billing, Notifications modules with clear boundaries
+- **Domain-Driven Design**: Entities, Value Objects, Repositories, Services
+- **Layered Architecture**: Presentation → Application → Domain → Infrastructure
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### ⚙️ Core Patterns & Practices
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+#### **Domain Layer**
 
-## Laravel Sponsors
+- **Entities**: Rich domain models with business logic
+- **Value Objects**: Immutable objects representing concepts
+- **Repositories**: Interface segregation for data access
+- **Domain Events**: Event-driven architecture within modules
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+#### **Application Layer**
 
-### Premium Partners
+- **Service Layer**: Application-specific business logic
+- **DTOs**: Data Transfer Objects for clean boundaries
+- **Commands**: CQRS-inspired command pattern
+- **Policies**: Authorization logic separated from controllers
+- **Validators**: Form request validation with custom rules
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+#### **Infrastructure Layer**
 
-## Contributing
+- **Repository Pattern**: Eloquent implementations with interfaces
+- **Caching Strategy**: Redis-backed caching with cache invalidation
+- **Queue System**: Job dispatching for async operations
+- **Event Listeners**: Decoupled event handling
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 🗄️ Technology Stack
 
-## Code of Conduct
+- **Framework**: Laravel 11.x
+- **Database**: PostgreSQL 15 (Enterprise-grade)
+- **Cache/Queue**: Redis 7.x
+- **Containerization**: Docker & Docker Compose
+- **Testing**: PHPUnit with 85%+ coverage target
+- **CI/CD**: GitHub Actions for automated testing & deployment
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 📦 Module Structure
 
-## Security Vulnerabilities
+Each module follows the same architectural pattern:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+Module/
+├── Application/ # Use cases, services, DTOs
+├── Domain/ # Entities, value objects, domain logic
+├── Infrastructure/ # Persistence, caching, jobs
+└── Presentation/ # API controllers, routes, resources
+```
 
-## License
+## 🚀 Quick Start
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Prerequisites
+
+- Docker & Docker Compose
+- PHP 8.2+ (for local development)
+- Composer
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/farid-labs/laravel-modular-monolith.git
+cd laravel-modular-monolith
+
+# Copy environment file
+cp .env.example .env
+
+# Start containers
+docker-compose up -d
+
+# Install dependencies
+docker-compose exec app composer install
+
+# Generate application key
+docker-compose exec app php artisan key:generate
+
+# Run migrations
+docker-compose exec app php artisan migrate --seed
+
+# Run tests
+docker-compose exec app php artisan test
+```
+
+## 🧪 Testing Strategy
+
+```bash
+# Run all tests
+docker-compose exec app php artisan test
+
+# Run unit tests
+docker-compose exec app php artisan test --testsuite=Unit
+
+# Run feature tests
+docker-compose exec app php artisan test --testsuite=Feature
+
+# Generate coverage report
+docker-compose exec app php artisan test --coverage
+```
+
+## 📊 Code Quality
+
+- PSR-12 coding standards
+- PHPStan level 8 static analysis
+- PHPUnit with comprehensive test coverage
+- Laravel Pint for code formatting
+
+## 🔐 Security
+
+- Rate limiting on all API endpoints
+- CSRF protection
+- SQL injection prevention (Eloquent ORM)
+- XSS protection (Blade escaping)
+- Secure password hashing (bcrypt)
+
+## 📈 Performance Optimizations
+
+- Redis Caching: Query result caching with TTL
+- Queue Workers: Async job processing
+- Database Indexing: Optimized queries
+- Eager Loading: N+1 query prevention
+- Response Caching: API response caching
+
+## 🤝 Contributing
+
+### This repository demonstrates engineering excellence. Contributions that maintain architectural integrity are welcome.
+
+1. Fork the repository
+2. Create feature branch (git checkout -b feature/amazing-feature)
+3. Commit changes (git commit -m 'Add amazing feature')
+4. Push to branch (git push origin feature/amazing-feature)
+5. Open Pull Request
+
+## 📄 License
+
+MIT License - see <a href="" >LICENSE</a> file for details
+
+## 👨‍💻 About Farid Labs
+
+### Engineering-focused repositories exploring software architecture, scalable systems, and modern web technologies.
+
+#### 🔗 Portfolio: https://faridteymouri.vercel.app/
+
+---
+
+Built with ❤️ and engineering excellence
