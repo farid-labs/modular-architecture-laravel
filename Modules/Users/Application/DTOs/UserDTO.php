@@ -11,11 +11,17 @@ class UserDTO extends DataTransferObject
     public ?string $password = null;
     public ?string $email_verified_at = null;
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         return new self($data);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [
