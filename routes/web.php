@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return response()->json([
-        'service' => 'laravel-modular-monolith-api',
+        'service' => 'modular-architecture-laravel-api',
         'status' => 'ok',
         'version' => config('app.version', 'dev'),
         'time' => now()->toIso8601String(),
