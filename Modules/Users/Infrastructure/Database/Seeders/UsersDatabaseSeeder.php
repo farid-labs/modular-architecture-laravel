@@ -3,7 +3,7 @@
 namespace Modules\Users\Infrastructure\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Modules\Users\Domain\Entities\User;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class UsersDatabaseSeeder extends Seeder
@@ -21,7 +21,14 @@ class UsersDatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Create sample users
-        User::factory()->count(10)->create();
+        // Create sample users using direct create
+        foreach (range(1, 10) as $i) {
+            User::create([
+                'name' => "User {$i}",
+                'email' => "user{$i}@example.com",
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]);
+        }
     }
 }
