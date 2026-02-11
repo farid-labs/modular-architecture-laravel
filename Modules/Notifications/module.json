@@ -1,0 +1,8 @@
+{
+    "name": "Notifications",
+    "description": "Event-driven notification system with multiple channels",
+    "version": "1.0.0",
+    "providers": [
+        "Modules\\Notifications\\Infrastructure\\Providers\\NotificationsServiceProvider"
+    ]
+}
