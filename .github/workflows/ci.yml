@@ -67,7 +67,7 @@ jobs:
       - name: Run migrations
         run: php artisan migrate --database=pgsql
         env:
-          DB_CONNECTION: pgsql
+          DB_CONNECTION: postgres
           DB_HOST: localhost
           DB_PORT: 5432
           DB_DATABASE: laravel_test
@@ -77,12 +77,12 @@ jobs:
       - name: Run PHPUnit tests with coverage
         run: vendor/bin/phpunit --coverage-clover coverage.xml
         env:
-          DB_CONNECTION: pgsql
+          DB_CONNECTION: postgres
           DB_HOST: localhost
           DB_PORT: 5432
           DB_DATABASE: laravel_test
-          DB_USERNAME: laravel
-          DB_PASSWORD: laravel
+          DB_USERNAME: laravel_test
+          DB_PASSWORD: laravel_test
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
