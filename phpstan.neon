@@ -1,0 +1,24 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+    - vendor/phpstan/phpstan-mockery/extension.neon
+parameters:
+    level: 8
+
+    paths:
+        - app
+        - Modules
+        - database
+        - tests
+
+    bootstrapFiles:
+        - vendor/nunomaduro/larastan/bootstrap.php
+
+    scanDirectories:
+        - Modules
+
+    excludePaths:
+        - Modules/*/Tests
+        - */node_modules/*
+        - */vendor/*
+
+
