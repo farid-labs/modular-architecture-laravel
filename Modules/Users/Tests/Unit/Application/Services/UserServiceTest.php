@@ -2,29 +2,32 @@
 
 namespace Modules\Users\Tests\Unit\Application\Services;
 
-use PHPUnit\Framework\TestCase;
-use Mockery;
+use Tests\TestCase;
+use Mockery\MockInterface;
 use Modules\Users\Application\Services\UserService;
 use Modules\Users\Domain\Repositories\UserRepositoryInterface;
 use Modules\Users\Application\DTOs\UserDTO;
-use Modules\Users\Domain\Entities\User;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Users\Domain\Exceptions\UserNotFoundException;
 
 class UserServiceTest extends TestCase
 {
-    protected $userRepository;
-    protected $userService;
+
+    protected UserRepositoryInterface&MockInterface $userRepository;
+
+    protected UserService $userService;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->userRepository = Mockery::mock(UserRepositoryInterface::class);
+
+        $this->userRepository = \Mockery::mock(UserRepositoryInterface::class);
         $this->userService = new UserService($this->userRepository);
     }
 
     protected function tearDown(): void
     {
-        Mockery::close();
+        \Mockery::close();
         parent::tearDown();
     }
 
@@ -55,7 +58,7 @@ class UserServiceTest extends TestCase
 
         $result = $this->userService->createUser($userDTO);
 
-        $this->assertEquals($user, $result);
+        $this->assertSame($user, $result);
     }
 
     public function test_get_user_by_id_returns_user(): void
