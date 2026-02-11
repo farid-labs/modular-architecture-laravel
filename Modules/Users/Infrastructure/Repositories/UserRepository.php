@@ -2,15 +2,22 @@
 
 namespace Modules\Users\Infrastructure\Repositories;
 
-use Modules\Users\Domain\Entities\User;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Users\Domain\Repositories\UserRepositoryInterface;
 use Modules\Users\Application\DTOs\UserDTO;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * @template TFactory of \Illuminate\Database\Eloquent\Factories\Factory
+ */
 class UserRepository implements UserRepositoryInterface
 {
-    public function __construct(private User $model) {}
+    private User $model;
 
+    public function __construct(User $model)
+    {
+        $this->model = $model;
+    }
     public function findById(int $id): ?User
     {
         return $this->model->find($id);
@@ -24,7 +31,7 @@ class UserRepository implements UserRepositoryInterface
     public function create(UserDTO $userDTO): User
     {
         $data = $userDTO->toArray();
-        
+
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         }
@@ -35,13 +42,13 @@ class UserRepository implements UserRepositoryInterface
     public function update(int $id, UserDTO $userDTO): ?User
     {
         $user = $this->findById($id);
-        
-        if (!$user) {
+
+        if (!$user instanceof User) {
             return null;
         }
 
         $data = $userDTO->toArray();
-        
+
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         }
@@ -53,14 +60,17 @@ class UserRepository implements UserRepositoryInterface
     public function delete(int $id): bool
     {
         $user = $this->findById($id);
-        
-        if (!$user) {
+
+        if (!$user instanceof User) {
             return false;
         }
 
-        return $user->delete();
+        return $user->delete() === true;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getAll(): array
     {
         return $this->model->all()->toArray();
