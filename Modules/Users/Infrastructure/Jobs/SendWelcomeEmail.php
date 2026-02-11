@@ -7,24 +7,27 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Modules\Users\Domain\Entities\User;
+use Illuminate\Support\Facades\Log;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class SendWelcomeEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+
 
     public function __construct(public User $user) {}
 
     public function handle(): void
     {
         // In production, integrate with Mailgun, SendGrid, etc.
-        \Log::info("Sending welcome email to {$this->user->email}");
-        
+        Log::info("Sending welcome email to {$this->user->email}");
+
         // Example: Mail::to($this->user->email)->send(new WelcomeEmail($this->user));
     }
 
     public function failed(\Throwable $exception): void
     {
-        \Log::error("Failed to send welcome email to {$this->user->email}: " . $exception->getMessage());
+        Log::error("Failed to send welcome email to {$this->user->email}: " . $exception->getMessage());
     }
 }

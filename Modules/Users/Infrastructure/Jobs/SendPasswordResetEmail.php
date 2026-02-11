@@ -7,7 +7,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Modules\Users\Domain\Entities\User;
+use Illuminate\Support\Facades\Log;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class SendPasswordResetEmail implements ShouldQueue
 {
@@ -20,13 +21,13 @@ class SendPasswordResetEmail implements ShouldQueue
 
     public function handle(): void
     {
-        \Log::info("Sending password reset email to {$this->user->email}");
-        
+        Log::info("Sending password reset email to {$this->user->email}");
+
         // Example: Mail::to($this->user->email)->send(new PasswordResetEmail($this->user, $this->token));
     }
 
     public function failed(\Throwable $exception): void
     {
-        \Log::error("Failed to send password reset email to {$this->user->email}: " . $exception->getMessage());
+        Log::error("Failed to send password reset email to {$this->user->email}: " . $exception->getMessage());
     }
 }

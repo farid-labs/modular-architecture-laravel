@@ -2,9 +2,9 @@
 
 namespace Modules\Users\Infrastructure\Listeners;
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Modules\Users\Domain\Events\UserCreated;
 use Modules\Users\Infrastructure\Jobs\SendWelcomeEmail;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendWelcomeEmailListener implements ShouldQueue
 {
