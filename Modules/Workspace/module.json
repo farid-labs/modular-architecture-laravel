@@ -1,0 +1,8 @@
+{
+    "name": "Workspace",
+    "description": "Workspace and team management module with multi-tenancy support",
+    "version": "1.0.0",
+    "providers": [
+        "Modules\\Workspace\\Infrastructure\\Providers\\WorkspaceServiceProvider"
+    ]
+}
