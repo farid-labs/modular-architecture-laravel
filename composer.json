@@ -1,5 +1,5 @@
 {
-    "name": "farid-labs/laravel-modular-monolith",
+    "name": "farid-labs/modular-architecture-laravel",
     "type": "project",
     "description": "Production-grade Laravel modular monolith with DDD and Clean Architecture",
     "keywords": [
@@ -12,22 +12,27 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "darkaonline/l5-swagger": "^10.1",
+        "doctrine/annotations": "^2.0",
         "laravel/framework": "^12.0",
-        "laravel/sanctum": "^4.0",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.11",
         "predis/predis": "^2.0",
         "spatie/data-transfer-object": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
-        "laravel/pint": "^1.0",
+        "laravel/pint": "^1.27",
         "laravel/sail": "^1.0",
+        "laravel/telescope": "^5.17",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.0",
+        "nunomaduro/larastan": "^3.9",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-mockery": "^2.0",
         "phpunit/phpunit": "^11.0",
-        "spatie/laravel-ignition": "^2.0",
-        "phpstan/phpstan": "^1.10",
-        "roave/security-advisories": "dev-master"
+        "roave/security-advisories": "dev-master",
+        "spatie/laravel-ignition": "^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -40,7 +45,9 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/",
-            "Modules\\Users\\Tests\\": "Modules/Users/Tests/"
+            "Modules\\Users\\Tests\\": "Modules/Users/Tests/",
+            "Modules\\Workspace\\Tests\\": "Modules/Workspace/Tests/",
+            "Modules\\Notifications\\Tests\\": "Modules/Notifications/Tests/"
         }
     },
     "scripts": {
