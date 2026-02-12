@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, develop]
   pull_request:
@@ -65,16 +66,16 @@ jobs:
           php artisan key:generate
           php artisan config:clear
 
-      # Create test database
+      # Create test database using existing superuser (simplest solution)
       - name: Create testing database
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-          PGPASSWORD=laravel psql -h localhost -U laravel -c "CREATE DATABASE laravel_test;"
-          PGPASSWORD=laravel psql -h localhost -U laravel -c "CREATE USER laravel_test WITH PASSWORD 'laravel_test';"
-          PGPASSWORD=laravel psql -h localhost -U laravel -c "GRANT ALL PRIVILEGES ON DATABASE laravel_test TO laravel_test;"
-          PGPASSWORD=laravel psql -h localhost -U laravel -c "GRANT ALL PRIVILEGES ON DATABASE laravel_test TO laravel_test;"
 
+          # 🔑 Use existing superuser (laravel) to create test database
+          PGPASSWORD=laravel psql -h localhost -U laravel -c "CREATE DATABASE laravel_test;"
+
+      # Run migrations
       - name: Run migrations
         run: php artisan migrate --env=testing
         env:
@@ -83,8 +84,8 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_DATABASE: laravel_test
-          DB_USERNAME: laravel_test
-          DB_PASSWORD: laravel_test
+          DB_USERNAME: laravel # 🔑 Use superuser for testing
+          DB_PASSWORD: laravel # 🔑 Same password as main DB
 
       # Run tests
       - name: Run PHPUnit tests with coverage
@@ -95,8 +96,8 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_DATABASE: laravel_test
-          DB_USERNAME: laravel_test
-          DB_PASSWORD: laravel_test
+          DB_USERNAME: laravel # 🔑 Consistent with migrations
+          DB_PASSWORD: laravel
           CACHE_DRIVER: array
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
