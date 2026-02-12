@@ -13,22 +13,19 @@ class UsersDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
+        // Create admin user with admin privileges
         User::create([
             'name' => 'Admin User',
             'email' => 'admin@faridlabs.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
+            'is_admin' => true,
         ]);
 
-        // Create sample users using direct create
-        foreach (range(1, 10) as $i) {
-            User::create([
-                'name' => "User {$i}",
-                'email' => "user{$i}@example.com",
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]);
-        }
+        // Create 10 sample users with verified emails
+        User::factory()
+            ->count(10)
+            ->verified()
+            ->create();
     }
 }
