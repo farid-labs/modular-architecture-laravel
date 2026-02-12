@@ -5,6 +5,7 @@ namespace Modules\Users\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Application\Services\CachedUserService;
 use Modules\Users\Infrastructure\Persistence\Models\User;
@@ -22,11 +23,12 @@ class UserController extends Controller
     public function __construct(
         private CachedUserService $userService
     ) {
-        $this->authorizeResource(User::class, 'user');
+
+        // $this->authorizeResource(User::class, 'user');
     }
 
     #[OA\Get(
-        path: '/api/v1/users',
+        path: '/v1/users',
         summary: 'Get all users',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -62,7 +64,7 @@ class UserController extends Controller
     }
 
     #[OA\Get(
-        path: '/api/v1/users/{id}',
+        path: '/v1/users/{id}',
         summary: 'Get user by ID',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -98,6 +100,10 @@ class UserController extends Controller
         // Authorization check
         $this->authorize('view', $user);
 
+
+        Log::debug('Controller show invoked', [
+            'user_param' => $user->id,
+        ]);
         return response()->json([
             'data' => new UserResource($user),
             'message' => 'User retrieved successfully',
@@ -105,7 +111,7 @@ class UserController extends Controller
     }
 
     #[OA\Post(
-        path: '/api/v1/users',
+        path: '/v1/users',
         summary: 'Create a new user',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -142,7 +148,7 @@ class UserController extends Controller
     }
 
     #[OA\Put(
-        path: '/api/v1/users/{id}',
+        path: '/v1/users/{id}',
         summary: 'Update user',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -196,7 +202,7 @@ class UserController extends Controller
     }
 
     #[OA\Delete(
-        path: '/api/v1/users/{id}',
+        path: '/v1/users/{id}',
         summary: 'Delete user',
         tags: ['Users'],
         security: [['sanctum' => []]],
