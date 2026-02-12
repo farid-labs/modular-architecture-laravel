@@ -6,8 +6,9 @@ use Spatie\DataTransferObject\DataTransferObject;
 
 class UserDTO extends DataTransferObject
 {
-    public string $name;
-    public string $email;
+
+    public ?string $name = null;
+    public ?string $email = null;
     public ?string $password = null;
     public ?string $email_verified_at = null;
 
@@ -24,11 +25,11 @@ class UserDTO extends DataTransferObject
      */
     public function toArray(): array
     {
-        return [
+        return array_filter([
             'name' => $this->name,
             'email' => $this->email,
             'password' => $this->password,
             'email_verified_at' => $this->email_verified_at,
-        ];
+        ], fn($value) => $value !== null);
     }
 }

@@ -52,7 +52,7 @@ class UserService
         }
 
         // Business logic validation
-        if ($userDTO->email !== $user->email) {
+        if ($userDTO->email !== null && $userDTO->email !== $user->email) {
             $this->ensureEmailIsUnique($userDTO->email);
         }
 
