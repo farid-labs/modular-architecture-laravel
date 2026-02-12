@@ -3,6 +3,10 @@
 namespace Modules\Users\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Policies\UserPolicy;
 
 class UsersServiceProvider extends ServiceProvider
 {
@@ -11,7 +15,7 @@ class UsersServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->register(\Modules\Users\Infrastructure\Providers\RepositoryServiceProvider::class);
+        $this->app->register(RepositoryServiceProvider::class);
     }
 
     /**
@@ -19,7 +23,10 @@ class UsersServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/../../Presentation/Routes/api.php');
-        $this->loadMigrationsFrom(__DIR__.'/../../Infrastructure/Database/Migrations');
+        $this->loadRoutesFrom(__DIR__ . '/../../Presentation/Routes/api.php');
+        $this->loadMigrationsFrom(__DIR__ . '/../../Infrastructure/Database/Migrations');
+        Gate::policy(User::class, UserPolicy::class);
+
+        Log::info('UserPolicy registered for User model: ' . (Gate::getPolicyFor(User::class) ? 'YES' : 'NO'));
     }
 }
