@@ -103,20 +103,20 @@ jobs:
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
 
-      - name: Run tests with coverage (optional)
-        run: php artisan test --coverage
-        if: github.ref == 'refs/heads/main'
-        env:
-          APP_ENV: testing
-          DB_CONNECTION: pgsql
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_DATABASE: laravel_test
-          DB_USERNAME: laravel_test
-          DB_PASSWORD: laravel_test
-          CACHE_DRIVER: array
-          SESSION_DRIVER: array
-          QUEUE_CONNECTION: sync
+      # - name: Run tests with coverage (optional)
+      #   run: php artisan test --coverage
+      #   if: github.ref == 'refs/heads/main'
+      #   env:
+      #     APP_ENV: testing
+      #     DB_CONNECTION: pgsql
+      #     DB_HOST: localhost
+      #     DB_PORT: 5432
+      #     DB_DATABASE: laravel_test
+      #     DB_USERNAME: laravel_test
+      #     DB_PASSWORD: laravel_test
+      #     CACHE_DRIVER: array
+      #     SESSION_DRIVER: array
+      #     QUEUE_CONNECTION: sync
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
