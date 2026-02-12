@@ -9,103 +9,156 @@ on:
 
 jobs:
   test:
-    name: Run Laravel Tests
+    name: Run Tests
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_DB: laravel_test
-          POSTGRES_USER: laravel_test
-          POSTGRES_PASSWORD: laravel_test
+          POSTGRES_DB: laravel
+          POSTGRES_USER: laravel
+          POSTGRES_PASSWORD: laravel
         options: >-
-          --health-cmd="pg_isready -U laravel_test"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd "pg_isready -U laravel"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
       redis:
         image: redis:7-alpine
         options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
           extensions: mbstring, pdo, pdo_pgsql, bcmath, zip
-          coverage: pcov
 
-      - name: Cache Composer
+      - name: Cache Composer packages
         uses: actions/cache@v3
         with:
-          path: ~/.composer/cache
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
-          restore-keys: composer-${{ runner.os }}-
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
 
-      - name: Prepare Laravel
+      - name: Prepare environment
         run: |
           cp .env.example .env
           php artisan key:generate
           php artisan config:clear
 
-      - name: Run Tests (Parallel + Coverage)
-        run: php artisan test --parallel --coverage-clover=coverage.xml
+      - name: Create test user and database with full privileges
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
+          PGPASSWORD=laravel psql -h localhost -U laravel -d laravel -c "CREATE USER laravel_test WITH PASSWORD 'laravel_test';"
+
+          PGPASSWORD=laravel psql -h localhost -U laravel -d laravel -c "CREATE DATABASE laravel_test WITH OWNER laravel_test;"
+
+          PGPASSWORD=laravel psql -h localhost -U laravel -d laravel_test -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO laravel_test;"
+          PGPASSWORD=laravel psql -h localhost -U laravel -d laravel_test -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO laravel_test;"
+          PGPASSWORD=laravel psql -h localhost -U laravel -d laravel_test -c "GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO laravel_test;"
+
+      - name: Run migrations for test database
+        run: php artisan migrate --env=testing
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: postgres
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel_test
+          DB_PASSWORD: laravel_test
+
+      - name: Run PHPUnit tests
+        run: php artisan test
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: postgres
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel_test
+          DB_PASSWORD: laravel_test
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
 
   code-quality:
     name: Code Quality Checks
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: shivammathur/setup-php@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
           tools: phpstan, pint
 
-      - name: Cache Composer
+      - name: Cache Composer packages
         uses: actions/cache@v3
         with:
-          path: ~/.composer/cache
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
-          restore-keys: composer-${{ runner.os }}-
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-      - run: composer install --prefer-dist --no-progress --no-interaction
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
 
-      - run: ./vendor/bin/pint --test
-      - run: ./vendor/bin/phpstan analyse app Modules --level=8
+      - name: Run Laravel Pint
+        run: ./vendor/bin/pint --test
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse app Modules --level=8
 
   security:
     name: Security Checks
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: shivammathur/setup-php@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
 
-      - name: Cache Composer
+      - name: Cache Composer packages
         uses: actions/cache@v3
         with:
-          path: ~/.composer/cache
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
-          restore-keys: composer-${{ runner.os }}-
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-      - run: composer install --prefer-dist --no-progress --no-interaction
-      - run: composer audit
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Run Composer audit
+        run: composer audit
+
+      - name: Run security check
+        run: composer require --dev roave/security-advisories --no-update && composer update --dry-run
