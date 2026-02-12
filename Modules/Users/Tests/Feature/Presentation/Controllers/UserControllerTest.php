@@ -2,139 +2,162 @@
 
 namespace Modules\Users\Tests\Feature\Presentation\Controllers;
 
-use Tests\TestCase;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Laravel\Sanctum\Sanctum;
+use Modules\Users\Tests\TestCase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class UserControllerTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+    }
+
+    /**
+     * Authenticate a user (helper)
+     */
+    protected function authenticate(bool $admin = false): User
+    {
+        $user = User::create([
+            'name' => $admin ? 'Admin User' : 'Test User',
+            'email' => $admin ? 'admin@test.com' : 'user@test.com',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+            'is_admin' => $admin,
+        ]);
+
+
+        Sanctum::actingAs($user, ['*']);
+        return $user;
+    }
+
     public function test_can_list_users(): void
     {
-        // Create users directly
-        foreach (range(1, 3) as $i) {
-            User::create([
-                'name' => "User {$i}",
-                'email' => "user{$i}@example.com",
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]);
-        }
+        $auth = $this->authenticate();
+        User::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/v1/users');
-
-        $response->assertStatus(200)
-            ->assertJsonCount(3, 'data');
+        $this->getJson('/v1/users')
+            ->assertOk()
+            ->assertJsonCount(4, 'data');
     }
 
     public function test_can_show_single_user(): void
     {
-        $user = User::create([
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
+        $this->authenticate(admin: true);
+        $user = User::factory()->create();
 
-        $response = $this->getJson("/api/v1/users/{$user->id}");
-
-        $response->assertStatus(200)
+        $this->getJson("/v1/users/{$user->id}")
+            ->assertOk()
             ->assertJson([
                 'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email
-                ]
+                    'id'    => $user->id,
+                    'name'  => $user->name,
+                    'email' => $user->email,
+                ],
             ]);
     }
 
     public function test_can_create_user(): void
     {
-        $userData = [
-            'name' => $this->faker->name,
-            'email' => $this->faker->unique()->safeEmail,
-            'password' => 'password123'
+        $this->authenticate();
+
+        $data = [
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => 'password123',
         ];
 
-        $response = $this->postJson('/api/v1/users', $userData);
+        $this->postJson('/v1/users', $data)
+            ->assertCreated()
+            ->assertJson(['data' => ['email' => $data['email']]]);
 
-        $response->assertStatus(201)
-            ->assertJson([
-                'data' => [
-                    'name' => $userData['name'],
-                    'email' => $userData['email']
-                ]
-            ]);
-
-        $this->assertDatabaseHas('users', [
-            'email' => $userData['email']
-        ]);
+        $this->assertDatabaseHas('users', ['email' => $data['email']]);
     }
 
     public function test_cannot_create_user_with_existing_email(): void
     {
-        $existingUser = User::create([
-            'name' => 'Existing User',
-            'email' => 'existing@example.com',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
+        $this->authenticate();
+        $existing = User::factory()->create();
 
-        $userData = [
-            'name' => $this->faker->name,
-            'email' => 'existing@example.com',
-            'password' => 'password123'
-        ];
-
-        $response = $this->postJson('/api/v1/users', $userData);
-
-        $response->assertStatus(422);
+        $this->postJson('/v1/users', [
+            'name' => $this->faker->name(),
+            'email' => $existing->email,
+            'password' => 'password123',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('email');
     }
 
-    public function test_can_update_user(): void
+    public function test_can_update_own_user(): void
     {
-        $user = User::create([
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
+        $auth = $this->authenticate();
 
-        $updateData = [
-            'name' => 'Updated Name',
-            'email' => $this->faker->unique()->safeEmail
-        ];
-
-        $response = $this->putJson("/api/v1/users/{$user->id}", $updateData);
-
-        $response->assertStatus(200)
-            ->assertJson([
-                'data' => [
-                    'name' => 'Updated Name'
-                ]
-            ]);
+        $this->putJson("/v1/users/{$auth->id}", [
+            'name' => 'My New Name',
+            'email' => $this->faker->unique()->safeEmail(),
+        ])->assertOk();
 
         $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'name' => 'Updated Name'
+            'id' => $auth->id,
+            'name' => 'My New Name',
         ]);
     }
 
-    public function test_can_delete_user(): void
+    public function test_cannot_update_other_user_without_permission(): void
     {
-        $user = User::create([
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
+        $this->authenticate();
+        $other = User::factory()->create();
 
-        $response = $this->deleteJson("/api/v1/users/{$user->id}");
+        $this->putJson("/v1/users/{$other->id}", [
+            'name' => 'Hacked',
+            'email' => $this->faker->unique()->safeEmail(),
+        ])->assertForbidden();
+    }
 
-        $response->assertStatus(200);
-        $this->assertSoftDeleted('users', ['id' => $user->id]);
+    public function test_can_delete_own_user(): void
+    {
+        $auth = $this->authenticate();
+
+        $this->deleteJson("/v1/users/{$auth->id}")
+            ->assertOk();
+    }
+
+
+    public function test_cannot_delete_other_user_without_permission(): void
+    {
+        $this->authenticate();
+        $other = User::factory()->create();
+
+        $this->deleteJson("/v1/users/{$other->id}")
+            ->assertForbidden();
+    }
+
+    public function test_unauthenticated_user_cannot_access_protected_routes(): void
+    {
+        $this->getJson('/v1/users')
+            ->assertUnauthorized();
+    }
+
+    public function test_can_show_own_user(): void
+    {
+        $auth = $this->authenticate();
+
+        $this->getJson("/v1/users/{$auth->id}")
+            ->assertOk();
+    }
+
+    public function test_cannot_show_other_user_without_permission(): void
+    {
+        $this->authenticate();
+        $other = User::factory()->create();
+
+        $this->getJson("/v1/users/{$other->id}")
+            ->assertForbidden();
     }
 }

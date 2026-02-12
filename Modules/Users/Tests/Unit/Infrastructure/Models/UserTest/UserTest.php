@@ -1,9 +1,9 @@
 <?php
 
-namespace Modules\Users\Tests\Unit\Domain\Entities;
+namespace Modules\Users\Tests\Unit\Infrastructure\Models\UserTest;
 
 use Modules\Users\Infrastructure\Persistence\Models\User;
-use Tests\TestCase;
+use Modules\Users\Tests\TestCase;
 use Carbon\CarbonImmutable;
 
 class UserTest extends TestCase

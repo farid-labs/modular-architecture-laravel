@@ -2,7 +2,7 @@
 
 namespace Modules\Users\Tests\Unit\Application\Services;
 
-use Tests\TestCase;
+use Modules\Users\Tests\TestCase;
 use Mockery\MockInterface;
 use Modules\Users\Application\Services\UserService;
 use Modules\Users\Domain\Repositories\UserRepositoryInterface;
