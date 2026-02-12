@@ -8,7 +8,9 @@ use Laravel\Sanctum\HasApiTokens;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use Modules\Users\Infrastructure\Database\Factories\UserFactory;
+use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  *
@@ -24,7 +26,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable;
+    use SoftDeletes;
+    use HasApiTokens, Notifiable, HasRoles;
     /** @phpstan-ignore-next-line */
     use HasFactory;
 
@@ -33,6 +36,7 @@ class User extends Authenticatable
         'email',
         'password',
         'email_verified_at',
+        'is_admin'
     ];
 
     protected $hidden = [
@@ -40,15 +44,14 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts =  [
+        'is_admin'          => 'boolean',
+        'email_verified_at' => 'immutable_datetime',
+        'created_at'        => 'immutable_datetime',
+        'updated_at'        => 'immutable_datetime',
+        'password'          => 'hashed',
+    ];
+
 
     /**
      * Get user's full name
@@ -67,6 +70,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->is_admin ?? false;
+    }
+
+    /**
      * Update user email
      */
     public function updateEmail(Email $email): void
@@ -81,5 +92,21 @@ class User extends Authenticatable
     public function updateName(Name $name): void
     {
         $this->name = $name->getValue();
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory()
+    {
+        return UserFactory::new();
+    }
+
+    /**
+     * Determine if the user is an administrator.
+     */
+    public function getIsAdminAttribute(): bool
+    {
+        return (bool) ($this->attributes['is_admin'] ?? false);
     }
 }

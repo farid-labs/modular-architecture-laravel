@@ -3,55 +3,68 @@
 namespace Modules\Users\Infrastructure\Policies;
 
 use Modules\Users\Infrastructure\Persistence\Models\User;
+use Illuminate\Support\Facades\Log;
 
-/**
- * @template TFactory of \Illuminate\Database\Eloquent\Factories\Factory
- */
 class UserPolicy
 {
-    /**
-     * @param User $user
-     */
     public function viewAny(User $user): bool
     {
+        Log::debug('Policy viewAny', ['user_id' => $user->id]);
         return true;
     }
 
-    public function view(User $authenticatedUser, User $targetUser): bool
+    public function view(User $user, User $model): bool
     {
-        return $authenticatedUser->id === $targetUser->id;
+        $result = $user->id === $model->id || $user->is_admin;
+        Log::debug('Policy view', [
+            'authenticated_user' => $user->id,
+            'target_user' => $model->id,
+            'is_same' => $user->id === $model->id,
+            'is_admin' => $user->is_admin,
+            'result' => $result
+        ]);
+        return $result;
     }
 
-    /**
-     * @param User $user
-     */
     public function create(User $user): bool
     {
+        Log::debug('Policy create', ['user_id' => $user->id]);
         return true;
     }
 
-
-    public function update(User $authenticatedUser, User $targetUser): bool
+    public function update(User $user, User $model): bool
     {
-        return $authenticatedUser->id === $targetUser->id;
+        $result = $user->id === $model->id || $user->is_admin;
+        Log::debug('Policy update', [
+            'authenticated_user' => $user->id,
+            'target_user' => $model->id,
+            'is_same' => $user->id === $model->id,
+            'is_admin' => $user->is_admin,
+            'result' => $result
+        ]);
+        return $result;
     }
 
-
-    public function delete(User $authenticatedUser, User $targetUser): bool
+    public function delete(User $user, User $model): bool
     {
-        return $authenticatedUser->id === $targetUser->id;
+        $result = $user->id === $model->id || $user->is_admin;
+        Log::debug('Policy delete', [
+            'authenticated_user' => $user->id,
+            'target_user' => $model->id,
+            'is_same' => $user->id === $model->id,
+            'is_admin' => $user->is_admin,
+            'result' => $result
+        ]);
+        return $result;
     }
 
-
-    public function restore(User $authenticatedUser, User $targetUser): bool
+    public function restore(User $user, User $model): bool
     {
-        return $authenticatedUser->id === $targetUser->id;
+        return $user->id === $model->id || $user->is_admin;
     }
 
-
-
-    public function forceDelete(User $authenticatedUser, User $targetUser): bool
+    public function forceDelete(User $user, User $model): bool
     {
-        return $authenticatedUser->id === $targetUser->id;
+        return $user->is_admin;
     }
 }

@@ -33,6 +33,7 @@ class UserFactory extends Factory
             'password' => $password,
             'email_verified_at' => $this->faker->optional()->dateTime(),
             'remember_token' => Str::random(10),
+            'is_admin' => false,
         ];
     }
 
@@ -45,7 +46,12 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
         ]);
     }
-
+    public function admin(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'is_admin' => true,
+        ]);
+    }
     /**
      * Indicate that the user's email is unverified.
      */
