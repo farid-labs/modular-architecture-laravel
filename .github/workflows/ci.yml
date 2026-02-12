@@ -15,11 +15,11 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_DB: laravel_test
+          POSTGRES_DB: laravel
           POSTGRES_USER: laravel
           POSTGRES_PASSWORD: laravel
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U laravel"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -58,31 +58,37 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
 
-      - name: Copy environment file
-        run: cp .env.example .env
+      # IMPORTANT
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
 
-      - name: Generate application key
-        run: php artisan key:generate
+      # Create test database
+      - name: Create testing database
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Run migrations
-        run: php artisan migrate --database=pgsql
-        env:
-          DB_CONNECTION: postgres
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_DATABASE: laravel_test
-          DB_USERNAME: laravel
-          DB_PASSWORD: laravel
+          PGPASSWORD=laravel psql -h localhost -U laravel -c "CREATE DATABASE laravel_test;"
+          PGPASSWORD=laravel psql -h localhost -U laravel -c "CREATE USER laravel_test WITH PASSWORD 'laravel_test';"
+          PGPASSWORD=laravel psql -h localhost -U laravel -c "GRANT ALL PRIVILEGES ON DATABASE laravel_test TO laravel_test;"
 
+      # Run tests (Laravel will handle migrations)
       - name: Run PHPUnit tests with coverage
-        run: vendor/bin/phpunit --coverage-clover coverage.xml
+        run: php artisan test --coverage-clover coverage.xml
         env:
-          DB_CONNECTION: postgres
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
           DB_HOST: localhost
           DB_PORT: 5432
           DB_DATABASE: laravel_test
           DB_USERNAME: laravel_test
           DB_PASSWORD: laravel_test
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -117,10 +123,10 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
 
-      - name: Run Laravel Pint (code formatting)
+      - name: Run Laravel Pint
         run: ./vendor/bin/pint --test
 
-      - name: Run PHPStan (static analysis)
+      - name: Run PHPStan
         run: ./vendor/bin/phpstan analyse app Modules --level=8
 
   security:
