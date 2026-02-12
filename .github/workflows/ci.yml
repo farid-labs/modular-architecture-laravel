@@ -70,12 +70,23 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-
           PGPASSWORD=laravel psql -h localhost -U laravel -c "CREATE DATABASE laravel_test;"
           PGPASSWORD=laravel psql -h localhost -U laravel -c "CREATE USER laravel_test WITH PASSWORD 'laravel_test';"
           PGPASSWORD=laravel psql -h localhost -U laravel -c "GRANT ALL PRIVILEGES ON DATABASE laravel_test TO laravel_test;"
+          PGPASSWORD=laravel psql -h localhost -U laravel -c "GRANT ALL PRIVILEGES ON DATABASE laravel_test TO laravel_test;"
 
-      # Run tests (Laravel will handle migrations)
+      - name: Run migrations
+        run: php artisan migrate --env=testing
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel_test
+          DB_PASSWORD: laravel_test
+
+      # Run tests
       - name: Run PHPUnit tests with coverage
         run: php artisan test --coverage-clover coverage.xml
         env:
