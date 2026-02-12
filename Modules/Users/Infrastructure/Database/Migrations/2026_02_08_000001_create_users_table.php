@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
             $table->string('email', 255)->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password', 255);
+            $table->boolean('is_admin')->default(false);
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
@@ -24,6 +26,7 @@ return new class extends Migration
             // Indexes for performance
             $table->index('email');
             $table->index('created_at');
+            $table->index('is_admin');
         });
     }
 
