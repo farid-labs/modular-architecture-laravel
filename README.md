@@ -1,4 +1,4 @@
-# Laravel Modular Monolith API
+# Modular Architecture Laravel (Monolith API)
 
 [![CI](https://github.com/farid-labs/modular-architecture-laravel/workflows/CI/badge.svg)](https://github.com/farid-labs/modular-architecture-laravel/actions)
 
@@ -71,42 +71,94 @@ Module/
 
 ```bash
 # Clone repository
-git clone https://github.com/farid-labs/laravel-modular-monolith.git
-cd laravel-modular-monolith
+git clone https://github.com/farid-labs/modular-architecture-laravel.git
+cd modular-architecture-laravel
 
 # Copy environment file
 cp .env.example .env
 
-# Start containers
-docker-compose up -d
+# Start containers (this will build images and start services)
+docker compose up -d
 
-# Install dependencies
-docker-compose exec app composer install
+# Wait for containers to be ready (optional but recommended)
+sleep 5
+
+# Install PHP dependencies
+docker compose exec app composer install
 
 # Generate application key
-docker-compose exec app php artisan key:generate
+docker compose exec app php artisan key:generate
 
-# Run migrations
-docker-compose exec app php artisan migrate --seed
+# Run migrations and seeders
+docker compose exec app php artisan migrate:fresh --seed
 
-# Run tests
-docker-compose exec app php artisan test
+# Install frontend dependencies (if needed)
+# docker compose exec app npm install
 ```
 
-## 🧪 Testing Strategy
+### 🧪 Testing Strategy
 
 ```bash
 # Run all tests
-docker-compose exec app php artisan test
+docker compose exec app php artisan test
 
-# Run unit tests
-docker-compose exec app php artisan test --testsuite=Unit
+# Run unit tests only
+docker compose exec app php artisan test --testsuite=Unit
 
-# Run feature tests
-docker-compose exec app php artisan test --testsuite=Feature
+# Run feature tests only
+docker compose exec app php artisan test --testsuite=Feature
 
-# Generate coverage report
-docker-compose exec app php artisan test --coverage
+# Run tests with coverage
+docker compose exec app php artisan test --coverage
+
+# Run specific test file
+docker compose exec app php artisan test --filter=UserControllerTest
+```
+
+### Development Commands
+
+```bash
+# Access application container
+docker compose exec app bash
+
+# View logs
+docker compose logs -f app
+
+# Restart services
+docker compose restart
+
+# Stop all services
+docker compose down
+
+# Stop and remove all containers, networks, and volumes
+docker compose down -v
+```
+
+### API Documentation
+
+```bash
+# Generate Swagger/OpenAPI documentation
+docker compose exec app php artisan l5-swagger:generate
+
+# Access API documentation at:
+# http://localhost:8080/api/documentation
+```
+
+### Accessing the Application
+
+- API Base URL: `http://localhost:8080/api/v1`
+- API Documentation: `http://localhost:8080/api/documentation`
+- Telescope (if enabled): `http://localhost:8080/telescope`
+
+### Default Test User
+
+#### After running migrations with seeders, you can use this user for testing:
+
+```json
+{
+    "email": "admin@faridlabs.com",
+    "password": "password"
+}
 ```
 
 ## 📊 Code Quality
