@@ -131,7 +131,11 @@ jobs:
         run: ./vendor/bin/pint --test
 
       - name: Run PHPStan
-        run: ./vendor/bin/phpstan analyse app Modules --level=8
+        run: |
+          mkdir -p /tmp/phpstan
+          ./vendor/bin/phpstan analyse app Modules --level=8 --memory-limit=1G
+        env:
+          TMPDIR: /tmp
 
   security:
     name: Security Checks
