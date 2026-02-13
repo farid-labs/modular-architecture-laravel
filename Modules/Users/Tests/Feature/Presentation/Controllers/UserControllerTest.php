@@ -48,16 +48,24 @@ class UserControllerTest extends TestCase
 
     public function test_can_show_single_user(): void
     {
-        $this->authenticate(admin: true);
-        $user = User::factory()->create();
+        $this->authenticate(admin: true); // Admin can view any user
+
+        // Create factory user with explicit, predictable values
+        $user = User::create([
+            'name' => 'John Doe',
+            'email' => 'john.doe@example.com',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+            'is_admin' => false,
+        ]);
 
         $this->getJson("/v1/users/{$user->id}")
             ->assertOk()
             ->assertJson([
                 'data' => [
                     'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
+                    'name' => 'John Doe',
+                    'email' => 'john.doe@example.com',
                 ],
             ]);
     }
