@@ -61,6 +61,7 @@ jobs:
       - name: Prepare environment
         run: |
           cp .env.example .env
+          chmod 666 .env
           php artisan key:generate
           php artisan config:clear
 
