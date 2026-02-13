@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
+use Modules\Users\Infrastructure\Database\Factories\UserFactory;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -51,6 +52,17 @@ class User extends Authenticatable
         'updated_at' => 'immutable_datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return UserFactory
+     */
+    protected static function newFactory(): UserFactory
+    {
+        return UserFactory::new();
+    }
+
 
     /**
      * Get user's full name
