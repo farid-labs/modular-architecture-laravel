@@ -9,7 +9,6 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
-use Modules\Users\Infrastructure\Database\Factories\UserFactory;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -21,14 +20,16 @@ use Spatie\Permission\Traits\HasRoles;
  * @property \Carbon\CarbonImmutable|null $email_verified_at
  * @property \Carbon\CarbonImmutable $created_at
  * @property \Carbon\CarbonImmutable $updated_at
+ * @property bool $is_admin
+ *
+ * @mixin \Eloquent
  */
 class User extends Authenticatable
 {
-    use HasApiTokens, HasRoles, Notifiable;
+    use HasApiTokens, HasRoles, Notifiable, SoftDeletes;
+
     /** @phpstan-ignore-next-line */
     use HasFactory;
-
-    use SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -90,14 +91,6 @@ class User extends Authenticatable
     public function updateName(Name $name): void
     {
         $this->name = $name->getValue();
-    }
-
-    /**
-     * Create a new factory instance for the model.
-     */
-    protected static function newFactory()
-    {
-        return UserFactory::new();
     }
 
     /**
