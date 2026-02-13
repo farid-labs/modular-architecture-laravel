@@ -1,10 +1,14 @@
+![Weather App Preview](./architecture-diagram.svg)<br>
+
 # Modular Architecture Laravel (Monolith API)
 
+A production-grade Laravel modular monolith demonstrating **Domain-Driven Design**, **Clean Architecture**, and **Enterprise Patterns**. Built for scalability, maintainability, and developer experience.
 [![CI](https://github.com/farid-labs/modular-architecture-laravel/workflows/CI/badge.svg)](https://github.com/farid-labs/modular-architecture-laravel/actions)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-
-A production-grade Laravel modular monolith demonstrating **Domain-Driven Design**, **Clean Architecture**, and **Enterprise Patterns**. Built for scalability, maintainability, and developer experience.
+[![GitHub stars](https://img.shields.io/github/stars/farid-labs/modular-architecture-laravel?logo=github)](https://github.com/farid-labs/modular-architecture-laravel/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/farid-labs/modular-architecture-laravel?logo=github)](https://github.com/farid-labs/modular-architecture-laravel/forks)
+[![GitHub issues](https://img.shields.io/github/issues/farid-labs/modular-architecture-laravel?logo=github)](https://github.com/farid-labs/modular-architecture-laravel/issues)
 
 ## 🎯 Architecture Highlights
 

@@ -1,0 +1,215 @@
+<svg viewBox="0 0 1200 750" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <!-- Darker Hacker-Style Background with Subtle Grid Pattern -->
+  <rect width="1200" height="750" fill="#0a0a14"/>
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1a1a2e" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="750" fill="url(#grid)" opacity="0.3"/>
+
+  <!-- Title with Hacker Glow and Fantasy Rune Accents -->
+  <text x="600" y="50" font-family="monospace" font-size="32" font-weight="bold" fill="#00ff9f" text-anchor="middle" filter="url(#glow)">
+    Laravel Modular Monolith Architecture
+  </text>
+  <text x="600" y="85" font-family="monospace" font-size="18" fill="#4cc9f0" text-anchor="middle">
+    Domain-Driven Design • Clean Architecture • Enterprise Patterns
+  </text>
+
+  <!-- Fantasy Rune Elements -->
+  <path d="M550 95 L570 115 L590 95" fill="none" stroke="#FB503B" stroke-width="2" stroke-dasharray="2,2"/>
+  <path d="M610 95 L630 115 L650 95" fill="none" stroke="#FB503B" stroke-width="2" stroke-dasharray="2,2"/>
+
+  <!-- Outer Container with Circuit Border -->
+  <rect x="50" y="120" width="1100" height="530" rx="15" fill="#12122a" stroke="#00ff9f" stroke-width="2" stroke-dasharray="5,3"/>
+
+  <!-- Module Containers with Hacker Terminal Feel -->
+  <g id="modules">
+    <!-- Users Module -->
+    <g id="users-module">
+      <rect x="70" y="150" width="320" height="470" rx="10" fill="#0b1626" stroke="#004d80" stroke-width="1.5"/>
+      <text x="230" y="185" font-family="monospace" font-size="20" font-weight="bold" fill="#00ff9f" text-anchor="middle">👤 Users Module</text>
+      
+      <!-- Layers with Glow -->
+      <g class="layer">
+        <rect x="90" y="205" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="230" y="235" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Presentation Layer</text>
+        <text x="230" y="255" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Controllers • Routes • Resources</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="90" y="300" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="230" y="330" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Application Layer</text>
+        <text x="230" y="350" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Services • DTOs • Policies</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="90" y="395" width="280" height="85" rx="5" fill="#081020" stroke="#00ff9f" stroke-width="2" filter="url(#shadow)"/>
+        <text x="230" y="425" font-family="monospace" font-size="15" font-weight="bold" fill="#00ff9f" text-anchor="middle">Domain Layer</text>
+        <text x="230" y="445" font-family="monospace" font-size="12" fill="#b2ffd6" text-anchor="middle">Entities • Value Objects • Events</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="90" y="490" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="230" y="520" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Infrastructure Layer</text>
+        <text x="230" y="540" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Repositories • Models • Jobs</text>
+      </g>
+    </g>
+    
+    <!-- Workspace Module -->
+    <g id="workspace-module">
+      <rect x="440" y="150" width="320" height="470" rx="10" fill="#0b1626" stroke="#004d80" stroke-width="1.5"/>
+      <text x="600" y="185" font-family="monospace" font-size="20" font-weight="bold" fill="#00ff9f" text-anchor="middle">📁 Workspace Module</text>
+      
+      <!-- Layers -->
+      <g class="layer">
+        <rect x="460" y="205" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="600" y="235" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Presentation Layer</text>
+        <text x="600" y="255" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Controllers • Routes • Resources</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="460" y="300" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="600" y="330" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Application Layer</text>
+        <text x="600" y="350" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Services • DTOs • Policies</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="460" y="395" width="280" height="85" rx="5" fill="#081020" stroke="#00ff9f" stroke-width="2" filter="url(#shadow)"/>
+        <text x="600" y="425" font-family="monospace" font-size="15" font-weight="bold" fill="#00ff9f" text-anchor="middle">Domain Layer</text>
+        <text x="600" y="445" font-family="monospace" font-size="12" fill="#b2ffd6" text-anchor="middle">Entities • Value Objects • Events</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="460" y="490" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="600" y="520" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Infrastructure Layer</text>
+        <text x="600" y="540" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Repositories • Models • Jobs</text>
+      </g>
+    </g>
+    
+    <!-- Notifications Module -->
+    <g id="notifications-module">
+      <rect x="810" y="150" width="320" height="470" rx="10" fill="#0b1626" stroke="#004d80" stroke-width="1.5"/>
+      <text x="970" y="185" font-family="monospace" font-size="20" font-weight="bold" fill="#00ff9f" text-anchor="middle">🔔 Notifications Module</text>
+      
+      <!-- Layers -->
+      <g class="layer">
+        <rect x="830" y="205" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="970" y="235" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Presentation Layer</text>
+        <text x="970" y="255" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Controllers • Routes • Resources</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="830" y="300" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="970" y="330" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Application Layer</text>
+        <text x="970" y="350" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Services • DTOs • Policies</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="830" y="395" width="280" height="85" rx="5" fill="#081020" stroke="#00ff9f" stroke-width="2" filter="url(#shadow)"/>
+        <text x="970" y="425" font-family="monospace" font-size="15" font-weight="bold" fill="#00ff9f" text-anchor="middle">Domain Layer</text>
+        <text x="970" y="445" font-family="monospace" font-size="12" fill="#b2ffd6" text-anchor="middle">Entities • Value Objects • Events</text>
+      </g>
+      
+      <g class="layer">
+        <rect x="830" y="490" width="280" height="85" rx="5" fill="#081020" stroke="#003366" stroke-width="1" filter="url(#shadow)"/>
+        <text x="970" y="520" font-family="monospace" font-size="15" fill="#00ff9f" text-anchor="middle">Infrastructure Layer</text>
+        <text x="970" y="540" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Repositories • Models • Jobs</text>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Dependency Arrows with Fantasy Energy Flow -->
+  <g id="dependencies">
+    <!-- Users Module Dependencies -->
+    <path d="M230 290 L230 260" stroke="#00ff9f" stroke-width="2" fill="none" marker-end="url(#arrowhead)" filter="url(#glow-arrow)"/>
+    <path d="M230 385 L230 355" stroke="#00ff9f" stroke-width="2" fill="none" marker-end="url(#arrowhead)" filter="url(#glow-arrow)"/>
+    <path d="M230 480 L230 450" stroke="#00ff9f" stroke-width="2.5" fill="none" marker-end="url(#arrowhead-green)" filter="url(#glow-arrow)"/>
+    
+    <!-- Workspace Module Dependencies -->
+    <path d="M600 290 L600 260" stroke="#00ff9f" stroke-width="2" fill="none" marker-end="url(#arrowhead)" filter="url(#glow-arrow)"/>
+    <path d="M600 385 L600 355" stroke="#00ff9f" stroke-width="2" fill="none" marker-end="url(#arrowhead)" filter="url(#glow-arrow)"/>
+    <path d="M600 480 L600 450" stroke="#00ff9f" stroke-width="2.5" fill="none" marker-end="url(#arrowhead-green)" filter="url(#glow-arrow)"/>
+    
+    <!-- Notifications Module Dependencies -->
+    <path d="M970 290 L970 260" stroke="#00ff9f" stroke-width="2" fill="none" marker-end="url(#arrowhead)" filter="url(#glow-arrow)"/>
+    <path d="M970 385 L970 355" stroke="#00ff9f" stroke-width="2" fill="none" marker-end="url(#arrowhead)" filter="url(#glow-arrow)"/>
+    <path d="M970 480 L970 450" stroke="#00ff9f" stroke-width="2.5" fill="none" marker-end="url(#arrowhead-green)" filter="url(#glow-arrow)"/>
+  </g>
+  
+  <!-- Shared Infrastructure with Circuit Patterns -->
+  <g id="shared-infrastructure">
+    <rect x="400" y="610" width="400" height="60" rx="8" fill="#081020" stroke="#00ff9f" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="600" y="635" font-family="monospace" font-size="16" font-weight="bold" fill="#00ff9f" text-anchor="middle">Shared Infrastructure</text>
+    <text x="600" y="655" font-family="monospace" font-size="12" fill="#80ffdb" text-anchor="middle">Database • Cache • Queue • Events</text>
+    
+    <!-- Connection lines with dashed energy flows -->
+    <path d="M230 580 L230 610 L400 640" stroke="#4cc9f0" stroke-width="1.5" fill="none" stroke-dasharray="5,3" filter="url(#glow-arrow)"/>
+    <path d="M600 580 L600 610" stroke="#4cc9f0" stroke-width="1.5" fill="none" stroke-dasharray="5,3" filter="url(#glow-arrow)"/>
+    <path d="M970 580 L970 610 L800 640" stroke="#4cc9f0" stroke-width="1.5" fill="none" stroke-dasharray="5,3" filter="url(#glow-arrow)"/>
+  </g>
+  
+  <!-- Legend with Fantasy Icons -->
+  <g id="legend">
+    <rect x="70" y="610" width="280" height="60" rx="8" fill="#081020" stroke="#4d4d7a" stroke-width="1" filter="url(#shadow)"/>
+    <circle cx="95" cy="625" r="6" fill="#00ff9f"/>
+    <text x="110" y="630" font-family="monospace" font-size="12" fill="#ffffff">Domain Core (Business Rules)</text>
+    
+    <circle cx="95" cy="645" r="6" fill="#4cc9f0"/>
+    <text x="110" y="650" font-family="monospace" font-size="12" fill="#ffffff">Dependency Flow Direction</text>
+  </g>
+  
+  <!-- Filters for Glow and Shadow (Hacker/Fantasy Effects) -->
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-arrow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00ff9f"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#00ff9f"/>
+    </marker>
+  </defs>
+  
+  <!-- Original Footer -->
+  <text x="600" y="695" font-family="monospace" font-size="14" fill="#5f5f8f" text-anchor="middle">
+    Production-Grade Modular Monolith • Built with Laravel 11 • DDD &amp; Clean Architecture Principles
+  </text>
+
+  <!-- New Chic Footer -->
+  <g id="new-footer">
+    <text x="600" y="718" font-family="monospace" font-size="14" fill="#00ff9f" text-anchor="middle" filter="url(#glow)">
+      Developed with ❤️ by Farid Teymouri
+    </text>
+    <g transform="translate(110, 725)">
+      <a xlink:href="https://github.com/farid-teymouri">
+        <text x="25" y="15" font-family="monospace" font-size="12" fill="#80ffdb">Github : github.com/farid-teymouri</text>
+      </a>
+    </g>
+    <g transform="translate(450, 725)">
+      <a xlink:href="https://github.com/farid-labs">
+        <text x="25" y="15" font-family="monospace" font-size="12" margin-left="20px" fill="#80ffdb">Github labs : github.com/farid-labs</text>
+      </a>
+    </g>
+    <g transform="translate(800, 725)">
+      <a xlink:href="https://faridteymouri.vercel.app/">
+        <text x="25" y="15" font-family="monospace" font-size="12" fill="#80ffdb">Portfolio : faridteymouri.vercel.app</text>
+      </a>
+    </g>
+  </g>
+</svg>
