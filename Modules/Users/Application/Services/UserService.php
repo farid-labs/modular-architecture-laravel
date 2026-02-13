@@ -16,13 +16,18 @@ class UserService
 
     public function createUser(UserDTO $userDTO): User
     {
+        $email = $userDTO->email;
+        if ($email === null) {
+            throw new \InvalidArgumentException('Email is required for user creation');
+        }
+
         Log::channel('domain')->info('Creating user', [
-            'email' => $userDTO->email,
+            'email' => $email,
             'name' => $userDTO->name,
         ]);
 
         // Business logic validation
-        $this->ensureEmailIsUnique($userDTO->email);
+        $this->ensureEmailIsUnique($email);
 
         $user = $this->userRepository->create($userDTO);
 
@@ -38,7 +43,7 @@ class UserService
     {
         Log::channel('domain')->info('Updating user', [
             'user_id' => $id,
-            'email' => $userDTO->email,
+            'email' => $userDTO->email ?? 'not provided',
         ]);
 
         $user = $this->userRepository->findById($id);
