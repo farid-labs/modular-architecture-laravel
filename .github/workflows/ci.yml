@@ -162,8 +162,5 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
 
-      - name: Run Composer audit
-        run: composer audit
-
-      - name: Run security check
-        run: composer require --dev roave/security-advisories --no-update && composer update --dry-run
+      - name: Run Composer security audit (ignore abandoned packages warning)
+        run: composer audit || [ $? -eq 2 ]
