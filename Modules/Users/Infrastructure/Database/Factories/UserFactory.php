@@ -41,14 +41,14 @@ class UserFactory extends Factory
      */
     public function verified(): static
     {
-        return $this->state(fn () => [
+        return $this->state(fn() => [
             'email_verified_at' => now(),
         ]);
     }
 
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'is_admin' => true,
         ]);
     }
@@ -58,8 +58,16 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn () => [
+        return $this->state(fn() => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function withCredentials(string $name, string $email): static
+    {
+        return $this->state(fn() => [
+            'name' => $name,
+            'email' => $email,
         ]);
     }
 }
