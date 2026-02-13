@@ -4,11 +4,11 @@ namespace Modules\Notifications\Infrastructure\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
-use Modules\Notifications\Domain\Enums\NotificationType;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
+use Modules\Notifications\Domain\Enums\NotificationType;
 
 class CustomNotification extends Notification implements ShouldQueue
 {
@@ -17,8 +17,8 @@ class CustomNotification extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      *
-     * @param array<string, mixed>|null $data
-     * @param array<NotificationChannel> $channels
+     * @param  array<string, mixed>|null  $data
+     * @param  array<NotificationChannel>  $channels
      */
     public function __construct(
         private NotificationType $type,
@@ -48,6 +48,7 @@ class CustomNotification extends Notification implements ShouldQueue
                 NotificationChannel::PUSH => 'broadcast',
             };
         }
+
         return $result;
     }
 

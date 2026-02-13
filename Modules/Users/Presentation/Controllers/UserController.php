@@ -100,10 +100,10 @@ class UserController extends Controller
         // Authorization check
         $this->authorize('view', $user);
 
-
         Log::debug('Controller show invoked', [
             'user_param' => $user->id,
         ]);
+
         return response()->json([
             'data' => new UserResource($user),
             'message' => 'User retrieved successfully',

@@ -13,10 +13,8 @@ return new class extends Migration
             $table->string('title', 255);
             $table->text('description')->nullable();
 
-
             $table->foreignId('project_id')->constrained()->cascadeOnDelete();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
-
 
             $table->enum('status', ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'])->default('pending');
             $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');

@@ -3,6 +3,7 @@
 namespace Modules\Users\Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+
 // use Illuminate\Foundation\Testing\RefreshDatabase;   ← REMOVE or COMMENT OUT
 
 abstract class TestCase extends BaseTestCase

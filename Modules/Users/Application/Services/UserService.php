@@ -2,12 +2,11 @@
 
 namespace Modules\Users\Application\Services;
 
-use Modules\Users\Domain\Repositories\UserRepositoryInterface;
-use Modules\Users\Application\DTOs\UserDTO;
-use Modules\Users\Infrastructure\Persistence\Models\User;
-use Modules\Users\Domain\Exceptions\UserNotFoundException;
 use Illuminate\Support\Facades\Log;
-
+use Modules\Users\Application\DTOs\UserDTO;
+use Modules\Users\Domain\Exceptions\UserNotFoundException;
+use Modules\Users\Domain\Repositories\UserRepositoryInterface;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class UserService
 {
@@ -15,12 +14,11 @@ class UserService
         private UserRepositoryInterface $userRepository
     ) {}
 
-
     public function createUser(UserDTO $userDTO): User
     {
         Log::channel('domain')->info('Creating user', [
             'email' => $userDTO->email,
-            'name' => $userDTO->name
+            'name' => $userDTO->name,
         ]);
 
         // Business logic validation
@@ -30,23 +28,22 @@ class UserService
 
         Log::channel('domain')->info('User created successfully', [
             'user_id' => $user->id,
-            'email' => $user->email
+            'email' => $user->email,
         ]);
 
         return $user;
     }
 
-
     public function updateUser(int $id, UserDTO $userDTO): User
     {
         Log::channel('domain')->info('Updating user', [
             'user_id' => $id,
-            'email' => $userDTO->email
+            'email' => $userDTO->email,
         ]);
 
         $user = $this->userRepository->findById($id);
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             Log::channel('domain')->error('User not found for update', ['user_id' => $id]);
             throw UserNotFoundException::withId($id);
         }
@@ -58,18 +55,17 @@ class UserService
 
         $updatedUser = $this->userRepository->update($id, $userDTO);
 
-        if (!$updatedUser instanceof User) {
-            throw new \RuntimeException("Failed to update user");
+        if (! $updatedUser instanceof User) {
+            throw new \RuntimeException('Failed to update user');
         }
 
         Log::channel('domain')->info('User updated successfully', [
             'user_id' => $id,
-            'email' => $updatedUser->email
+            'email' => $updatedUser->email,
         ]);
 
         return $updatedUser;
     }
-
 
     public function getUserById(int $id): User
     {
@@ -77,14 +73,14 @@ class UserService
 
         $user = $this->userRepository->findById($id);
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             Log::channel('domain')->warning('User not found', ['user_id' => $id]);
             throw UserNotFoundException::withId($id);
         }
 
         Log::channel('domain')->debug('User fetched successfully', [
             'user_id' => $id,
-            'email' => $user->email
+            'email' => $user->email,
         ]);
 
         return $user;
@@ -124,7 +120,7 @@ class UserService
         $existingUser = $this->userRepository->findByEmail($email);
         if ($existingUser instanceof User) {
             Log::channel('domain')->warning('Email already exists', ['email' => $email]);
-            throw new \InvalidArgumentException("Email already exists");
+            throw new \InvalidArgumentException('Email already exists');
         }
     }
 }

@@ -3,8 +3,8 @@
 namespace Modules\Users\Infrastructure\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Modules\Users\Infrastructure\Persistence\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class UsersDatabaseSeeder extends Seeder
 {

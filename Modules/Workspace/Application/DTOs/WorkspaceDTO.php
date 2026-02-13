@@ -7,12 +7,15 @@ use Spatie\DataTransferObject\DataTransferObject;
 class WorkspaceDTO extends DataTransferObject
 {
     public string $name;
+
     public ?string $description = null;
+
     public ?int $owner_id = null;
+
     public ?string $status = 'active';
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {

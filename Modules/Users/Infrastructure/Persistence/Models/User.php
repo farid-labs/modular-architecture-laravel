@@ -2,18 +2,17 @@
 
 namespace Modules\Users\Infrastructure\Persistence\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Users\Infrastructure\Database\Factories\UserFactory;
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- *
  * @property int $id
  * @property string $name
  * @property string $email
@@ -22,21 +21,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Carbon\CarbonImmutable|null $email_verified_at
  * @property \Carbon\CarbonImmutable $created_at
  * @property \Carbon\CarbonImmutable $updated_at
- *
  */
 class User extends Authenticatable
 {
-    use SoftDeletes;
-    use HasApiTokens, Notifiable, HasRoles;
+    use HasApiTokens, HasRoles, Notifiable;
     /** @phpstan-ignore-next-line */
     use HasFactory;
+
+    use SoftDeletes;
 
     protected $fillable = [
         'name',
         'email',
         'password',
         'email_verified_at',
-        'is_admin'
+        'is_admin',
     ];
 
     protected $hidden = [
@@ -44,14 +43,13 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts =  [
-        'is_admin'          => 'boolean',
+    protected $casts = [
+        'is_admin' => 'boolean',
         'email_verified_at' => 'immutable_datetime',
-        'created_at'        => 'immutable_datetime',
-        'updated_at'        => 'immutable_datetime',
-        'password'          => 'hashed',
+        'created_at' => 'immutable_datetime',
+        'updated_at' => 'immutable_datetime',
+        'password' => 'hashed',
     ];
-
 
     /**
      * Get user's full name

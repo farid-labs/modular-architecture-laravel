@@ -28,6 +28,6 @@ class SendPasswordResetEmail implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        Log::error("Failed to send password reset email to {$this->user->email}: " . $exception->getMessage());
+        Log::error("Failed to send password reset email to {$this->user->email}: ".$exception->getMessage());
     }
 }

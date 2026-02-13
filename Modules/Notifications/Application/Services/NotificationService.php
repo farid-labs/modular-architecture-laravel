@@ -2,12 +2,12 @@
 
 namespace Modules\Notifications\Application\Services;
 
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Modules\Notifications\Application\DTOs\NotificationDTO;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
 use Modules\Notifications\Infrastructure\Notifications\CustomNotification;
-use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\Support\Facades\Log;
 use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class NotificationService
@@ -15,7 +15,7 @@ class NotificationService
     /**
      * Send a notification to a user
      *
-     * @param array<NotificationChannel> $channels
+     * @param  array<NotificationChannel>  $channels
      */
     public function sendNotification(
         int $userId,
@@ -29,7 +29,7 @@ class NotificationService
             'user_id' => $userId,
             'type' => $notificationDTO->type->value,
             'title' => $notificationDTO->title,
-            'channels' => array_map(fn($c) => $c->value, $channels)
+            'channels' => array_map(fn ($c) => $c->value, $channels),
         ]);
 
         $notification = new CustomNotification(
@@ -60,11 +60,12 @@ class NotificationService
             ->where('notifiable_id', $userId)
             ->first();
 
-        if (!$notification instanceof DatabaseNotification) {
+        if (! $notification instanceof DatabaseNotification) {
             return false;
         }
 
         $notification->markAsRead();
+
         return true;
     }
 
@@ -81,7 +82,7 @@ class NotificationService
             ->whereNull('read_at')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn(DatabaseNotification $n) => $n->toArray())
+            ->map(fn (DatabaseNotification $n) => $n->toArray())
             ->all();
     }
 
@@ -97,7 +98,7 @@ class NotificationService
             ->where('notifiable_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn(DatabaseNotification $n) => $n->toArray())
+            ->map(fn (DatabaseNotification $n) => $n->toArray())
             ->all();
     }
 
@@ -112,7 +113,7 @@ class NotificationService
             ->where('notifiable_id', $userId)
             ->first();
 
-        if (!$notification instanceof DatabaseNotification) {
+        if (! $notification instanceof DatabaseNotification) {
             return false;
         }
 

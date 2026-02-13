@@ -3,12 +3,11 @@
 namespace Modules\Workspace\Infrastructure\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Workspace\Infrastructure\Persistence\Models\Task;
-use Modules\Workspace\Infrastructure\Persistence\Models\Project;
 use Modules\Users\Infrastructure\Persistence\Models\User;
-use Modules\Workspace\Domain\Enums\TaskStatus;
 use Modules\Workspace\Domain\Enums\TaskPriority;
-
+use Modules\Workspace\Domain\Enums\TaskStatus;
+use Modules\Workspace\Infrastructure\Persistence\Models\Project;
+use Modules\Workspace\Infrastructure\Persistence\Models\Task;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Modules\Workspace\Infrastructure\Persistence\Models\Task>
@@ -46,7 +45,7 @@ class TaskFactory extends Factory
      */
     public function pending(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => TaskStatus::PENDING,
         ]);
     }
@@ -56,7 +55,7 @@ class TaskFactory extends Factory
      */
     public function inProgress(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => TaskStatus::IN_PROGRESS,
         ]);
     }
@@ -66,7 +65,7 @@ class TaskFactory extends Factory
      */
     public function completed(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => TaskStatus::COMPLETED,
         ]);
     }
@@ -76,7 +75,7 @@ class TaskFactory extends Factory
      */
     public function highPriority(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'priority' => TaskPriority::HIGH,
         ]);
     }
@@ -86,7 +85,7 @@ class TaskFactory extends Factory
      */
     public function lowPriority(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'priority' => TaskPriority::LOW,
         ]);
     }

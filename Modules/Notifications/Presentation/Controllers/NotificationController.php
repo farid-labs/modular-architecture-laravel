@@ -3,12 +3,12 @@
 namespace Modules\Notifications\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
-use Modules\Notifications\Application\Services\NotificationService;
-use Modules\Notifications\Application\DTOs\NotificationDTO;
-use Modules\Notifications\Presentation\Requests\StoreNotificationRequest;
-use Modules\Notifications\Presentation\Resources\NotificationResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Notifications\Application\DTOs\NotificationDTO;
+use Modules\Notifications\Application\Services\NotificationService;
+use Modules\Notifications\Presentation\Requests\StoreNotificationRequest;
+use Modules\Notifications\Presentation\Resources\NotificationResource;
 
 class NotificationController extends Controller
 {
@@ -21,7 +21,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -29,7 +29,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'data' => NotificationResource::collection($notifications),
-            'message' => 'Notifications retrieved successfully'
+            'message' => 'Notifications retrieved successfully',
         ]);
     }
 
@@ -40,7 +40,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -48,7 +48,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'data' => NotificationResource::collection($notifications),
-            'message' => 'Unread notifications retrieved successfully'
+            'message' => 'Unread notifications retrieved successfully',
         ]);
     }
 
@@ -59,14 +59,14 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $notificationDTO = NotificationDTO::fromArray($request->validated());
 
         $channels = array_map(
-            fn($c) => \Modules\Notifications\Domain\Enums\NotificationChannel::from($c),
+            fn ($c) => \Modules\Notifications\Domain\Enums\NotificationChannel::from($c),
             $request->input('channels', ['database'])
         );
 
@@ -77,7 +77,7 @@ class NotificationController extends Controller
         );
 
         return response()->json([
-            'message' => 'Notification sent successfully'
+            'message' => 'Notification sent successfully',
         ], 201);
     }
 
@@ -88,14 +88,14 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $this->notificationService->markAsRead($id, $user->id);
 
         return response()->json([
-            'message' => 'Notification marked as read'
+            'message' => 'Notification marked as read',
         ]);
     }
 
@@ -106,14 +106,14 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $this->notificationService->deleteNotification($id, $user->id);
 
         return response()->json([
-            'message' => 'Notification deleted successfully'
+            'message' => 'Notification deleted successfully',
         ]);
     }
 }

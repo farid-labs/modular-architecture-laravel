@@ -4,14 +4,13 @@ namespace Modules\Workspace\Infrastructure\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Modules\Users\Infrastructure\Persistence\Models\User;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskAttachmentFactory;
 
 /**
- *
  * @property int $id
  * @property int $task_id
  * @property string $file_name

@@ -2,24 +2,29 @@
 
 namespace Modules\Notifications\Application\DTOs;
 
-use Spatie\DataTransferObject\DataTransferObject;
 use Modules\Notifications\Domain\Enums\NotificationType;
+use Spatie\DataTransferObject\DataTransferObject;
 
 class NotificationDTO extends DataTransferObject
 {
     public NotificationType $type;
+
     public string $title;
+
     public string $message;
+
     /** @var array<string, mixed>|null */
     public ?array $data = null;
+
     public ?string $action_url = null;
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
         $data['type'] = NotificationType::from($data['type']);
+
         return new self($data);
     }
 

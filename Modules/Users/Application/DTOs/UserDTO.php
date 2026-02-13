@@ -6,14 +6,16 @@ use Spatie\DataTransferObject\DataTransferObject;
 
 class UserDTO extends DataTransferObject
 {
-
     public ?string $name = null;
+
     public ?string $email = null;
+
     public ?string $password = null;
+
     public ?string $email_verified_at = null;
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -30,6 +32,6 @@ class UserDTO extends DataTransferObject
             'email' => $this->email,
             'password' => $this->password,
             'email_verified_at' => $this->email_verified_at,
-        ], fn($value) => $value !== null);
+        ], fn ($value) => $value !== null);
     }
 }

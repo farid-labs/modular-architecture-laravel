@@ -2,17 +2,16 @@
 
 namespace Modules\Users\Tests\Unit\Application\Services;
 
-use Modules\Users\Tests\TestCase;
 use Mockery\MockInterface;
-use Modules\Users\Application\Services\UserService;
-use Modules\Users\Domain\Repositories\UserRepositoryInterface;
 use Modules\Users\Application\DTOs\UserDTO;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Application\Services\UserService;
 use Modules\Users\Domain\Exceptions\UserNotFoundException;
+use Modules\Users\Domain\Repositories\UserRepositoryInterface;
+use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Tests\TestCase;
 
 class UserServiceTest extends TestCase
 {
-
     protected UserRepositoryInterface&MockInterface $userRepository;
 
     protected UserService $userService;
@@ -36,10 +35,10 @@ class UserServiceTest extends TestCase
         $userDTO = UserDTO::fromArray([
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'password' => 'password123'
+            'password' => 'password123',
         ]);
 
-        $user = new User();
+        $user = new User;
         $user->id = 1;
         $user->name = 'John Doe';
         $user->email = 'john@example.com';
@@ -63,7 +62,7 @@ class UserServiceTest extends TestCase
 
     public function test_get_user_by_id_returns_user(): void
     {
-        $user = new User();
+        $user = new User;
         $user->id = 1;
         $user->name = 'John Doe';
 

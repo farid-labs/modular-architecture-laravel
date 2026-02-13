@@ -2,10 +2,9 @@
 
 namespace Modules\Workspace\Infrastructure\Repositories;
 
-use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
-use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
+use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
 
 class WorkspaceRepository implements WorkspaceRepositoryInterface
 {

@@ -19,7 +19,7 @@ class NotificationsServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__ . '/../../Presentation/Routes/api.php');
-        $this->loadMigrationsFrom(__DIR__ . '/../../Infrastructure/Database/Migrations');
+        $this->loadRoutesFrom(__DIR__.'/../../Presentation/Routes/api.php');
+        $this->loadMigrationsFrom(__DIR__.'/../../Infrastructure/Database/Migrations');
     }
 }

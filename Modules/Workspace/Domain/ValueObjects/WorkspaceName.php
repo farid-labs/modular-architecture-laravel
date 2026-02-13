@@ -33,7 +33,8 @@ class WorkspaceName
         $clean = preg_replace('/[^A-Za-z0-9-]+/', '-', $name);
         // ensure $clean is a string (avoid analyzer warning and possible null at runtime)
         $clean = $clean ?? '';
-        return strtolower(trim((string)$clean, '-'));
+
+        return strtolower(trim((string) $clean, '-'));
     }
 
     public function getValue(): string

@@ -2,14 +2,15 @@
 
 namespace Modules\Users\Infrastructure\Policies;
 
-use Modules\Users\Infrastructure\Persistence\Models\User;
 use Illuminate\Support\Facades\Log;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class UserPolicy
 {
     public function viewAny(User $user): bool
     {
         Log::debug('Policy viewAny', ['user_id' => $user->id]);
+
         return true;
     }
 
@@ -21,14 +22,16 @@ class UserPolicy
             'target_user' => $model->id,
             'is_same' => $user->id === $model->id,
             'is_admin' => $user->is_admin,
-            'result' => $result
+            'result' => $result,
         ]);
+
         return $result;
     }
 
     public function create(User $user): bool
     {
         Log::debug('Policy create', ['user_id' => $user->id]);
+
         return true;
     }
 
@@ -40,8 +43,9 @@ class UserPolicy
             'target_user' => $model->id,
             'is_same' => $user->id === $model->id,
             'is_admin' => $user->is_admin,
-            'result' => $result
+            'result' => $result,
         ]);
+
         return $result;
     }
 
@@ -53,8 +57,9 @@ class UserPolicy
             'target_user' => $model->id,
             'is_same' => $user->id === $model->id,
             'is_admin' => $user->is_admin,
-            'result' => $result
+            'result' => $result,
         ]);
+
         return $result;
     }
 

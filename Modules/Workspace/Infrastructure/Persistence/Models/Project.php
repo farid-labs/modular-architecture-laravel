@@ -4,11 +4,11 @@ namespace Modules\Workspace\Infrastructure\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Users\Infrastructure\Persistence\Models\User;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Infrastructure\Database\Factories\ProjectFactory;
 
@@ -18,7 +18,6 @@ use Modules\Workspace\Infrastructure\Database\Factories\ProjectFactory;
  * @property string|null $description
  * @property int $workspace_id
  * @property ProjectStatus $status
-
  */
 class Project extends Model
 {

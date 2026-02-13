@@ -2,9 +2,9 @@
 
 namespace Modules\Users\Tests\Unit\Infrastructure\Models\UserTest;
 
+use Carbon\CarbonImmutable;
 use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Users\Tests\TestCase;
-use Carbon\CarbonImmutable;
 
 class UserTest extends TestCase
 {

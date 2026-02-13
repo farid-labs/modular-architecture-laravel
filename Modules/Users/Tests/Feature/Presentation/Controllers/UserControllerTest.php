@@ -2,14 +2,12 @@
 
 namespace Modules\Users\Tests\Feature\Presentation\Controllers;
 
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
-use Laravel\Sanctum\Sanctum;
-use Modules\Users\Tests\TestCase;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\Sanctum;
 use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Tests\TestCase;
 
 class UserControllerTest extends TestCase
 {
@@ -33,8 +31,8 @@ class UserControllerTest extends TestCase
             'is_admin' => $admin,
         ]);
 
-
         Sanctum::actingAs($user, ['*']);
+
         return $user;
     }
 
@@ -57,8 +55,8 @@ class UserControllerTest extends TestCase
             ->assertOk()
             ->assertJson([
                 'data' => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
+                    'id' => $user->id,
+                    'name' => $user->name,
                     'email' => $user->email,
                 ],
             ]);
@@ -127,7 +125,6 @@ class UserControllerTest extends TestCase
         $this->deleteJson("/v1/users/{$auth->id}")
             ->assertOk();
     }
-
 
     public function test_cannot_delete_other_user_without_permission(): void
     {

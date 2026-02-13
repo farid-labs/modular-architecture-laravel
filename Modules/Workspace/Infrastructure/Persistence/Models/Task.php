@@ -4,13 +4,10 @@ namespace Modules\Workspace\Infrastructure\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Users\Infrastructure\Persistence\Models\User;
-use Modules\Workspace\Infrastructure\Persistence\Models\Project;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Workspace\Infrastructure\Persistence\Models\TaskComment;
-use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachment;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskFactory;
 
 /**
@@ -27,10 +24,10 @@ use Modules\Workspace\Infrastructure\Database\Factories\TaskFactory;
  */
 class Task extends Model
 {
-    use SoftDeletes;
-
     /** @use HasFactory<TaskFactory> */
     use HasFactory;
+
+    use SoftDeletes;
 
     protected $fillable = [
         'title',

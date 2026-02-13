@@ -3,15 +3,15 @@
 namespace Modules\Users\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Modules\Users\Infrastructure\Persistence\Models\User;
-use Modules\Users\Application\Services\UserService;
 use Modules\Users\Application\DTOs\UserDTO;
+use Modules\Users\Application\Services\UserService;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Users\Presentation\Requests\LoginRequest;
 use Modules\Users\Presentation\Requests\RegisterRequest;
 use Modules\Users\Presentation\Resources\UserResource;
-use Illuminate\Http\JsonResponse;
 
 /**
  * @OA\Tag(
@@ -28,19 +28,25 @@ class AuthController extends Controller
      *     path="/api/v1/auth/register",
      *     summary="Register a new user",
      *     tags={"Authentication"},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(ref="#/components/schemas/RegisterRequest")
      *     ),
+     *
      *     @OA\Response(
      *         response=201,
      *         description="User registered successfully",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="data", ref="#/components/schemas/User"),
      *             @OA\Property(property="token", type="string"),
      *             @OA\Property(property="message", type="string")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=422,
      *         description="Validation error"
@@ -57,7 +63,7 @@ class AuthController extends Controller
         return response()->json([
             'data' => new UserResource($user),
             'token' => $token,
-            'message' => 'User registered successfully'
+            'message' => 'User registered successfully',
         ], 201);
     }
 
@@ -66,19 +72,25 @@ class AuthController extends Controller
      *     path="/api/v1/auth/login",
      *     summary="Login user",
      *     tags={"Authentication"},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(ref="#/components/schemas/LoginRequest")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Login successful",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="data", ref="#/components/schemas/User"),
      *             @OA\Property(property="token", type="string"),
      *             @OA\Property(property="message", type="string")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Invalid credentials"
@@ -89,17 +101,17 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
 
-        if (!Auth::attempt($credentials)) {
+        if (! Auth::attempt($credentials)) {
             return response()->json([
-                'message' => 'Invalid credentials'
+                'message' => 'Invalid credentials',
             ], 401);
         }
 
         $user = Auth::user();
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             return response()->json([
-                'message' => 'Authentication failed'
+                'message' => 'Authentication failed',
             ], 401);
         }
 
@@ -108,7 +120,7 @@ class AuthController extends Controller
         return response()->json([
             'data' => new UserResource($user),
             'token' => $token,
-            'message' => 'Login successful'
+            'message' => 'Login successful',
         ]);
     }
 
@@ -118,31 +130,33 @@ class AuthController extends Controller
      *     summary="Logout user",
      *     tags={"Authentication"},
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Logged out successfully",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string")
      *         )
      *     )
      * )
      */
-
     public function logout(Request $request): JsonResponse
     {
 
         $user = $request->user();
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             return response()->json([
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
             ], 401);
         }
 
         $user->tokens()->delete();
 
         return response()->json([
-            'message' => 'Logged out successfully'
+            'message' => 'Logged out successfully',
         ]);
     }
 
@@ -152,10 +166,13 @@ class AuthController extends Controller
      *     summary="Get current user",
      *     tags={"Authentication"},
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Current user retrieved successfully",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="data", ref="#/components/schemas/User")
      *         )
      *     )
@@ -165,14 +182,14 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             return response()->json([
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
             ], 401);
         }
 
         return response()->json([
-            'data' => new UserResource($user)
+            'data' => new UserResource($user),
         ]);
     }
 }

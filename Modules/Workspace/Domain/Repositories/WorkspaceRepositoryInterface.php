@@ -2,7 +2,6 @@
 
 namespace Modules\Workspace\Domain\Repositories;
 
-
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
 

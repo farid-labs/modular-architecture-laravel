@@ -12,7 +12,7 @@ class CustomizeFormatter
     {
         foreach ($logger->getHandlers() as $handler) {
             if ($handler instanceof FormattableHandlerInterface) {
-                $handler->setFormatter(new JsonFormatter());
+                $handler->setFormatter(new JsonFormatter);
             }
         }
     }

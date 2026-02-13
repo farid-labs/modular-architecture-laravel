@@ -2,16 +2,19 @@
 
 namespace Modules\Users\Application\Services;
 
-use Modules\Users\Application\DTOs\UserDTO;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class CachedUserService
 {
     private const USER_CACHE_KEY = 'user_{id}';
+
     private const USER_CACHE_TTL = 3600; // 1 hour
+
     private const USERS_LIST_CACHE_KEY = 'users_list';
+
     private const USERS_LIST_CACHE_TTL = 1800; // 30 minutes
 
     public function __construct(
@@ -29,6 +32,7 @@ class CachedUserService
 
         return Cache::remember($cacheKey, self::USER_CACHE_TTL, function () use ($id) {
             Log::info("Cache miss for user {$id}, fetching from database");
+
             return $this->userService->getUserById($id);
         });
     }
@@ -40,6 +44,7 @@ class CachedUserService
     {
         return Cache::remember(self::USERS_LIST_CACHE_KEY, self::USERS_LIST_CACHE_TTL, function () {
             Log::info('Cache miss for users list, fetching from database');
+
             return $this->userService->getAllUsers();
         });
     }

@@ -2,16 +2,15 @@
 
 namespace Modules\Workspace\Infrastructure\Persistence\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Users\Infrastructure\Persistence\Models\User;
-use Modules\Workspace\Domain\ValueObjects\WorkspaceName;
-use Modules\Workspace\Domain\Enums\WorkspaceStatus;
-use Modules\Workspace\Infrastructure\Persistence\Models\Project;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Workspace\Domain\Enums\WorkspaceStatus;
+use Modules\Workspace\Domain\ValueObjects\WorkspaceName;
 use Modules\Workspace\Infrastructure\Database\Factories\WorkspaceFactory; // Assuming factory exists; implement if needed
 
 /**
@@ -24,15 +23,15 @@ use Modules\Workspace\Infrastructure\Database\Factories\WorkspaceFactory; // Ass
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
- * 
+ *
  * @mixin \Illuminate\Database\Eloquent\Builder<static>
  */
 class Workspace extends Model
 {
-    use SoftDeletes;
-
     /** @use HasFactory<WorkspaceFactory> */
     use HasFactory;
+
+    use SoftDeletes;
 
     protected $fillable = [
         'name',

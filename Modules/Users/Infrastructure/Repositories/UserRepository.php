@@ -2,10 +2,10 @@
 
 namespace Modules\Users\Infrastructure\Repositories;
 
-use Modules\Users\Infrastructure\Persistence\Models\User;
-use Modules\Users\Domain\Repositories\UserRepositoryInterface;
-use Modules\Users\Application\DTOs\UserDTO;
 use Illuminate\Support\Facades\Hash;
+use Modules\Users\Application\DTOs\UserDTO;
+use Modules\Users\Domain\Repositories\UserRepositoryInterface;
+use Modules\Users\Infrastructure\Persistence\Models\User;
 
 /**
  * @template TFactory of \Illuminate\Database\Eloquent\Factories\Factory
@@ -18,6 +18,7 @@ class UserRepository implements UserRepositoryInterface
     {
         $this->model = $model;
     }
+
     public function findById(int $id): ?User
     {
         return $this->model->find($id);
@@ -43,7 +44,7 @@ class UserRepository implements UserRepositoryInterface
     {
         $user = $this->findById($id);
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             return null;
         }
 
@@ -54,6 +55,7 @@ class UserRepository implements UserRepositoryInterface
         }
 
         $user->update($data);
+
         return $user;
     }
 
@@ -61,7 +63,7 @@ class UserRepository implements UserRepositoryInterface
     {
         $user = $this->findById($id);
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             return false;
         }
 

@@ -14,8 +14,6 @@ class SendWelcomeEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-
-
     public function __construct(public User $user) {}
 
     public function handle(): void
@@ -28,6 +26,6 @@ class SendWelcomeEmail implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        Log::error("Failed to send welcome email to {$this->user->email}: " . $exception->getMessage());
+        Log::error("Failed to send welcome email to {$this->user->email}: ".$exception->getMessage());
     }
 }

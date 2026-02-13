@@ -4,8 +4,8 @@ namespace Modules\Workspace\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
-use Modules\Workspace\Infrastructure\Repositories\WorkspaceRepository;
-use Modules\Workspace\Infrastructure\Persistence\Models\Workspace; // Corrected import to reference the Eloquent model
+use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
+use Modules\Workspace\Infrastructure\Repositories\WorkspaceRepository; // Corrected import to reference the Eloquent model
 
 class WorkspaceServiceProvider extends ServiceProvider
 {
@@ -13,13 +13,13 @@ class WorkspaceServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             WorkspaceRepositoryInterface::class,
-            fn($app) => new WorkspaceRepository(new Workspace)
+            fn ($app) => new WorkspaceRepository(new Workspace)
         );
     }
 
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__ . '/../../Presentation/Routes/api.php');
-        $this->loadMigrationsFrom(__DIR__ . '/../../Infrastructure/Database/Migrations');
+        $this->loadRoutesFrom(__DIR__.'/../../Presentation/Routes/api.php');
+        $this->loadMigrationsFrom(__DIR__.'/../../Infrastructure/Database/Migrations');
     }
 }

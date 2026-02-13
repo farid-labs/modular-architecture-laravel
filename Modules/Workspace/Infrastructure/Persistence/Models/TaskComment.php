@@ -4,11 +4,10 @@ namespace Modules\Workspace\Infrastructure\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskCommentFactory;
-use Modules\Workspace\Infrastructure\Persistence\Models\Task;
 
 /**
  * @property int $id
@@ -47,8 +46,6 @@ class TaskComment extends Model
 
     /**
      * Override factory for PHPStan & IDEs
-     *
-     * @return TaskCommentFactory
      */
     protected static function newFactory(): TaskCommentFactory
     {

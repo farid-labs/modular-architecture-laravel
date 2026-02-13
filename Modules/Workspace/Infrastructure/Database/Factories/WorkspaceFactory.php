@@ -3,10 +3,9 @@
 namespace Modules\Workspace\Infrastructure\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Illuminate\Support\Str;
 use Modules\Users\Infrastructure\Persistence\Models\User;
 use Modules\Workspace\Domain\Enums\WorkspaceStatus;
-use Illuminate\Support\Str;
 use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
 
 /**
@@ -42,7 +41,7 @@ class WorkspaceFactory extends Factory
      */
     public function active(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => WorkspaceStatus::ACTIVE,
         ]);
     }
@@ -52,17 +51,14 @@ class WorkspaceFactory extends Factory
      */
     public function inactive(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => WorkspaceStatus::INACTIVE,
         ]);
     }
 
-    /**
-     * @param User $user
-     */
     public function forOwner(User $user): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'owner_id' => $user->id,
         ]);
     }
