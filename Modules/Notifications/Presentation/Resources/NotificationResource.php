@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \Illuminate\Notifications\DatabaseNotification
+ * Transform the resource into an array.
+ *
+ * @return array<string, mixed>
  */
 class NotificationResource extends JsonResource
 {
@@ -17,19 +19,20 @@ class NotificationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $data = $this->data ?? [];
+        $notification = $this->resource;
+        $data = $notification->data ?? [];
 
         return [
-            'id' => $this->id,
+            'id' => $notification->id,
             'type' => $data['type'] ?? 'info',
             'title' => $data['title'] ?? null,
             'message' => $data['message'] ?? null,
             'data' => $data,
             'action_url' => $data['action_url'] ?? null,
-            'read_at' => $this->read_at?->toISOString(),
-            'is_read' => $this->read_at !== null,
-            'created_at' => $this->created_at?->toISOString(),
-            'updated_at' => $this->updated_at?->toISOString(),
+            'read_at' => $notification->read_at?->toIso8601String(),
+            'is_read' => $notification->read_at !== null,
+            'created_at' => $notification->created_at?->toIso8601String(),
+            'updated_at' => $notification->updated_at?->toIso8601String(),
         ];
     }
 }
