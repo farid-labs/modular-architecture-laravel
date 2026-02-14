@@ -1,6 +1,6 @@
 <?php
 
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 
 return [
 
@@ -69,7 +69,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => User::class,
+            'model' => UserModel::class,
         ],
 
         // 'users' => [
