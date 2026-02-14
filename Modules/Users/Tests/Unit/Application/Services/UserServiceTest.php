@@ -5,9 +5,11 @@ namespace Modules\Users\Tests\Unit\Application\Services;
 use Mockery\MockInterface;
 use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Application\Services\UserService;
+use Modules\Users\Domain\Entities\UserEntity;
 use Modules\Users\Domain\Exceptions\UserNotFoundException;
 use Modules\Users\Domain\Repositories\UserRepositoryInterface;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Domain\ValueObjects\Email;
+use Modules\Users\Domain\ValueObjects\Name;
 use Modules\Users\Tests\TestCase;
 
 class UserServiceTest extends TestCase
@@ -38,10 +40,11 @@ class UserServiceTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $user = new User;
-        $user->id = 1;
-        $user->name = 'John Doe';
-        $user->email = 'john@example.com';
+        $entity = new UserEntity(
+            1,
+            new Name('John Doe'),
+            new Email('john@example.com')
+        );
 
         $this->userRepository
             ->shouldReceive('findByEmail')
@@ -53,28 +56,30 @@ class UserServiceTest extends TestCase
             ->shouldReceive('create')
             ->once()
             ->with($userDTO)
-            ->andReturn($user);
+            ->andReturn($entity);
 
         $result = $this->userService->createUser($userDTO);
 
-        $this->assertSame($user, $result);
+        $this->assertSame($entity, $result);
     }
 
     public function test_get_user_by_id_returns_user(): void
     {
-        $user = new User;
-        $user->id = 1;
-        $user->name = 'John Doe';
+        $entity = new UserEntity(
+            1,
+            new Name('John Doe'),
+            new Email('john@example.com')
+        );
 
         $this->userRepository
             ->shouldReceive('findById')
             ->once()
             ->with(1)
-            ->andReturn($user);
+            ->andReturn($entity);
 
         $result = $this->userService->getUserById(1);
 
-        $this->assertEquals($user, $result);
+        $this->assertEquals($entity, $result);
     }
 
     public function test_get_user_by_id_throws_exception_when_not_found(): void

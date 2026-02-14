@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Users\Tests\TestCase;
 
 class UserControllerTest extends TestCase
@@ -21,9 +21,9 @@ class UserControllerTest extends TestCase
     /**
      * Authenticate a user (helper)
      */
-    protected function authenticate(bool $admin = false): User
+    protected function authenticate(bool $admin = false): UserModel
     {
-        $user = User::create([
+        $user = UserModel::create([
             'name' => $admin ? 'Admin User' : 'Test User',
             'email' => $admin ? 'admin@test.com' : 'user@test.com',
             'password' => Hash::make('password'),
@@ -39,7 +39,7 @@ class UserControllerTest extends TestCase
     public function test_can_list_users(): void
     {
         $auth = $this->authenticate();
-        User::factory()->count(3)->create();
+        UserModel::factory()->count(3)->create();
 
         $this->getJson('/v1/users')
             ->assertOk()
@@ -51,7 +51,7 @@ class UserControllerTest extends TestCase
         $this->authenticate(admin: true); // Admin can view any user
 
         // Create factory user with explicit, predictable values
-        $user = User::create([
+        $user = UserModel::create([
             'name' => 'John Doe',
             'email' => 'john.doe@example.com',
             'password' => Hash::make('password'),
@@ -90,7 +90,7 @@ class UserControllerTest extends TestCase
     public function test_cannot_create_user_with_existing_email(): void
     {
         $this->authenticate();
-        $existing = User::factory()->create();
+        $existing = UserModel::factory()->create();
 
         $this->postJson('/v1/users', [
             'name' => $this->faker->name(),
@@ -118,7 +118,7 @@ class UserControllerTest extends TestCase
     public function test_cannot_update_other_user_without_permission(): void
     {
         $this->authenticate();
-        $other = User::factory()->create();
+        $other = UserModel::factory()->create();
 
         $this->putJson("/v1/users/{$other->id}", [
             'name' => 'Hacked',
@@ -137,7 +137,7 @@ class UserControllerTest extends TestCase
     public function test_cannot_delete_other_user_without_permission(): void
     {
         $this->authenticate();
-        $other = User::factory()->create();
+        $other = UserModel::factory()->create();
 
         $this->deleteJson("/v1/users/{$other->id}")
             ->assertForbidden();
@@ -160,7 +160,7 @@ class UserControllerTest extends TestCase
     public function test_cannot_show_other_user_without_permission(): void
     {
         $this->authenticate();
-        $other = User::factory()->create();
+        $other = UserModel::factory()->create();
 
         $this->getJson("/v1/users/{$other->id}")
             ->assertForbidden();
