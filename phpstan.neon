@@ -1,6 +1,7 @@
 includes:
-    - ./vendor/nunomaduro/larastan/extension.neon
+    - vendor/larastan/larastan/extension.neon
     - vendor/phpstan/phpstan-mockery/extension.neon
+
 parameters:
     level: 8
 
@@ -10,9 +11,6 @@ parameters:
         - database
         - tests
 
-    bootstrapFiles:
-        - vendor/nunomaduro/larastan/bootstrap.php
-
     scanDirectories:
         - Modules
 
@@ -20,5 +18,3 @@ parameters:
         - Modules/*/Tests
         - */node_modules/*
         - */vendor/*
-
-

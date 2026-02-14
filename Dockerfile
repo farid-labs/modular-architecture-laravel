@@ -1,5 +1,5 @@
 # Use explicit Alpine 3.20 or 3.21 variant → much more stable for PHP 8.2 extensions in 2025–2026
-FROM php:8.2-fpm-alpine3.20
+FROM php:8.3-fpm-alpine3.20
 
 # The rest of your Dockerfile remains almost identical
 # ==================================================================
