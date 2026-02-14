@@ -4,32 +4,36 @@ namespace Modules\Users\Infrastructure\Repositories;
 
 use Illuminate\Support\Facades\Hash;
 use Modules\Users\Application\DTOs\UserDTO;
+use Modules\Users\Domain\Entities\UserEntity;
 use Modules\Users\Domain\Repositories\UserRepositoryInterface;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Domain\ValueObjects\Email;
+use Modules\Users\Domain\ValueObjects\Name;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 
-/**
- * @template TFactory of \Illuminate\Database\Eloquent\Factories\Factory
- */
 class UserRepository implements UserRepositoryInterface
 {
-    private User $model;
+    private UserModel $model;
 
-    public function __construct(User $model)
+    public function __construct(UserModel $model)
     {
         $this->model = $model;
     }
 
-    public function findById(int $id): ?User
+    public function findById(int $id): UserEntity
     {
-        return $this->model->find($id);
+        $model = $this->model->findOrFail($id);
+
+        return $this->mapToEntity($model);
     }
 
-    public function findByEmail(string $email): ?User
+    public function findByEmail(string $email): ?UserEntity
     {
-        return $this->model->where('email', $email)->first();
+        $model = $this->model->where('email', $email)->first();
+
+        return $model ? $this->mapToEntity($model) : null;
     }
 
-    public function create(UserDTO $userDTO): User
+    public function create(UserDTO $userDTO): UserEntity
     {
         $data = $userDTO->toArray();
 
@@ -37,16 +41,14 @@ class UserRepository implements UserRepositoryInterface
             $data['password'] = Hash::make($data['password']);
         }
 
-        return $this->model->create($data);
+        $model = $this->model->create($data);
+
+        return $this->mapToEntity($model);
     }
 
-    public function update(int $id, UserDTO $userDTO): ?User
+    public function update(int $id, UserDTO $userDTO): UserEntity
     {
-        $user = $this->findById($id);
-
-        if (! $user instanceof User) {
-            return null;
-        }
+        $model = $this->model->findOrFail($id);
 
         $data = $userDTO->toArray();
 
@@ -54,27 +56,39 @@ class UserRepository implements UserRepositoryInterface
             $data['password'] = Hash::make($data['password']);
         }
 
-        $user->update($data);
+        $model->update($data);
 
-        return $user;
+        return $this->mapToEntity($model);
     }
 
     public function delete(int $id): bool
     {
-        $user = $this->findById($id);
+        $model = $this->model->find($id);
 
-        if (! $user instanceof User) {
-            return false;
-        }
-
-        return $user->delete() === true;
+        return $model ? (bool) $model->delete() : false;
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, UserEntity>
      */
     public function getAll(): array
     {
-        return $this->model->all()->toArray();
+        $models = $this->model->all();
+
+        return $models->map(fn ($model) => $this->mapToEntity($model))->toArray();
+    }
+
+    private function mapToEntity(UserModel $model): UserEntity
+    {
+        return new UserEntity(
+            $model->id,
+            new Name($model->name),
+            new Email($model->email),
+            $model->password,
+            $model->is_admin,
+            $model->email_verified_at,
+            $model->created_at,
+            $model->updated_at
+        );
     }
 }

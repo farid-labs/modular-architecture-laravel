@@ -5,17 +5,17 @@ namespace Modules\Users\Infrastructure\Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Modules\Users\Infrastructure\Persistence\Models\User>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Modules\Users\Infrastructure\Persistence\Models\UserModel>
  */
 class UserFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      */
-    protected $model = User::class;
+    protected $model = UserModel::class;
 
     /**
      * Define the model's default state.

@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Modules\Users\Domain\ValueObjects\Email;
-use Modules\Users\Domain\ValueObjects\Name;
 use Modules\Users\Infrastructure\Database\Factories\UserFactory;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -25,12 +23,14 @@ use Spatie\Permission\Traits\HasRoles;
  *
  * @mixin \Eloquent
  */
-class User extends Authenticatable
+class UserModel extends Authenticatable
 {
     use HasApiTokens, HasRoles, Notifiable, SoftDeletes;
 
     /** @phpstan-ignore-next-line */
     use HasFactory;
+
+    protected $table = 'users';  // Explicitly set table name to match migration
 
     protected $fillable = [
         'name',
@@ -59,47 +59,6 @@ class User extends Authenticatable
     protected static function newFactory(): UserFactory
     {
         return UserFactory::new();
-    }
-
-    /**
-     * Get user's full name
-     */
-    public function getFullName(): string
-    {
-        return $this->name;
-    }
-
-    /**
-     * Check if user is active
-     */
-    public function isActive(): bool
-    {
-        return $this->email_verified_at !== null;
-    }
-
-    /**
-     * Check if user is admin
-     */
-    public function isAdmin(): bool
-    {
-        return $this->is_admin ?? false;
-    }
-
-    /**
-     * Update user email
-     */
-    public function updateEmail(Email $email): void
-    {
-        $this->email = $email->getValue();
-        $this->email_verified_at = null;
-    }
-
-    /**
-     * Update user name
-     */
-    public function updateName(Name $name): void
-    {
-        $this->name = $name->getValue();
     }
 
     /**

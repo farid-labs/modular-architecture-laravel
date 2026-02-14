@@ -5,7 +5,7 @@ namespace Modules\Users\Presentation\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Domain\Entities\UserEntity;
 
 class UserResource extends JsonResource
 {
@@ -26,19 +26,19 @@ class UserResource extends JsonResource
     {
         $resource = $this->resource;
 
-        if ($resource instanceof User) {
+        if ($resource instanceof UserEntity) {
             return [
-                'id' => $resource->id,
-                'name' => $resource->name,
-                'email' => $resource->email,
-                'email_verified_at' => $resource->email_verified_at?->toIso8601String(),
+                'id' => $resource->getId(),
+                'name' => $resource->getFullName(),
+                'email' => $resource->getEmail()->getValue(),
+                'email_verified_at' => $resource->getEmailVerifiedAt()?->toIso8601String(),
                 'is_active' => $resource->isActive(),
-                'created_at' => $resource->created_at->toIso8601String(),
-                'updated_at' => $resource->updated_at->toIso8601String(),
+                'created_at' => $resource->getCreatedAt()?->toIso8601String(),
+                'updated_at' => $resource->getUpdatedAt()?->toIso8601String(),
             ];
         }
 
-        // Defensive fallback for arrays (should be rare after controller fix)
+        // Fallback for arrays (if any legacy use)
         $data = (array) $resource;
 
         return [

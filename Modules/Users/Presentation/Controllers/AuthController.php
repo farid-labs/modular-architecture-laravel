@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Application\Services\UserService;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Domain\Entities\UserEntity;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Users\Presentation\Requests\LoginRequest;
 use Modules\Users\Presentation\Requests\RegisterRequest;
 use Modules\Users\Presentation\Resources\UserResource;
@@ -23,80 +24,21 @@ class AuthController extends Controller
 {
     public function __construct(private UserService $userService) {}
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/auth/register",
-     *     summary="Register a new user",
-     *     tags={"Authentication"},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(ref="#/components/schemas/RegisterRequest")
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=201,
-     *         description="User registered successfully",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(property="data", ref="#/components/schemas/User"),
-     *             @OA\Property(property="token", type="string"),
-     *             @OA\Property(property="message", type="string")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error"
-     *     )
-     * )
-     */
     public function register(RegisterRequest $request): JsonResponse
     {
         $userDTO = UserDTO::fromArray($request->validated());
-        $user = $this->userService->createUser($userDTO);
+        $entity = $this->userService->createUser($userDTO);
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $model = $this->mapEntityToModelForAuth($entity);
+        $token = $model->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'data' => new UserResource($user),
+            'data' => new UserResource($entity),
             'token' => $token,
             'message' => 'User registered successfully',
         ], 201);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/auth/login",
-     *     summary="Login user",
-     *     tags={"Authentication"},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(ref="#/components/schemas/LoginRequest")
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Login successful",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(property="data", ref="#/components/schemas/User"),
-     *             @OA\Property(property="token", type="string"),
-     *             @OA\Property(property="message", type="string")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=401,
-     *         description="Invalid credentials"
-     *     )
-     * )
-     */
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
@@ -107,51 +49,23 @@ class AuthController extends Controller
             ], 401);
         }
 
+        /** @var UserModel $user */
         $user = Auth::user();
 
-        if (! $user instanceof User) {
-            return response()->json([
-                'message' => 'Authentication failed',
-            ], 401);
-        }
-
+        $entity = $this->userService->getUserById($user->id);
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'data' => new UserResource($user),
+            'data' => new UserResource($entity),
             'token' => $token,
             'message' => 'Login successful',
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/auth/logout",
-     *     summary="Logout user",
-     *     tags={"Authentication"},
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Logged out successfully",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(property="message", type="string")
-     *         )
-     *     )
-     * )
-     */
     public function logout(Request $request): JsonResponse
     {
-
+        /** @var UserModel $user */
         $user = $request->user();
-
-        if (! $user instanceof User) {
-            return response()->json([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
 
         $user->tokens()->delete();
 
@@ -160,36 +74,30 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/auth/me",
-     *     summary="Get current user",
-     *     tags={"Authentication"},
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Current user retrieved successfully",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(property="data", ref="#/components/schemas/User")
-     *         )
-     *     )
-     * )
-     */
     public function me(Request $request): JsonResponse
     {
+        /** @var UserModel $user */
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            return response()->json([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
+        $entity = $this->userService->getUserById($user->id);
 
         return response()->json([
-            'data' => new UserResource($user),
+            'data' => new UserResource($entity),
         ]);
+    }
+
+    private function mapEntityToModelForAuth(UserEntity $entity): UserModel
+    {
+        $model = new UserModel;
+        $model->id = $entity->getId();
+        $model->name = $entity->getFullName();
+        $model->email = $entity->getEmail()->getValue();
+        $model->password = $entity->getPassword() ?? '';  // Default to empty string if null
+        $model->is_admin = $entity->isAdmin();
+        $model->email_verified_at = $entity->getEmailVerifiedAt();
+        $model->created_at = $entity->getCreatedAt() ?? now()->toImmutable();  // Default to current time if null
+        $model->updated_at = $entity->getUpdatedAt() ?? now()->toImmutable();  // Default to current time if null
+
+        return $model;
     }
 }

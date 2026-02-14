@@ -5,7 +5,7 @@ namespace Modules\Users\Application\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Modules\Users\Application\DTOs\UserDTO;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Domain\Entities\UserEntity;
 
 class CachedUserService
 {
@@ -26,7 +26,7 @@ class CachedUserService
         return str_replace('{id}', (string) $id, self::USER_CACHE_KEY);
     }
 
-    public function getUserById(int $id): User
+    public function getUserById(int $id): UserEntity
     {
         $cacheKey = $this->getCacheKey($id);
 
@@ -38,7 +38,7 @@ class CachedUserService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, UserEntity>
      */
     public function getAllUsers(): array
     {
@@ -49,39 +49,34 @@ class CachedUserService
         });
     }
 
-    public function createUser(UserDTO $userDTO): User
+    public function createUser(UserDTO $userDTO): UserEntity
     {
-        /** @var User $user */
-        $user = $this->userService->createUser($userDTO);
+        $entity = $this->userService->createUser($userDTO);
 
-        // Invalidate users list cache
         Cache::forget(self::USERS_LIST_CACHE_KEY);
 
-        Log::info("User {$user->id} created, cache invalidated");
+        Log::info("User {$entity->getId()} created, cache invalidated");
 
-        return $user;
+        return $entity;
     }
 
-    public function updateUser(int $id, UserDTO $userDTO): User
+    public function updateUser(int $id, UserDTO $userDTO): UserEntity
     {
-        /** @var User $user */
-        $user = $this->userService->updateUser($id, $userDTO);
+        $entity = $this->userService->updateUser($id, $userDTO);
 
-        // Invalidate both user and list caches
         $cacheKey = $this->getCacheKey($id);
         Cache::forget($cacheKey);
         Cache::forget(self::USERS_LIST_CACHE_KEY);
 
         Log::info("User {$id} updated, cache invalidated");
 
-        return $user;
+        return $entity;
     }
 
     public function deleteUser(int $id): bool
     {
         $result = $this->userService->deleteUser($id);
 
-        // Invalidate both user and list caches
         $cacheKey = $this->getCacheKey($id);
         Cache::forget($cacheKey);
         Cache::forget(self::USERS_LIST_CACHE_KEY);

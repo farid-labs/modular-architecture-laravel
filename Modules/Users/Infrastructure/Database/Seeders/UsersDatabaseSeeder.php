@@ -4,7 +4,7 @@ namespace Modules\Users\Infrastructure\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 
 class UsersDatabaseSeeder extends Seeder
 {
@@ -14,7 +14,7 @@ class UsersDatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create admin user with admin privileges
-        User::create([
+        UserModel::create([
             'name' => 'Admin User',
             'email' => 'admin@faridlabs.com',
             'password' => Hash::make('password'),
@@ -23,7 +23,7 @@ class UsersDatabaseSeeder extends Seeder
         ]);
 
         // Create 10 sample users with verified emails
-        User::factory()
+        UserModel::factory()
             ->count(10)
             ->verified()
             ->create();

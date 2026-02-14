@@ -4,9 +4,9 @@ namespace Modules\Users\Application\Services;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Users\Application\DTOs\UserDTO;
+use Modules\Users\Domain\Entities\UserEntity;
 use Modules\Users\Domain\Exceptions\UserNotFoundException;
 use Modules\Users\Domain\Repositories\UserRepositoryInterface;
-use Modules\Users\Infrastructure\Persistence\Models\User;
 
 class UserService
 {
@@ -14,7 +14,7 @@ class UserService
         private UserRepositoryInterface $userRepository
     ) {}
 
-    public function createUser(UserDTO $userDTO): User
+    public function createUser(UserDTO $userDTO): UserEntity
     {
         $email = $userDTO->email;
         if ($email === null) {
@@ -26,69 +26,60 @@ class UserService
             'name' => $userDTO->name,
         ]);
 
-        // Business logic validation
         $this->ensureEmailIsUnique($email);
 
-        $user = $this->userRepository->create($userDTO);
+        $entity = $this->userRepository->create($userDTO);
 
         Log::channel('domain')->info('User created successfully', [
-            'user_id' => $user->id,
-            'email' => $user->email,
+            'user_id' => $entity->getId(),
+            'email' => $entity->getEmail()->getValue(),
         ]);
 
-        return $user;
+        return $entity;
     }
 
-    public function updateUser(int $id, UserDTO $userDTO): User
+    public function updateUser(int $id, UserDTO $userDTO): UserEntity
     {
         Log::channel('domain')->info('Updating user', [
             'user_id' => $id,
             'email' => $userDTO->email ?? 'not provided',
         ]);
 
-        $user = $this->userRepository->findById($id);
-
-        if (! $user instanceof User) {
-            Log::channel('domain')->error('User not found for update', ['user_id' => $id]);
+        $entity = $this->userRepository->findById($id);
+        if ($entity === null) {
             throw UserNotFoundException::withId($id);
         }
 
-        // Business logic validation
-        if ($userDTO->email !== null && $userDTO->email !== $user->email) {
+        if ($userDTO->email !== null && $userDTO->email !== $entity->getEmail()->getValue()) {
             $this->ensureEmailIsUnique($userDTO->email);
         }
 
-        $updatedUser = $this->userRepository->update($id, $userDTO);
-
-        if (! $updatedUser instanceof User) {
-            throw new \RuntimeException('Failed to update user');
-        }
+        $updatedEntity = $this->userRepository->update($id, $userDTO);
 
         Log::channel('domain')->info('User updated successfully', [
             'user_id' => $id,
-            'email' => $updatedUser->email,
+            'email' => $updatedEntity->getEmail()->getValue(),
         ]);
 
-        return $updatedUser;
+        return $updatedEntity;
     }
 
-    public function getUserById(int $id): User
+    public function getUserById(int $id): UserEntity
     {
         Log::channel('domain')->debug('Fetching user by ID', ['user_id' => $id]);
 
-        $user = $this->userRepository->findById($id);
-
-        if (! $user instanceof User) {
+        $entity = $this->userRepository->findById($id);
+        if ($entity === null) {
             Log::channel('domain')->warning('User not found', ['user_id' => $id]);
             throw UserNotFoundException::withId($id);
         }
 
         Log::channel('domain')->debug('User fetched successfully', [
             'user_id' => $id,
-            'email' => $user->email,
+            'email' => $entity->getEmail()->getValue(),
         ]);
 
-        return $user;
+        return $entity;
     }
 
     public function deleteUser(int $id): bool
@@ -107,23 +98,23 @@ class UserService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, UserEntity>
      */
     public function getAllUsers(): array
     {
         Log::channel('domain')->debug('Fetching all users');
 
-        $users = $this->userRepository->getAll();
+        $entities = $this->userRepository->getAll();
 
-        Log::channel('domain')->debug('Users fetched successfully', ['count' => count($users)]);
+        Log::channel('domain')->debug('Users fetched successfully', ['count' => count($entities)]);
 
-        return $users;
+        return $entities;
     }
 
     private function ensureEmailIsUnique(string $email): void
     {
-        $existingUser = $this->userRepository->findByEmail($email);
-        if ($existingUser instanceof User) {
+        $existingEntity = $this->userRepository->findByEmail($email);
+        if ($existingEntity !== null) {
             Log::channel('domain')->warning('Email already exists', ['email' => $email]);
             throw new \InvalidArgumentException('Email already exists');
         }

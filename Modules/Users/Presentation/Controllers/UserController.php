@@ -5,10 +5,9 @@ namespace Modules\Users\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Application\Services\CachedUserService;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Users\Presentation\Requests\StoreUserRequest;
 use Modules\Users\Presentation\Requests\UpdateUserRequest;
 use Modules\Users\Presentation\Resources\UserResource;
@@ -23,8 +22,7 @@ class UserController extends Controller
     public function __construct(
         private CachedUserService $userService
     ) {
-
-        // $this->authorizeResource(User::class, 'user');
+        // $this->authorizeResource(UserModel::class, 'user');
     }
 
     #[OA\Get(
@@ -95,17 +93,13 @@ class UserController extends Controller
     )]
     public function show(Request $request, int $id): JsonResponse
     {
-        $user = $this->userService->getUserById($id);
+        $model = UserModel::findOrFail($id);
+        $this->authorize('view', $model);
 
-        // Authorization check
-        $this->authorize('view', $user);
-
-        Log::debug('Controller show invoked', [
-            'user_param' => $user->id,
-        ]);
+        $entity = $this->userService->getUserById($id);
 
         return response()->json([
-            'data' => new UserResource($user),
+            'data' => new UserResource($entity),
             'message' => 'User retrieved successfully',
         ]);
     }
@@ -139,10 +133,10 @@ class UserController extends Controller
     public function store(StoreUserRequest $request): JsonResponse
     {
         $userDTO = UserDTO::fromArray($request->validated());
-        $user = $this->userService->createUser($userDTO);
+        $entity = $this->userService->createUser($userDTO);
 
         return response()->json([
-            'data' => new UserResource($user),
+            'data' => new UserResource($entity),
             'message' => 'User created successfully',
         ], 201);
     }
@@ -187,16 +181,14 @@ class UserController extends Controller
     )]
     public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
-        $user = $this->userService->getUserById($id);
-
-        // Authorization check
-        $this->authorize('update', $user);
+        $model = UserModel::findOrFail($id);
+        $this->authorize('update', $model);
 
         $userDTO = UserDTO::fromArray($request->validated());
-        $updatedUser = $this->userService->updateUser($id, $userDTO);
+        $updatedEntity = $this->userService->updateUser($id, $userDTO);
 
         return response()->json([
-            'data' => new UserResource($updatedUser),
+            'data' => new UserResource($updatedEntity),
             'message' => 'User updated successfully',
         ]);
     }
@@ -232,10 +224,8 @@ class UserController extends Controller
     )]
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $user = $this->userService->getUserById($id);
-
-        // Authorization check
-        $this->authorize('delete', $user);
+        $model = UserModel::findOrFail($id);
+        $this->authorize('delete', $model);
 
         $this->userService->deleteUser($id);
 

@@ -3,22 +3,22 @@
 namespace Modules\Users\Domain\Repositories;
 
 use Modules\Users\Application\DTOs\UserDTO;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Domain\Entities\UserEntity;
 
 interface UserRepositoryInterface
 {
-    public function findById(int $id): ?User;
+    public function findById(int $id): ?UserEntity;
 
-    public function findByEmail(string $email): ?User;
+    public function findByEmail(string $email): ?UserEntity;
 
-    public function create(UserDTO $userDTO): User;
+    public function create(UserDTO $userDTO): UserEntity;
 
-    public function update(int $id, UserDTO $userDTO): ?User;
+    public function update(int $id, UserDTO $userDTO): UserEntity;
 
     public function delete(int $id): bool;
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, UserEntity>
      */
     public function getAll(): array;
 }
