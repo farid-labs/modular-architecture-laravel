@@ -45,7 +45,6 @@ return new class extends Migration
             $table->primary(['entry_uuid', 'tag']);
             $table->index('tag');
 
-            /** @phpstan-ignore-next-line */
             $table->foreign('entry_uuid')
                 ->references('uuid')
                 ->on('telescope_entries')
