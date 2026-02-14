@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Notification;
 use Modules\Notifications\Application\DTOs\NotificationDTO;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
 use Modules\Notifications\Infrastructure\Notifications\CustomNotification;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 
 class NotificationService
 {
@@ -22,8 +22,8 @@ class NotificationService
         NotificationDTO $notificationDTO,
         array $channels = [NotificationChannel::DATABASE]
     ): void {
-        /** @var User $user */
-        $user = User::findOrFail($userId);
+        /** @var UserModel $user */
+        $user = UserModel::findOrFail($userId);
 
         Log::channel('domain')->info('Sending notification', [
             'user_id' => $userId,
@@ -56,7 +56,7 @@ class NotificationService
     {
         $notification = DatabaseNotification::query()
             ->where('id', $notificationId)
-            ->where('notifiable_type', User::class)
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $userId)
             ->first();
 
@@ -77,7 +77,7 @@ class NotificationService
     public function getUnreadNotifications(int $userId): array
     {
         return DatabaseNotification::query()
-            ->where('notifiable_type', User::class)
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $userId)
             ->whereNull('read_at')
             ->orderBy('created_at', 'desc')
@@ -94,7 +94,7 @@ class NotificationService
     public function getAllNotifications(int $userId): array
     {
         return DatabaseNotification::query()
-            ->where('notifiable_type', User::class)
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get()
@@ -109,7 +109,7 @@ class NotificationService
     {
         $notification = DatabaseNotification::query()
             ->where('id', $notificationId)
-            ->where('notifiable_type', User::class)
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $userId)
             ->first();
 
