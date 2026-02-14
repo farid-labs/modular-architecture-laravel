@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskCommentFactory;
 
 /**
@@ -37,11 +37,11 @@ class TaskComment extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<UserModel, $this>
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(UserModel::class);
     }
 
     /**

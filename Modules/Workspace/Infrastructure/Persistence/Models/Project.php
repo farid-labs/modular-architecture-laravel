@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Infrastructure\Database\Factories\ProjectFactory;
 
@@ -55,12 +55,12 @@ class Project extends Model
     }
 
     /**
-     * @return BelongsToMany<User, $this>
+     * @return BelongsToMany<UserModel, $this>
      */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(
-            User::class,
+            UserModel::class,
             'project_members',
             'project_id',
             'user_id'

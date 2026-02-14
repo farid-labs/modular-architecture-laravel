@@ -3,7 +3,7 @@
 namespace Modules\Workspace\Application\Services;
 
 use Illuminate\Support\Facades\Log;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
 use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
@@ -14,7 +14,7 @@ class WorkspaceService
         private WorkspaceRepositoryInterface $workspaceRepository
     ) {}
 
-    public function createWorkspace(WorkspaceDTO $workspaceDTO, User $owner): Workspace
+    public function createWorkspace(WorkspaceDTO $workspaceDTO, UserModel $owner): Workspace
     {
         Log::channel('domain')->info('Creating workspace', [
             'name' => $workspaceDTO->name,

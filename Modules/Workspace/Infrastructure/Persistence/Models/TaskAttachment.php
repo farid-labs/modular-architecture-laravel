@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskAttachmentFactory;
 
 /**
@@ -45,11 +45,11 @@ class TaskAttachment extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<UserModel, $this>
      */
     public function uploadedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'uploaded_by');
+        return $this->belongsTo(UserModel::class, 'uploaded_by');
     }
 
     public function getFileUrl(): string

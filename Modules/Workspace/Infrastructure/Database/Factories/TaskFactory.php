@@ -3,7 +3,7 @@
 namespace Modules\Workspace\Infrastructure\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
 use Modules\Workspace\Infrastructure\Persistence\Models\Project;
@@ -33,7 +33,7 @@ class TaskFactory extends Factory
             'title' => $this->faker->sentence(4),
             'description' => $this->faker->optional()->paragraph(),
             'project_id' => Project::factory(),
-            'assigned_to' => $this->faker->optional()->randomElement(User::pluck('id')->toArray()),
+            'assigned_to' => $this->faker->optional()->randomElement(UserModel::pluck('id')->toArray()),
             'status' => $status,
             'priority' => $priority,
             'due_date' => $this->faker->optional()->dateTimeBetween('now', '+1 month'),

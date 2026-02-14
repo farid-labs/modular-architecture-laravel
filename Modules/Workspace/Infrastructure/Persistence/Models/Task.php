@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskFactory;
 
 /**
@@ -54,11 +54,11 @@ class Task extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<UserModel, $this>
      */
     public function assignedUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(UserModel::class, 'assigned_to');
     }
 
     /**

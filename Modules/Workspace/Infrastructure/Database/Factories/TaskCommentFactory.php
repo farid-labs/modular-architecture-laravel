@@ -3,7 +3,7 @@
 namespace Modules\Workspace\Infrastructure\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\Task;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskComment;
 
@@ -21,12 +21,12 @@ class TaskCommentFactory extends Factory
     {
         return [
             'task_id' => Task::factory(),
-            'user_id' => User::factory(),
+            'user_id' => UserModel::factory(),
             'comment' => $this->faker->paragraph(1),
         ];
     }
 
-    public function forUser(User $user): static
+    public function forUser(UserModel $user): static
     {
         return $this->state(fn () => ['user_id' => $user->id]);
     }

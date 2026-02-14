@@ -3,7 +3,7 @@
 namespace Modules\Workspace\Infrastructure\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\Task;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachment;
 
@@ -57,7 +57,7 @@ class TaskAttachmentFactory extends Factory
             'file_path' => 'attachments/'.$fileName,
             'file_size' => $this->faker->numberBetween(1024, 1024 * 1024), // 1KB - 1MB
             'file_type' => $fileType,
-            'uploaded_by' => User::factory(),
+            'uploaded_by' => UserModel::factory(),
         ];
     }
 

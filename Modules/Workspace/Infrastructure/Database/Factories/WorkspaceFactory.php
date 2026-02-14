@@ -4,7 +4,7 @@ namespace Modules\Workspace\Infrastructure\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\WorkspaceStatus;
 use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
 
@@ -32,7 +32,7 @@ class WorkspaceFactory extends Factory
             'slug' => Str::slug($name),
             'description' => $this->faker->optional()->paragraph(),
             'status' => $this->faker->randomElement(WorkspaceStatus::cases()),
-            'owner_id' => User::factory(),
+            'owner_id' => UserModel::factory(),
         ];
     }
 
@@ -56,7 +56,7 @@ class WorkspaceFactory extends Factory
         ]);
     }
 
-    public function forOwner(User $user): static
+    public function forOwner(UserModel $user): static
     {
         return $this->state(fn () => [
             'owner_id' => $user->id,

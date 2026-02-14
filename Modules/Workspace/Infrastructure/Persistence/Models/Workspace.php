@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Users\Infrastructure\Persistence\Models\User;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\WorkspaceStatus;
 use Modules\Workspace\Domain\ValueObjects\WorkspaceName;
 use Modules\Workspace\Infrastructure\Database\Factories\WorkspaceFactory; // Assuming factory exists; implement if needed
@@ -46,20 +46,20 @@ class Workspace extends Model
     ];
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<UserModel, $this>
      */
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->belongsTo(UserModel::class, 'owner_id');
     }
 
     /**
-     * @return BelongsToMany<User, $this, \Illuminate\Database\Eloquent\Relations\Pivot, 'pivot'>
+     * @return BelongsToMany<UserModel, $this, \Illuminate\Database\Eloquent\Relations\Pivot, 'pivot'>
      */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(
-            User::class,
+            UserModel::class,
             'workspace_members',
             'workspace_id',
             'user_id'
