@@ -4,10 +4,10 @@ namespace Modules\Workspace\Presentation\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
+use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
 
 /**
- * @mixin Workspace
+ * @mixin WorkspaceModel
  */
 class WorkspaceResource extends JsonResource
 {
@@ -23,14 +23,14 @@ class WorkspaceResource extends JsonResource
             'name' => $this->resource->name,
             'slug' => $this->resource->slug,
             'description' => $this->resource->description,
-            'status' => $this->resource->status,
-            'owner' => [
-                'id' => $this->resource->owner->id ?? null,
-                'name' => $this->resource->owner->name ?? null,
-                'email' => $this->resource->owner->email ?? null,
-            ],
-            'members_count' => $this->resource->members->count() ?? 0,
-            'projects_count' => $this->resource->projects->count() ?? 0,
+            'status' => $this->resource->status->value,
+            'owner' => $this->resource->owner ? [
+                'id' => $this->resource->owner->id,
+                'name' => $this->resource->owner->name,
+                'email' => $this->resource->owner->email,
+            ] : null,
+            'members_count' => $this->resource->members?->count() ?? 0,
+            'projects_count' => $this->resource->projects?->count() ?? 0,
             'created_at' => $this->resource->created_at?->toISOString(),
             'updated_at' => $this->resource->updated_at?->toISOString(),
         ];
