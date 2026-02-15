@@ -58,6 +58,7 @@ Module/
 ├── Domain/ # Entities, value objects, domain logic
 ├── Infrastructure/ # Persistence, caching, jobs
 └── Presentation/ # API controllers, routes, resources
+└── Tests/ # Unit, Feature
 ```
 
 ## 🚀 Quick Start
@@ -120,7 +121,7 @@ docker compose exec app php artisan test --filter=UserControllerTest
 
 ```bash
 # Access application container
-docker compose exec app bash
+docker compose exec app sh
 
 # View logs
 docker compose logs -f app
