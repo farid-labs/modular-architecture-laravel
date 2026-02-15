@@ -22,7 +22,7 @@ use Modules\Workspace\Infrastructure\Database\Factories\TaskFactory;
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  */
-class Task extends Model
+class TaskModel extends Model
 {
     /** @use HasFactory<TaskFactory> */
     use HasFactory;
@@ -46,11 +46,11 @@ class Task extends Model
     ];
 
     /**
-     * @return BelongsTo<Project, $this>
+     * @return BelongsTo<ProjectModel, $this>
      */
-    public function project(): BelongsTo
+    public function ProjectModel(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(ProjectModel::class);
     }
 
     /**
@@ -62,19 +62,19 @@ class Task extends Model
     }
 
     /**
-     * @return HasMany<TaskComment, $this>
+     * @return HasMany<TaskCommentModel, $this>
      */
     public function comments(): HasMany
     {
-        return $this->hasMany(TaskComment::class);
+        return $this->hasMany(TaskCommentModel::class);
     }
 
     /**
-     * @return HasMany<TaskAttachment, $this>
+     * @return HasMany<TaskAttachmentModel, $this>
      */
     public function attachments(): HasMany
     {
-        return $this->hasMany(TaskAttachment::class);
+        return $this->hasMany(TaskAttachmentModel::class);
     }
 
     public function isActive(): bool

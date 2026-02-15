@@ -22,7 +22,7 @@ use Modules\Workspace\Infrastructure\Database\Factories\TaskAttachmentFactory;
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  */
-class TaskAttachment extends Model
+class TaskAttachmentModel extends Model
 {
     /** @use HasFactory<TaskAttachmentFactory> */
     use HasFactory, SoftDeletes;
@@ -37,11 +37,11 @@ class TaskAttachment extends Model
     ];
 
     /**
-     * @return BelongsTo<Task, $this>
+     * @return BelongsTo<TaskModel, $this>
      */
-    public function task(): BelongsTo
+    public function TaskModel(): BelongsTo
     {
-        return $this->belongsTo(Task::class);
+        return $this->belongsTo(TaskModel::class);
     }
 
     /**

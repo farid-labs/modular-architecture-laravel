@@ -26,7 +26,7 @@ use Modules\Workspace\Infrastructure\Database\Factories\WorkspaceFactory; // Ass
  *
  * @mixin \Illuminate\Database\Eloquent\Builder<static>
  */
-class Workspace extends Model
+class WorkspaceModel extends Model
 {
     /** @use HasFactory<WorkspaceFactory> */
     use HasFactory;
@@ -67,11 +67,11 @@ class Workspace extends Model
     }
 
     /**
-     * @return HasMany<Project, $this>
+     * @return HasMany<ProjectModel, $this>
      */
     public function projects(): HasMany
     {
-        return $this->hasMany(Project::class);
+        return $this->hasMany(ProjectModel::class);
     }
 
     public function getName(): string

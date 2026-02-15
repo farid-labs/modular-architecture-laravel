@@ -4,20 +4,20 @@ namespace Modules\Workspace\Infrastructure\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
-use Modules\Workspace\Infrastructure\Persistence\Models\Task;
-use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachment;
+use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachmentModel;
+use Modules\Workspace\Infrastructure\Persistence\Models\TaskModel;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<TaskAttachment>
+ * @extends Factory<TaskAttachmentModel>
  */
 class TaskAttachmentFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachment>
+     * @var class-string<TaskAttachmentModel>
      */
-    protected $model = TaskAttachment::class;
+    protected $model = TaskAttachmentModel::class;
 
     /**
      * Define the model's default state.
@@ -52,7 +52,7 @@ class TaskAttachmentFactory extends Factory
         $fileName = $this->faker->word().'.'.$extension;
 
         return [
-            'task_id' => Task::factory(),
+            'task_id' => TaskModel::factory(),
             'file_name' => $fileName,
             'file_path' => 'attachments/'.$fileName,
             'file_size' => $this->faker->numberBetween(1024, 1024 * 1024), // 1KB - 1MB

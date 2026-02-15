@@ -6,19 +6,19 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\WorkspaceStatus;
-use Modules\Workspace\Infrastructure\Persistence\Models\Workspace;
+use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Modules\Workspace\Infrastructure\Persistence\Models\Workspace>
+ * @extends Factory<WorkspaceModel>
  */
 class WorkspaceFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<Workspace>
+     * @var class-string<WorkspaceModel>
      */
-    protected $model = Workspace::class;
+    protected $model = WorkspaceModel::class;
 
     /**
      * @return array<string, mixed>

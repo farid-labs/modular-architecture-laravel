@@ -5,10 +5,8 @@ namespace Modules\Workspace\Infrastructure\Persistence\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Infrastructure\Database\Factories\ProjectFactory;
 
@@ -18,8 +16,13 @@ use Modules\Workspace\Infrastructure\Database\Factories\ProjectFactory;
  * @property string|null $description
  * @property int $workspace_id
  * @property ProjectStatus $status
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ *
+ * @mixin \Illuminate\Database\Eloquent\Builder<static>
  */
-class Project extends Model
+class ProjectModel extends Model
 {
     /** @use HasFactory<ProjectFactory> */
     use HasFactory, SoftDeletes;
@@ -31,44 +34,36 @@ class Project extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'status' => ProjectStatus::class,
-        ];
-    }
+    protected $casts = [
+        'status' => ProjectStatus::class,
+    ];
 
     /**
-     * @return BelongsTo<Workspace, $this>
+     * @return BelongsTo<WorkspaceModel, $this>
      */
     public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Workspace::class);
+        return $this->belongsTo(WorkspaceModel::class);
     }
 
     /**
-     * @return HasMany<Task, $this>
+     * @return HasMany<TaskModel, $this>
      */
     public function tasks(): HasMany
     {
-        return $this->hasMany(Task::class);
+        return $this->hasMany(TaskModel::class);
     }
 
     /**
-     * @return BelongsToMany<UserModel, $this>
+     * @return BelongsTo<WorkspaceModel, $this>
      */
-    public function members(): BelongsToMany
+    public function projectModel(): BelongsTo
     {
-        return $this->belongsToMany(
-            UserModel::class,
-            'project_members',
-            'project_id',
-            'user_id'
-        )->withPivot('role')->withTimestamps();
+        return $this->belongsTo(WorkspaceModel::class, 'workspace_id');
     }
 
-    public function isActive(): bool
+    protected static function newFactory(): ProjectFactory
     {
-        return $this->status->value === 'active';
+        return ProjectFactory::new();
     }
 }

@@ -17,7 +17,7 @@ use Modules\Workspace\Infrastructure\Database\Factories\TaskCommentFactory;
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  */
-class TaskComment extends Model
+class TaskCommentModel extends Model
 {
     /** @use HasFactory<TaskCommentFactory> */
     use HasFactory, SoftDeletes;
@@ -29,11 +29,11 @@ class TaskComment extends Model
     ];
 
     /**
-     * @return BelongsTo<Task, $this>
+     * @return BelongsTo<TaskModel, $this>
      */
-    public function task(): BelongsTo
+    public function TaskModel(): BelongsTo
     {
-        return $this->belongsTo(Task::class);
+        return $this->belongsTo(TaskModel::class);
     }
 
     /**

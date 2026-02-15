@@ -6,20 +6,20 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
-use Modules\Workspace\Infrastructure\Persistence\Models\Project;
-use Modules\Workspace\Infrastructure\Persistence\Models\Task;
+use Modules\Workspace\Infrastructure\Persistence\Models\ProjectModel;
+use Modules\Workspace\Infrastructure\Persistence\Models\TaskModel;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Modules\Workspace\Infrastructure\Persistence\Models\Task>
+ * @extends Factory<TaskModel>
  */
 class TaskFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Modules\Workspace\Infrastructure\Persistence\Models\Task>
+     * @var class-string<TaskModel>
      */
-    protected $model = Task::class;
+    protected $model = TaskModel::class;
 
     /**
      * @return array<string, mixed>
@@ -32,7 +32,7 @@ class TaskFactory extends Factory
         return [
             'title' => $this->faker->sentence(4),
             'description' => $this->faker->optional()->paragraph(),
-            'project_id' => Project::factory(),
+            'project_id' => ProjectModel::factory(),
             'assigned_to' => $this->faker->optional()->randomElement(UserModel::pluck('id')->toArray()),
             'status' => $status,
             'priority' => $priority,
