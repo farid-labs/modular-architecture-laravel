@@ -3,6 +3,7 @@
 namespace Modules\Users\Infrastructure\Repositories;
 
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Domain\Entities\UserEntity;
 use Modules\Users\Domain\Repositories\UserRepositoryInterface;
@@ -36,14 +37,19 @@ class UserRepository implements UserRepositoryInterface
     public function create(UserDTO $userDTO): UserEntity
     {
         $data = $userDTO->toArray();
-
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
+        $data['password'] = Hash::make($data['password']);
 
         $model = $this->model->create($data);
 
-        return $this->mapToEntity($model);
+        return new UserEntity(
+            $model->id,
+            new Name($model->name),
+            new Email($model->email),
+            $model->email_verified_at,
+            $model->created_at,
+            $model->updated_at,
+            $model->is_admin
+        );
     }
 
     public function update(int $id, UserDTO $userDTO): UserEntity
@@ -74,8 +80,33 @@ class UserRepository implements UserRepositoryInterface
     public function getAll(): array
     {
         $models = $this->model->all();
+        $entities = [];
 
-        return $models->map(fn ($model) => $this->mapToEntity($model))->toArray();
+        foreach ($models as $model) {
+            try {
+                $entities[] = $this->mapToEntity($model);
+            } catch (\InvalidArgumentException $e) {
+                Log::warning('Skipped invalid user record during mapping', [
+                    'user_id' => $model->id ?? 'unknown',
+                    'email' => $model->email ?? 'empty',
+                    'name' => $model->name ?? 'unknown',
+                    'error' => $e->getMessage(),
+                    'invalid_data_sample' => substr($model->email ?? '', 0, 50),
+                ]);
+
+                continue;
+            } catch (\Throwable $e) {
+                Log::error('Unexpected error mapping user record', [
+                    'user_id' => $model->id ?? 'unknown',
+                    'exception' => get_class($e),
+                    'message' => $e->getMessage(),
+                ]);
+
+                continue;
+            }
+        }
+
+        return $entities;
     }
 
     private function mapToEntity(UserModel $model): UserEntity
@@ -84,11 +115,10 @@ class UserRepository implements UserRepositoryInterface
             $model->id,
             new Name($model->name),
             new Email($model->email),
-            $model->password,
-            $model->is_admin,
             $model->email_verified_at,
             $model->created_at,
-            $model->updated_at
+            $model->updated_at,
+            $model->is_admin
         );
     }
 }
