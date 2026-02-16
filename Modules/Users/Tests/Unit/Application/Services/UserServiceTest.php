@@ -2,6 +2,7 @@
 
 namespace Modules\Users\Tests\Unit\Application\Services;
 
+use Carbon\CarbonImmutable;
 use Mockery\MockInterface;
 use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Application\Services\UserService;
@@ -21,7 +22,6 @@ class UserServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->userRepository = \Mockery::mock(UserRepositoryInterface::class);
         $this->userService = new UserService($this->userRepository);
     }
@@ -40,10 +40,15 @@ class UserServiceTest extends TestCase
             'password' => 'password123',
         ]);
 
+        $now = CarbonImmutable::now();
         $entity = new UserEntity(
             1,
             new Name('John Doe'),
-            new Email('john@example.com')
+            new Email('john@example.com'),
+            null,
+            $now,
+            $now,
+            false
         );
 
         $this->userRepository
@@ -59,16 +64,20 @@ class UserServiceTest extends TestCase
             ->andReturn($entity);
 
         $result = $this->userService->createUser($userDTO);
-
         $this->assertSame($entity, $result);
     }
 
     public function test_get_user_by_id_returns_user(): void
     {
+        $now = CarbonImmutable::now();
         $entity = new UserEntity(
             1,
             new Name('John Doe'),
-            new Email('john@example.com')
+            new Email('john@example.com'),
+            null,
+            $now,
+            $now,
+            false
         );
 
         $this->userRepository
@@ -78,7 +87,6 @@ class UserServiceTest extends TestCase
             ->andReturn($entity);
 
         $result = $this->userService->getUserById(1);
-
         $this->assertEquals($entity, $result);
     }
 

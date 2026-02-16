@@ -2,10 +2,10 @@
 
 namespace Modules\Users\Presentation\Resources;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Users\Domain\Entities\UserEntity;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 
 class UserResource extends JsonResource
 {
@@ -24,37 +24,40 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $resource = $this->resource;
-
-        if ($resource instanceof UserEntity) {
+        if ($this->resource instanceof UserEntity) {
             return [
-                'id' => $resource->getId(),
-                'name' => $resource->getFullName(),
-                'email' => $resource->getEmail()->getValue(),
-                'email_verified_at' => $resource->getEmailVerifiedAt()?->toIso8601String(),
-                'is_active' => $resource->isActive(),
-                'created_at' => $resource->getCreatedAt()?->toIso8601String(),
-                'updated_at' => $resource->getUpdatedAt()?->toIso8601String(),
+                'id' => $this->resource->getId(),
+                'name' => $this->resource->getName()->getValue(),
+                'email' => $this->resource->getEmail()->getValue(),
+                'email_verified_at' => $this->resource->getEmailVerifiedAt()?->toIso8601String(),
+                'is_active' => $this->resource->isActive(),
+                'created_at' => $this->resource->getCreatedAt()->toIso8601String(),
+                'updated_at' => $this->resource->getUpdatedAt()->toIso8601String(),
             ];
         }
 
-        // Fallback for arrays (if any legacy use)
-        $data = (array) $resource;
+        if ($this->resource instanceof UserModel) {
+            return [
+                'id' => $this->resource->id,
+                'name' => $this->resource->name,
+                'email' => $this->resource->email,
+                'email_verified_at' => $this->resource->email_verified_at?->toIso8601String(),
+                'is_active' => (bool) $this->resource->getAttribute('is_active'),
+                'created_at' => $this->resource->created_at->toIso8601String(),
+                'updated_at' => $this->resource->updated_at->toIso8601String(),
+            ];
+        }
+
+        $data = (array) $this->resource;
 
         return [
             'id' => $data['id'] ?? null,
             'name' => $data['name'] ?? null,
             'email' => $data['email'] ?? null,
-            'email_verified_at' => isset($data['email_verified_at'])
-                ? Carbon::parse($data['email_verified_at'])->toIso8601String()
-                : null,
+            'email_verified_at' => $data['email_verified_at'] ?? null,
             'is_active' => ! empty($data['email_verified_at']),
-            'created_at' => isset($data['created_at'])
-                ? Carbon::parse($data['created_at'])->toIso8601String()
-                : null,
-            'updated_at' => isset($data['updated_at'])
-                ? Carbon::parse($data['updated_at'])->toIso8601String()
-                : null,
+            'created_at' => $data['created_at'] ?? null,
+            'updated_at' => $data['updated_at'] ?? null,
         ];
     }
 }
