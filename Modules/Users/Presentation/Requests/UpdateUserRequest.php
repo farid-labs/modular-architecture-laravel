@@ -4,6 +4,7 @@ namespace Modules\Users\Presentation\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -22,19 +23,38 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
+
         $userId = $this->route('user');
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => [
                 'sometimes',
-                'string',
                 'email',
                 'max:255',
-                Rule::unique('users')->ignore($userId),
+                Rule::unique('users', 'email')->ignore($userId, 'id'),
             ],
-            'password' => ['sometimes', 'string', 'min:8'],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function validated($key = null, $default = null): array
+    {
+        return array_merge(
+            parent::validated($key, $default),
+            $this->only(['name', 'email'])
+        );
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function ($validator) {
+            if (empty($this->validated())) {
+                $validator->errors()->add('data', 'At least one field (name or email) must be provided for update');
+            }
+        });
     }
 
     /**
