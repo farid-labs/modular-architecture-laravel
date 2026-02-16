@@ -16,8 +16,11 @@ class Email
 
     private function ensureIsValidEmail(string $email): void
     {
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('Invalid email address');
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL, FILTER_FLAG_EMAIL_UNICODE)) {
+            throw new InvalidArgumentException('Invalid email address format');
+        }
+        if (mb_strlen($email) > 254) {
+            throw new InvalidArgumentException('Email address exceeds maximum length of 254 characters');
         }
     }
 

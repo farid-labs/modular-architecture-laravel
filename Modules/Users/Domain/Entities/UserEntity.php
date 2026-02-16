@@ -2,45 +2,31 @@
 
 namespace Modules\Users\Domain\Entities;
 
+use Carbon\CarbonInterface;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
 
+/**
+ * Pure domain entity representing a user (WITHOUT sensitive data)
+ * Immutable value object with full encapsulation and business logic
+ *
+ * SECURITY NOTE: Password is NEVER stored in domain entity.
+ * Password handling belongs to infrastructure layer (UserModel) only.
+ */
 class UserEntity
 {
-    private int $id;
-
-    private Name $name;
-
-    private Email $email;
-
-    private ?string $password;
-
-    private bool $isAdmin;
-
-    private ?\Carbon\CarbonImmutable $emailVerifiedAt;
-
-    private ?\Carbon\CarbonImmutable $createdAt;
-
-    private ?\Carbon\CarbonImmutable $updatedAt;
-
     public function __construct(
-        int $id,
-        Name $name,
-        Email $email,
-        ?string $password = null,
-        bool $isAdmin = false,
-        ?\Carbon\CarbonImmutable $emailVerifiedAt = null,
-        ?\Carbon\CarbonImmutable $createdAt = null,
-        ?\Carbon\CarbonImmutable $updatedAt = null
+        private readonly int $id,
+        private readonly Name $name,
+        private readonly Email $email,
+        private readonly ?CarbonInterface $emailVerifiedAt,
+        private readonly CarbonInterface $createdAt,
+        private readonly CarbonInterface $updatedAt,
+        private readonly bool $isAdmin = false
     ) {
-        $this->id = $id;
-        $this->name = $name;
-        $this->email = $email;
-        $this->password = $password;
-        $this->isAdmin = $isAdmin;
-        $this->emailVerifiedAt = $emailVerifiedAt;
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
+        // Constructor body is EMPTY - all properties are promoted
+        // NO password handling here (security best practice)
+        // NO active flag handling here (derived from emailVerifiedAt)
     }
 
     public function getId(): int
@@ -48,30 +34,9 @@ class UserEntity
         return $this->id;
     }
 
-    public function getFullName(): string
+    public function getName(): Name
     {
-        return $this->name->getValue();
-    }
-
-    public function isActive(): bool
-    {
-        return $this->emailVerifiedAt !== null;
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->isAdmin;
-    }
-
-    public function updateEmail(Email $email): void
-    {
-        $this->email = $email;
-        $this->emailVerifiedAt = null;
-    }
-
-    public function updateName(Name $name): void
-    {
-        $this->name = $name;
+        return $this->name;
     }
 
     public function getEmail(): Email
@@ -79,23 +44,98 @@ class UserEntity
         return $this->email;
     }
 
-    public function getPassword(): ?string
+    public function isAdmin(): bool
     {
-        return $this->password;
+        return $this->isAdmin;
     }
 
-    public function getEmailVerifiedAt(): ?\Carbon\CarbonImmutable
+    /**
+     * User is active ONLY if email is verified (business rule)
+     * This is a DERIVED property, not stored state
+     */
+    public function isActive(): bool
+    {
+        return $this->emailVerifiedAt !== null;
+    }
+
+    public function getEmailVerifiedAt(): ?CarbonInterface
     {
         return $this->emailVerifiedAt;
     }
 
-    public function getCreatedAt(): ?\Carbon\CarbonImmutable
+    public function getCreatedAt(): CarbonInterface
     {
         return $this->createdAt;
     }
 
-    public function getUpdatedAt(): ?\Carbon\CarbonImmutable
+    public function getUpdatedAt(): CarbonInterface
     {
         return $this->updatedAt;
+    }
+
+    public function updateName(Name $newName): self
+    {
+        // Note: Slug generation should happen in Value Object or Service layer
+        return new self(
+            $this->id,
+            $newName,
+            $this->email,
+            $this->emailVerifiedAt,
+            $this->createdAt,
+            $this->updatedAt,
+            $this->isAdmin
+        );
+    }
+
+    public function verifyEmail(): self
+    {
+        return new self(
+            $this->id,
+            $this->name,
+            $this->email,
+            now(),
+            $this->createdAt,
+            now(),
+            $this->isAdmin
+        );
+    }
+
+    public function promoteToAdmin(): self
+    {
+        return new self(
+            $this->id,
+            $this->name,
+            $this->email,
+            $this->emailVerifiedAt,
+            $this->createdAt,
+            now(),
+            true
+        );
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     email: string,
+     *     email_verified_at: string|null,
+     *     is_admin: bool,
+     *     is_active: bool,
+     *     created_at: string,
+     *     updated_at: string
+     * }
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name->getValue(),
+            'email' => $this->email->getValue(),
+            'email_verified_at' => $this->emailVerifiedAt?->toIso8601String(),
+            'is_admin' => $this->isAdmin,
+            'is_active' => $this->isActive(), // Derived property
+            'created_at' => $this->createdAt->toIso8601String(),
+            'updated_at' => $this->updatedAt->toIso8601String(),
+        ];
     }
 }
