@@ -1,45 +1,67 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Modular Architecture Laravel (Monolith API)",
-        "description": "Production-grade API built with Domain-Driven Design and Clean Architecture principles",
+        "title": "Modular Architecture Laravel API",
+        "description": "Production-grade modular monolith with DDD and Clean Architecture",
         "contact": {
-            "name": "Farid Labs",
-            "url": "https://faridteymouri.vercel.app",
-            "email": "contact@faridlabs.com"
+            "email": "admin@faridlabs.com"
         },
         "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
+            "name": "MIT"
         },
         "version": "1.0.0"
     },
-    "paths": {
-        "/api/v1": {
-            "servers": [
-                {
-                    "url": "http://localhost:8000",
-                    "description": "Local Development Server"
-                },
-                {
-                    "url": "https://api.example.com",
-                    "description": "Production Server"
-                }
-            ]
+    "servers": [
+        {
+            "url": "http://localhost:8080/api/v1",
+            "description": "Local Development"
         },
-        "/api/v1/auth/register": {
+        {
+            "url": "https://api.yourdomain.com/api/v1",
+            "description": "Production"
+        }
+    ],
+    "paths": {
+        "/v1/auth/register": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "Register a new user",
-                "operationId": "d39453c9e99ec59d5cdd41119da608b4",
+                "description": "Create a new user account and return authentication token",
+                "operationId": "registerUser",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/RegisterRequest"
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "securepassword123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "securepassword123"
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
@@ -66,25 +88,64 @@
                             }
                         }
                     },
+                    "409": {
+                        "description": "Conflict - Email already exists",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "field": {
+                                            "type": "string",
+                                            "example": "email"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
-                        "description": "Validation error"
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 }
             }
         },
-        "/api/v1/auth/login": {
+        "/v1/auth/login": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Login user",
-                "operationId": "2d1483c1ffce6140719cce83ad417e75",
+                "summary": "Authenticate user",
+                "description": "Login with credentials and receive authentication token",
+                "operationId": "loginUser",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/LoginRequest"
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "securepassword123"
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
@@ -112,18 +173,44 @@
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials"
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "hint": {
+                                            "type": "string",
+                                            "example": "Check your email and password"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "429": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 }
             }
         },
-        "/api/v1/auth/logout": {
+        "/v1/auth/logout": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "Logout user",
-                "operationId": "90ef6c868e1ab1d58ce7363ee6b676c9",
+                "description": "Invalidate current authentication token",
+                "operationId": "logoutUser",
                 "responses": {
                     "200": {
                         "description": "Logged out successfully",
@@ -139,53 +226,101 @@
                                 }
                             }
                         }
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/auth/me": {
-            "get": {
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "Get current user",
-                "operationId": "c88521eb9a1977f73669ca64c8a20dc0",
-                "responses": {
-                    "200": {
-                        "description": "Current user retrieved successfully",
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/User"
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "hint": {
+                                            "type": "string",
+                                            "example": "Provide a valid authentication token"
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
         },
-        "/api/v1/users": {
+        "/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get current user",
+                "description": "Retrieve profile of currently authenticated user",
+                "operationId": "getAuthenticatedUser",
+                "responses": {
+                    "200": {
+                        "description": "User retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "hint": {
+                                            "type": "string",
+                                            "example": "Provide a valid authentication token"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users": {
             "get": {
                 "tags": [
                     "Users"
                 ],
                 "summary": "Get all users",
-                "operationId": "5f5dda711050fde2d5ec447b49214709",
+                "operationId": "1f7139348ec7dfd5da699b90e2e8f14a",
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -209,7 +344,10 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized"
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 },
                 "security": [
@@ -223,7 +361,7 @@
                     "Users"
                 ],
                 "summary": "Create a new user",
-                "operationId": "ad9840c989b99b686fccb6aa0cb4248d",
+                "operationId": "3ae5a09fa9d2f5ee8e83c710ecf99282",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -253,8 +391,17 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
                     "422": {
-                        "description": "Validation error"
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "409": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 },
                 "security": [
@@ -264,13 +411,13 @@
                 ]
             }
         },
-        "/api/v1/users/{id}": {
+        "/v1/users/{id}": {
             "get": {
                 "tags": [
                     "Users"
                 ],
                 "summary": "Get user by ID",
-                "operationId": "2e337d4c4a1f03398f2ec188f0d7784d",
+                "operationId": "1ad79b18416cb0591da413077153c977",
                 "parameters": [
                     {
                         "name": "id",
@@ -300,8 +447,17 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "403": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
                     "404": {
-                        "description": "User not found"
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 },
                 "security": [
@@ -315,7 +471,7 @@
                     "Users"
                 ],
                 "summary": "Update user",
-                "operationId": "15ead31b4428b6c73af3b6a397c07112",
+                "operationId": "5b437d95420768fc57c5198ce421953e",
                 "parameters": [
                     {
                         "name": "id",
@@ -355,11 +511,20 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "403": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
                     "404": {
-                        "description": "User not found"
+                        "$ref": "#/components/schemas/ErrorResponse"
                     },
                     "422": {
-                        "description": "Validation error"
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 },
                 "security": [
@@ -373,7 +538,7 @@
                     "Users"
                 ],
                 "summary": "Delete user",
-                "operationId": "83be4bbcb5e29c31db803cc5d38c6e77",
+                "operationId": "5ca19c3794a3d1c02608fa801bfde6af",
                 "parameters": [
                     {
                         "name": "id",
@@ -400,8 +565,17 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "403": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
                     "404": {
-                        "description": "User not found"
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/schemas/ErrorResponse"
                     }
                 },
                 "security": [
@@ -410,10 +584,470 @@
                     }
                 ]
             }
+        },
+        "/v1/workspaces": {
+            "get": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "List user workspaces",
+                "description": "Get all workspaces the authenticated user is a member of",
+                "operationId": "listWorkspaces",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkspaceResource"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Create new workspace",
+                "description": "Create a new workspace owned by the authenticated user",
+                "operationId": "createWorkspace",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Marketing Team"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Marketing campaigns workspace",
+                                        "nullable": true
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "marketing-team",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Workspace created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkspaceResource"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "422": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/workspaces/{slug}": {
+            "get": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Get workspace by slug",
+                "description": "Retrieve a single workspace using its slug",
+                "operationId": "getWorkspaceBySlug",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkspaceResource"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "404": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/workspaces/{id}": {
+            "put": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Update workspace",
+                "description": "Update an existing workspace (owner only)",
+                "operationId": "updateWorkspace",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ],
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Workspace updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkspaceResource"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "403": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "404": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "422": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Delete workspace",
+                "description": "Permanently delete a workspace (owner only)",
+                "operationId": "deleteWorkspace",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Workspace deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "403": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "404": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/workspaces/{workspaceId}/members": {
+            "post": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Add member to workspace",
+                "description": "Add a user as a member to the workspace with specified role",
+                "operationId": "addWorkspaceMember",
+                "parameters": [
+                    {
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "owner",
+                                            "admin",
+                                            "member"
+                                        ],
+                                        "example": "member"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Member added successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "403": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "404": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "422": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Remove member from workspace",
+                "description": "Remove a user from workspace membership",
+                "operationId": "removeWorkspaceMember",
+                "parameters": [
+                    {
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Member removed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "403": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "404": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    "422": {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
         "schemas": {
+            "ErrorResponse": {
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "properties": {
                     "id": {
@@ -432,6 +1066,10 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
                     },
                     "created_at": {
                         "type": "string",
@@ -457,11 +1095,13 @@
                     },
                     "email": {
                         "type": "string",
+                        "format": "email",
                         "example": "john@example.com"
                     },
                     "password": {
                         "type": "string",
-                        "example": "password123"
+                        "format": "password",
+                        "example": "securepassword123"
                     }
                 },
                 "type": "object"
@@ -470,90 +1110,101 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "example": "John Doe"
+                        "example": "John Updated",
+                        "nullable": true
                     },
                     "email": {
                         "type": "string",
-                        "example": "john@example.com"
+                        "format": "email",
+                        "example": "updated@example.com",
+                        "nullable": true
                     }
                 },
                 "type": "object"
             },
-            "RegisterRequest": {
-                "required": [
-                    "name",
-                    "email",
-                    "password"
-                ],
+            "WorkspaceResource": {
                 "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
                     "name": {
                         "type": "string",
-                        "example": "John Doe"
+                        "example": "Marketing Team"
                     },
-                    "email": {
+                    "slug": {
                         "type": "string",
-                        "example": "john@example.com"
+                        "example": "marketing-team"
                     },
-                    "password": {
+                    "description": {
                         "type": "string",
-                        "example": "password123"
-                    }
-                },
-                "type": "object"
-            },
-            "LoginRequest": {
-                "required": [
-                    "email",
-                    "password"
-                ],
-                "properties": {
-                    "email": {
-                        "type": "string",
-                        "example": "john@example.com"
+                        "example": "Marketing campaigns workspace",
+                        "nullable": true
                     },
-                    "password": {
+                    "status": {
                         "type": "string",
-                        "example": "password123"
-                    }
-                },
-                "type": "object"
-            },
-            "ErrorResponse": {
-                "properties": {
-                    "message": {
-                        "type": "string",
-                        "example": "Error message here"
+                        "enum": [
+                            "active",
+                            "inactive"
+                        ],
+                        "example": "active"
                     },
-                    "errors": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "type": "array",
-                            "items": {
+                    "owner": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "email": {
                                 "type": "string"
                             }
-                        }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "members_count": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "projects_count": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 },
                 "type": "object"
             }
         },
         "securitySchemes": {
-            "sanctum": {
-                "type": "apiKey",
-                "description": "Enter token in format: Bearer {your-token}",
-                "name": "Authorization",
-                "in": "header"
+            "bearerAuth": {
+                "type": "http",
+                "description": "Enter token without Bearer prefix",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
             }
         }
     },
     "tags": [
         {
             "name": "Authentication",
-            "description": "API endpoints for authentication"
+            "description": "User authentication and session management endpoints"
         },
         {
             "name": "Users",
             "description": "API endpoints for managing users"
+        },
+        {
+            "name": "Workspaces",
+            "description": "Create and manage collaborative workspaces with member access control"
         }
     ]
 }
