@@ -34,7 +34,7 @@ class UserController extends Controller
     }
 
     #[OA\Get(
-        path: '/v1/users',
+        path: '/users',
         summary: 'Get all users',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -94,7 +94,7 @@ class UserController extends Controller
     }
 
     #[OA\Get(
-        path: '/v1/users/{id}',
+        path: '/users/{id}',
         summary: 'Get user by ID',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -177,7 +177,7 @@ class UserController extends Controller
     }
 
     #[OA\Post(
-        path: '/v1/users',
+        path: '/users',
         summary: 'Create a new user',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -260,7 +260,7 @@ class UserController extends Controller
     }
 
     #[OA\Put(
-        path: '/v1/users/{id}',
+        path: '/users/{id}',
         summary: 'Update user',
         tags: ['Users'],
         security: [['sanctum' => []]],
@@ -370,7 +370,7 @@ class UserController extends Controller
     }
 
     #[OA\Delete(
-        path: '/v1/users/{id}',
+        path: '/users/{id}',
         summary: 'Delete user',
         tags: ['Users'],
         security: [['sanctum' => []]],

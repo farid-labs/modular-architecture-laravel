@@ -28,7 +28,7 @@ class AuthController extends Controller
     public function __construct(private UserService $userService) {}
 
     #[OA\Post(
-        path: '/v1/auth/register',
+        path: '/auth/register',
         operationId: 'registerUser',
         summary: 'Register a new user',
         description: 'Create a new user account and return authentication token',
@@ -124,7 +124,7 @@ class AuthController extends Controller
     }
 
     #[OA\Post(
-        path: '/v1/auth/login',
+        path: '/auth/login',
         operationId: 'loginUser',
         summary: 'Authenticate user',
         description: 'Login with credentials and receive authentication token',
@@ -239,7 +239,7 @@ class AuthController extends Controller
     }
 
     #[OA\Post(
-        path: '/v1/auth/logout',
+        path: '/auth/logout',
         operationId: 'logoutUser',
         summary: 'Logout user',
         description: 'Invalidate current authentication token',
@@ -307,7 +307,7 @@ class AuthController extends Controller
     }
 
     #[OA\Get(
-        path: '/v1/auth/me',
+        path: '/auth/me',
         operationId: 'getAuthenticatedUser',
         summary: 'Get current user',
         description: 'Retrieve profile of currently authenticated user',
