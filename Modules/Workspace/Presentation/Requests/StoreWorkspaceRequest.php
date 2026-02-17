@@ -3,6 +3,8 @@
 namespace Modules\Workspace\Presentation\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class StoreWorkspaceRequest extends FormRequest
 {
@@ -22,9 +24,15 @@ class StoreWorkspaceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:100', 'min:3'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'status' => ['sometimes', 'in:active,inactive,suspended'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::unique('workspaces', 'slug')->whereNull('deleted_at'),
+            ],
         ];
     }
 
@@ -36,11 +44,22 @@ class StoreWorkspaceRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Workspace name is required',
-            'name.max' => 'Workspace name must not exceed 100 characters',
-            'name.min' => 'Workspace name must be at least 3 characters',
-            'description.max' => 'Description must not exceed 1000 characters',
-            'status.in' => 'Invalid workspace status',
+            'slug.required' => __('workspaces.slug_required'),
+            'slug.regex' => __('workspaces.slug_invalid_format'),
+            'slug.unique' => __('workspaces.slug_taken'),
+            'name.min' => __('workspaces.name_min'),
+            'name.max' => __('workspaces.name_max'),
+            'description.max' => __('workspaces.description_max'),
+            'status.in' => __('workspaces.invalid_status'),
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (empty($this->slug) && ! empty($this->name)) {
+            $this->merge([
+                'slug' => Str::slug($this->name),
+            ]);
+        }
     }
 }
