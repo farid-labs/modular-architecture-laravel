@@ -27,6 +27,8 @@ class TaskAttachmentModel extends Model
     /** @use HasFactory<TaskAttachmentFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $table = 'task_attachments';
+
     protected $fillable = [
         'task_id',
         'file_name',

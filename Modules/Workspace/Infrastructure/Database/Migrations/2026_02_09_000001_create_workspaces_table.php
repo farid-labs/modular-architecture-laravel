@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('slug', 100)->unique();
             $table->text('description')->nullable();
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
-            $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete(); // ✅ تغییر شده
+            $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
 

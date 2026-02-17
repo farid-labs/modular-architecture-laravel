@@ -27,6 +27,8 @@ class ProjectModel extends Model
     /** @use HasFactory<ProjectFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $table = 'projects';
+
     protected $fillable = [
         'name',
         'description',
@@ -43,7 +45,7 @@ class ProjectModel extends Model
      */
     public function workspace(): BelongsTo
     {
-        return $this->belongsTo(WorkspaceModel::class);
+        return $this->belongsTo(WorkspaceModel::class, 'workspace_id');
     }
 
     /**
@@ -51,7 +53,7 @@ class ProjectModel extends Model
      */
     public function tasks(): HasMany
     {
-        return $this->hasMany(TaskModel::class);
+        return $this->hasMany(TaskModel::class, 'project_id');
     }
 
     /**

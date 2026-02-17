@@ -33,6 +33,8 @@ class WorkspaceModel extends Model
 
     use SoftDeletes;
 
+    protected $table = 'workspaces';
+
     protected $fillable = [
         'name',
         'slug',
@@ -71,7 +73,7 @@ class WorkspaceModel extends Model
      */
     public function projects(): HasMany
     {
-        return $this->hasMany(ProjectModel::class);
+        return $this->hasMany(ProjectModel::class, 'workspace_id');
     }
 
     public function getName(): string

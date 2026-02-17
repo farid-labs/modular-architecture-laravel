@@ -9,7 +9,6 @@ use Modules\Workspace\Domain\Entities\ProjectEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
-use Modules\Workspace\Domain\ValueObjects\WorkspaceName;
 use Modules\Workspace\Infrastructure\Persistence\Models\ProjectModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachmentModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskCommentModel;
@@ -43,7 +42,13 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     public function create(WorkspaceDTO $workspaceDTO): WorkspaceEntity
     {
-        $model = $this->model->create($workspaceDTO->toArray());
+        $data = $workspaceDTO->toArray();
+        $model = $this->model->create($data);
+
+        $model->members()->attach($data['owner_id'], [
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
 
         return $this->mapToEntity($model);
     }
@@ -55,7 +60,8 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             return null;
         }
 
-        $model->update($workspaceDTO->toArray());
+        $data = array_filter($workspaceDTO->toArray(), fn ($value) => $value !== null);
+        $model->update($data);
 
         return $this->mapToEntity($model);
     }
@@ -76,8 +82,12 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     public function getWorkspacesByUser(int $userId): array
     {
-        $models = $this->model->with(['members'])
-            ->whereHas('members', fn ($q) => $q->where('user_id', $userId))
+        $models = $this->model->with(['members', 'owner'])
+            ->withCount(['members', 'projects'])
+            ->where(function ($query) use ($userId) {
+                $query->where('owner_id', $userId)
+                    ->orWhereHas('members', fn ($q) => $q->where('user_id', $userId));
+            })
             ->get();
 
         return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
@@ -90,7 +100,21 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             return false;
         }
 
-        $model->members()->attach($userId, ['role' => $role, 'joined_at' => now()]);
+        $isMember = $model->members()->where('user_id', $userId)->exists();
+
+        if ($isMember) {
+            $model->members()->updateExistingPivot($userId, [
+                'role' => $role,
+                'joined_at' => now(),
+            ]);
+
+            return true;
+        }
+
+        $model->members()->attach($userId, [
+            'role' => $role,
+            'joined_at' => now(),
+        ]);
 
         return true;
     }
@@ -101,7 +125,6 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         if (! $model) {
             return false;
         }
-
         $model->members()->detach($userId);
 
         return true;
@@ -109,13 +132,21 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     private function mapToEntity(WorkspaceModel $model): WorkspaceEntity
     {
+
+        $createdAt = $model->created_at ?? now();
+        $updatedAt = $model->updated_at ?? now();
+
         return new WorkspaceEntity(
             $model->id,
-            new WorkspaceName($model->name),
+            $model->name,
             $model->slug,
             $model->description,
             $model->status,
-            $model->owner_id
+            $model->owner_id,
+            $createdAt, // ✅ CarbonInterface تضمین شده
+            $updatedAt, // ✅ CarbonInterface تضمین شده
+            $model->members_count ?? 0,
+            $model->projects_count ?? 0
         );
     }
 
@@ -142,7 +173,6 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     public function findTaskById(int $id): ?TaskEntity
     {
-        // 🔑 فیکس کلیدی: تغییر 'project' به 'projectModel' (مطابق نام متد در TaskModel)
         $model = TaskModel::with(['projectModel', 'assignedUser', 'comments', 'attachments'])
             ->find($id);
 

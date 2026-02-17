@@ -22,6 +22,8 @@ class TaskCommentModel extends Model
     /** @use HasFactory<TaskCommentFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $table = 'task_comments';
+
     protected $fillable = [
         'task_id',
         'user_id',

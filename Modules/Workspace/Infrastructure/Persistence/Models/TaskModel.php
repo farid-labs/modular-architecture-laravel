@@ -29,6 +29,8 @@ class TaskModel extends Model
 
     use SoftDeletes;
 
+    protected $table = 'tasks';
+
     protected $fillable = [
         'title',
         'description',
