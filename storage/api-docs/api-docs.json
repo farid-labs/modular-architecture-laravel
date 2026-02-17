@@ -22,7 +22,7 @@
         }
     ],
     "paths": {
-        "/v1/auth/register": {
+        "/auth/register": {
             "post": {
                 "tags": [
                     "Authentication"
@@ -116,7 +116,7 @@
                 }
             }
         },
-        "/v1/auth/login": {
+        "/auth/login": {
             "post": {
                 "tags": [
                     "Authentication"
@@ -203,7 +203,7 @@
                 }
             }
         },
-        "/v1/auth/logout": {
+        "/auth/logout": {
             "post": {
                 "tags": [
                     "Authentication"
@@ -257,7 +257,7 @@
                 ]
             }
         },
-        "/v1/auth/me": {
+        "/auth/me": {
             "get": {
                 "tags": [
                     "Authentication"
@@ -314,13 +314,13 @@
                 ]
             }
         },
-        "/v1/users": {
+        "/users": {
             "get": {
                 "tags": [
                     "Users"
                 ],
                 "summary": "Get all users",
-                "operationId": "1f7139348ec7dfd5da699b90e2e8f14a",
+                "operationId": "ad89d37ed99e0b3898a3a0aa324fef8d",
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -361,7 +361,7 @@
                     "Users"
                 ],
                 "summary": "Create a new user",
-                "operationId": "3ae5a09fa9d2f5ee8e83c710ecf99282",
+                "operationId": "7c0295c9b73cf476d44337496035b868",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -411,13 +411,13 @@
                 ]
             }
         },
-        "/v1/users/{id}": {
+        "/users/{id}": {
             "get": {
                 "tags": [
                     "Users"
                 ],
                 "summary": "Get user by ID",
-                "operationId": "1ad79b18416cb0591da413077153c977",
+                "operationId": "e4dcf715bf165e1c9b26dffb85c4c3ce",
                 "parameters": [
                     {
                         "name": "id",
@@ -471,7 +471,7 @@
                     "Users"
                 ],
                 "summary": "Update user",
-                "operationId": "5b437d95420768fc57c5198ce421953e",
+                "operationId": "829951c3b8d5484d10c44f2e19739ce0",
                 "parameters": [
                     {
                         "name": "id",
@@ -538,7 +538,7 @@
                     "Users"
                 ],
                 "summary": "Delete user",
-                "operationId": "5ca19c3794a3d1c02608fa801bfde6af",
+                "operationId": "37c054a3e1941cbad59aa6cd752d0b6f",
                 "parameters": [
                     {
                         "name": "id",
@@ -585,7 +585,7 @@
                 ]
             }
         },
-        "/v1/workspaces": {
+        "/workspaces": {
             "get": {
                 "tags": [
                     "Workspaces"
@@ -638,21 +638,22 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name"
+                                    "name",
+                                    "slug"
                                 ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
                                         "example": "Marketing Team"
                                     },
+                                    "slug": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                        "example": "marketing-team"
+                                    },
                                     "description": {
                                         "type": "string",
                                         "example": "Marketing campaigns workspace",
-                                        "nullable": true
-                                    },
-                                    "slug": {
-                                        "type": "string",
-                                        "example": "marketing-team",
                                         "nullable": true
                                     }
                                 },
@@ -694,7 +695,7 @@
                 ]
             }
         },
-        "/v1/workspaces/{slug}": {
+        "/workspaces/{slug}": {
             "get": {
                 "tags": [
                     "Workspaces"
@@ -745,7 +746,7 @@
                 ]
             }
         },
-        "/v1/workspaces/{id}": {
+        "/workspaces/{id}": {
             "put": {
                 "tags": [
                     "Workspaces"
@@ -879,7 +880,7 @@
                 ]
             }
         },
-        "/v1/workspaces/{workspaceId}/members": {
+        "/workspaces/{workspaceId}/members": {
             "post": {
                 "tags": [
                     "Workspaces"

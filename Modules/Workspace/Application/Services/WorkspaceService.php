@@ -32,8 +32,9 @@ class WorkspaceService
     {
         Log::channel('domain')->debug('Fetching workspace by slug', ['slug' => $slug]);
         $workspace = $this->workspaceRepository->findBySlug($slug);
+
         if (! $workspace) {
-            throw new \InvalidArgumentException("Workspace with slug '{$slug}' not found");
+            throw new \InvalidArgumentException(__('workspaces.not_found', ['slug' => $slug]));
         }
 
         return $workspace;
@@ -47,6 +48,7 @@ class WorkspaceService
         ]);
 
         $data = $workspaceDTO->toArray();
+        Log::channel('domain')->info('Data workspace', $data);
         $data['owner_id'] = $user->id;
         $workspaceDTO = WorkspaceDTO::fromArray($data);
 
@@ -62,14 +64,18 @@ class WorkspaceService
 
     public function updateWorkspace(int $id, WorkspaceDTO $workspaceDTO): WorkspaceEntity
     {
-        Log::channel('domain')->info('Updating workspace', ['workspace_id' => $id]);
+        $data = $workspaceDTO->toArray();
+        $filteredData = array_filter($data, fn ($value) => $value !== null);
 
-        $workspace = $this->workspaceRepository->update($id, $workspaceDTO);
-        if (! $workspace) {
-            throw new \InvalidArgumentException("Workspace with ID {$id} not found");
+        if (empty($filteredData)) {
+            throw new \InvalidArgumentException(__('workspaces.no_fields_to_update'));
         }
 
-        Log::channel('domain')->info('Workspace updated successfully', ['workspace_id' => $id]);
+        $workspace = $this->workspaceRepository->update($id, WorkspaceDTO::fromArray($filteredData));
+
+        if (! $workspace) {
+            throw new \InvalidArgumentException(__('workspaces.not_found_by_id', ['id' => $id]));
+        }
 
         return $workspace;
     }
@@ -80,13 +86,14 @@ class WorkspaceService
 
         $result = $this->workspaceRepository->delete($id);
 
-        if ($result) {
-            Log::channel('domain')->info('Workspace deleted successfully', ['workspace_id' => $id]);
-        } else {
+        if (! $result) {
             Log::channel('domain')->warning('Workspace not found for deletion', ['workspace_id' => $id]);
+            throw new \InvalidArgumentException(__('workspaces.not_found_by_id', ['id' => $id]));
         }
 
-        return $result;
+        Log::channel('domain')->info('Workspace deleted successfully', ['workspace_id' => $id]);
+
+        return true;
     }
 
     public function addUserToWorkspace(int $workspaceId, int $userId, string $role): bool
@@ -99,17 +106,10 @@ class WorkspaceService
 
         $validRoles = ['owner', 'admin', 'member'];
         if (! in_array($role, $validRoles)) {
-            throw new \InvalidArgumentException("Invalid role '{$role}'. Must be one of: ".implode(', ', $validRoles));
+            throw new \InvalidArgumentException(__('workspaces.invalid_role', ['role' => $role]));
         }
 
         $result = $this->workspaceRepository->addUserToWorkspace($workspaceId, $userId, $role);
-
-        if ($result) {
-            Log::channel('domain')->info('User added to workspace successfully', [
-                'workspace_id' => $workspaceId,
-                'user_id' => $userId,
-            ]);
-        }
 
         return $result;
     }
