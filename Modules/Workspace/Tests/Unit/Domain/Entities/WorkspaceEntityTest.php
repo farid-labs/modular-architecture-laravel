@@ -5,7 +5,6 @@ namespace Modules\Workspace\Tests\Unit\Domain\Entities;
 use Carbon\Carbon;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Domain\Enums\WorkspaceStatus;
-use Modules\Workspace\Domain\ValueObjects\WorkspaceName;
 use Modules\Workspace\Tests\TestCase;
 
 class WorkspaceEntityTest extends TestCase
@@ -16,7 +15,7 @@ class WorkspaceEntityTest extends TestCase
 
         $entity = new WorkspaceEntity(
             1,
-            'Test Workspace', // ✅ string (نه WorkspaceName)
+            'Test Workspace',
             'test-workspace',
             'Description',
             WorkspaceStatus::ACTIVE,
@@ -33,9 +32,6 @@ class WorkspaceEntityTest extends TestCase
         $this->assertTrue($entity->isActive());
     }
 
-    /**
-     * ✅ تست جدید برای الگوی Immutable با متد withName()
-     */
     public function test_with_name_returns_new_instance_with_updated_values(): void
     {
         $now = Carbon::now();

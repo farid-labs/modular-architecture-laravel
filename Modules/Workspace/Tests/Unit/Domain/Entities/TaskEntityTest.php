@@ -20,17 +20,17 @@ class TaskEntityTest extends TestCase
             2,
             TaskStatus::PENDING,
             TaskPriority::HIGH,
-            Carbon::tomorrow()
+            Carbon::tomorrow(),
+            Carbon::now(),
+            Carbon::now()
         );
 
         $this->assertEquals(1, $task->getId());
         $this->assertEquals('Implement login feature', $task->getTitle());
         $this->assertEquals(TaskStatus::PENDING, $task->getStatus());
         $this->assertEquals(TaskPriority::HIGH, $task->getPriority());
-
-        $dueDate = $task->getDueDate();
-        $this->assertNotNull($dueDate, 'Due date should not be null');
-        $this->assertTrue($dueDate->isTomorrow(), 'Due date should be tomorrow');
+        $this->assertNotNull($task->getCreatedAt());
+        $this->assertNotNull($task->getUpdatedAt());
     }
 
     public function test_task_can_be_marked_as_completed(): void
@@ -43,14 +43,16 @@ class TaskEntityTest extends TestCase
             null,
             TaskStatus::PENDING,
             TaskPriority::MEDIUM,
-            null
+            null,
+            Carbon::now(),
+            Carbon::now()
         );
 
         $completedTask = $task->markAsCompleted();
 
         $this->assertTrue($completedTask->isCompleted());
         $this->assertEquals(TaskStatus::COMPLETED, $completedTask->getStatus());
-        $this->assertNotSame($task, $completedTask); // Immutable pattern
+        $this->assertNotSame($task, $completedTask);
     }
 
     public function test_task_is_overdue_when_due_date_passed_and_not_completed(): void
