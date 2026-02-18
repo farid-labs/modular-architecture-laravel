@@ -7,22 +7,22 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Workspace\Domain\Entities\TaskAttachmentEntity;
 use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *     schema="TaskAttachmentResource",
- *     type="object",
- *     description="Task attachment resource representation",
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="task_id", type="integer", example=10),
- *     @OA\Property(property="file_name", type="string", example="document.pdf"),
- *     @OA\Property(property="file_path", type="string", example="attachments/document.pdf"),
- *     @OA\Property(property="file_type", type="string", example="application/pdf"),
- *     @OA\Property(property="file_size", type="integer", example=102400),
- *     @OA\Property(property="uploaded_by", type="integer", example=5),
- *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
- * )
- */
+#[OA\Schema(
+    schema: 'TaskAttachmentResource',
+    type: 'object',
+    description: 'Task attachment resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'task_id', type: 'integer', example: 10),
+        new OA\Property(property: 'file_name', type: 'string', example: 'document.pdf'),
+        new OA\Property(property: 'file_path', type: 'string', example: 'attachments/document.pdf'),
+        new OA\Property(property: 'file_type', type: 'string', example: 'application/pdf'),
+        new OA\Property(property: 'file_size', type: 'integer', example: 102400),
+        new OA\Property(property: 'uploaded_by', type: 'integer', example: 5),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+    ]
+)]
 class TaskAttachmentResource extends JsonResource
 {
     /**

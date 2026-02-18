@@ -24,4 +24,5 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 npm-debug.log
-yarn-error.log
+yarn-error.log/storage/api-docs/
+/storage/api-docs/

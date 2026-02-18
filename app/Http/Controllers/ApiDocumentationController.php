@@ -70,32 +70,6 @@ use OpenApi\Attributes as OA;
                     new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true, example: 'updated@example.com'),
                 ]
             ),
-            // Workspace Resource Schema
-            new OA\Schema(
-                schema: 'WorkspaceResource',
-                type: 'object',
-                properties: [
-                    new OA\Property(property: 'id', type: 'integer', example: 1),
-                    new OA\Property(property: 'name', type: 'string', example: 'Marketing Team'),
-                    new OA\Property(property: 'slug', type: 'string', example: 'marketing-team'),
-                    new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Marketing campaigns workspace'),
-                    new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive'], example: 'active'),
-                    new OA\Property(
-                        property: 'owner',
-                        type: 'object',
-                        nullable: true,
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer'),
-                            new OA\Property(property: 'name', type: 'string'),
-                            new OA\Property(property: 'email', type: 'string'),
-                        ]
-                    ),
-                    new OA\Property(property: 'members_count', type: 'integer', example: 5),
-                    new OA\Property(property: 'projects_count', type: 'integer', example: 3),
-                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
-                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
-                ]
-            ),
         ]
     )
 )]

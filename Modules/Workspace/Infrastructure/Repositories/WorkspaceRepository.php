@@ -32,8 +32,6 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     /**
      * Get a new workspace model instance.
-     *
-     * @return WorkspaceModel
      */
     private function getModel(): WorkspaceModel
     {
@@ -59,7 +57,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = $this->getModel()->with(['members'])->where('owner_id', $ownerId)->get();
 
-        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function create(WorkspaceDTO $workspaceDTO): WorkspaceEntity
@@ -83,7 +81,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             return null;
         }
 
-        $data = array_filter($workspaceDTO->toArray(), fn($value) => $value !== null);
+        $data = array_filter($workspaceDTO->toArray(), fn ($value) => $value !== null);
         $model->update($data);
 
         return $this->mapToEntity($model);
@@ -100,7 +98,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = $this->getModel()->with(['owner'])->get();
 
-        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function getWorkspacesByUser(int $userId): array
@@ -109,11 +107,11 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             ->withCount(['members', 'projects'])
             ->where(function ($query) use ($userId) {
                 $query->where('owner_id', $userId)
-                    ->orWhereHas('members', fn($q) => $q->where('user_id', $userId));
+                    ->orWhereHas('members', fn ($q) => $q->where('user_id', $userId));
             })
             ->get();
 
-        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function addUserToWorkspace(int $workspaceId, int $userId, string $role): bool
@@ -192,7 +190,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     public function isUserMemberOfWorkspace(int $workspaceId, int $userId): bool
     {
         return WorkspaceModel::where('id', $workspaceId)
-            ->whereHas('members', fn($q) => $q->where('user_id', $userId))
+            ->whereHas('members', fn ($q) => $q->where('user_id', $userId))
             ->exists();
     }
 
@@ -222,7 +220,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         }
 
         // Filter null values before update
-        $data = array_filter($taskDTO->toArray(), fn($value) => $value !== null);
+        $data = array_filter($taskDTO->toArray(), fn ($value) => $value !== null);
         $model->update($data);
 
         // Refresh model to get updated attributes

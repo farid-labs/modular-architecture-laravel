@@ -7,21 +7,27 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Workspace\Domain\Entities\ProjectEntity;
 use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *     schema="ProjectResource",
- *     type="object",
- *     description="Project resource representation",
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", example="Website Redesign"),
- *     @OA\Property(property="description", type="string", nullable=true, example="Redesign company website"),
- *     @OA\Property(property="workspace_id", type="integer", example=10),
- *     @OA\Property(property="status", type="string", enum={"active", "completed", "archived"}, example="active"),
- *     @OA\Property(property="is_active", type="boolean", example=true),
- *     @OA\Property(property="created_at", type="string", format="date-time", example="2026-02-17T14:18:47+00:00"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2026-02-17T14:18:47+00:00")
- * )
- */
+#[OA\Schema(
+    schema: 'ProjectResource',
+    type: 'object',
+    description: 'Project resource representation',
+    required: ['id', 'name', 'workspace_id', 'status'],
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'name', type: 'string', example: 'Website Redesign'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Redesign company website'),
+        new OA\Property(property: 'workspace_id', type: 'integer', example: 10),
+        new OA\Property(
+            property: 'status',
+            type: 'string',
+            enum: ['active', 'completed', 'archived'],
+            example: 'active'
+        ),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-02-17T14:18:47+00:00'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-02-17T14:18:47+00:00'),
+    ]
+)]
 class ProjectResource extends JsonResource
 {
     /**

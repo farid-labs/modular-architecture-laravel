@@ -7,26 +7,36 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *     schema="TaskResource",
- *     type="object",
- *     description="Task resource representation",
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="title", type="string", example="Implement login feature"),
- *     @OA\Property(property="description", type="string", nullable=true),
- *     @OA\Property(property="project_id", type="integer", example=1),
- *     @OA\Property(property="assigned_to", type="integer", nullable=true, example=2),
- *     @OA\Property(property="status", type="string", enum={"pending", "in_progress", "completed", "blocked", "cancelled"}, example="pending"),
- *     @OA\Property(property="priority", type="string", enum={"low", "medium", "high", "urgent"}, example="high"),
- *     @OA\Property(property="due_date", type="string", format="date", nullable=true),
- *     @OA\Property(property="is_overdue", type="boolean", example=false),
- *     @OA\Property(property="is_completed", type="boolean", example=false),
- *     @OA\Property(property="is_assigned", type="boolean", example=true),
- *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
- * )
- */
+#[OA\Schema(
+    schema: 'TaskResource',
+    type: 'object',
+    description: 'Task resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'title', type: 'string', example: 'Implement login feature'),
+        new OA\Property(property: 'description', type: 'string', nullable: true),
+        new OA\Property(property: 'project_id', type: 'integer', example: 1),
+        new OA\Property(property: 'assigned_to', type: 'integer', nullable: true, example: 2),
+        new OA\Property(
+            property: 'status',
+            type: 'string',
+            enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'],
+            example: 'pending'
+        ),
+        new OA\Property(
+            property: 'priority',
+            type: 'string',
+            enum: ['low', 'medium', 'high', 'urgent'],
+            example: 'high'
+        ),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'is_overdue', type: 'boolean', example: false),
+        new OA\Property(property: 'is_completed', type: 'boolean', example: false),
+        new OA\Property(property: 'is_assigned', type: 'boolean', example: true),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+    ]
+)]
 class TaskResource extends JsonResource
 {
     /**

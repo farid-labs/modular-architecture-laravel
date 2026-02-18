@@ -8,23 +8,34 @@ use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
 use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *     schema="WorkspaceResource",
- *     type="object",
- *     description="Workspace resource representation",
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", example="Marketing Team"),
- *     @OA\Property(property="slug", type="string", example="marketing-team"),
- *     @OA\Property(property="description", type="string", nullable=true),
- *     @OA\Property(property="status", type="string", enum={"active", "inactive", "suspended"}, example="active"),
- *     @OA\Property(property="owner", type="object", @OA\Property(property="id", type="integer", example=1)),
- *     @OA\Property(property="members_count", type="integer", example=5),
- *     @OA\Property(property="projects_count", type="integer", example=10),
- *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
- * )
- */
+#[OA\Schema(
+    schema: 'WorkspaceResource',
+    type: 'object',
+    description: 'Workspace resource representation',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'name', type: 'string', example: 'Marketing Team'),
+        new OA\Property(property: 'slug', type: 'string', example: 'marketing-team'),
+        new OA\Property(property: 'description', type: 'string', nullable: true),
+        new OA\Property(
+            property: 'status',
+            type: 'string',
+            enum: ['active', 'inactive', 'suspended'],
+            example: 'active'
+        ),
+        new OA\Property(
+            property: 'owner',
+            type: 'object',
+            properties: [
+                new OA\Property(property: 'id', type: 'integer', example: 1),
+            ]
+        ),
+        new OA\Property(property: 'members_count', type: 'integer', example: 5),
+        new OA\Property(property: 'projects_count', type: 'integer', example: 10),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+    ]
+)]
 class WorkspaceResource extends JsonResource
 {
     /**
