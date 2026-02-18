@@ -8,6 +8,8 @@ use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\DTOs\TaskDTO;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Domain\Entities\ProjectEntity;
+use Modules\Workspace\Domain\Entities\TaskAttachmentEntity;
+use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
@@ -246,20 +248,40 @@ class WorkspaceService
         return $updatedTask;
     }
 
-    public function addCommentToTask(int $taskId, string $comment, UserModel $user): void
+    /**
+     * Add a comment to a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @param  string  $comment  The comment text
+     * @param  UserModel  $user  The authenticated user
+     * @return TaskCommentEntity The created comment entity
+     */
+    public function addCommentToTask(int $taskId, string $comment, UserModel $user): TaskCommentEntity
     {
         if (strlen($comment) < 3) {
             throw new \InvalidArgumentException('Comment must be at least 3 characters');
         }
 
-        $this->workspaceRepository->addCommentToTask($taskId, $comment, $user->id);
-
-        Log::channel('domain')->info('Comment added to task', [
+        Log::channel('domain')->info('Adding comment to task', [
             'task_id' => $taskId,
             'user_id' => $user->id,
         ]);
+
+        // returns TaskCommentEntity
+        return $this->workspaceRepository->addCommentToTask($taskId, $comment, $user->id);
     }
 
+    /**
+     * Upload an attachment to a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @param  string  $filePath  The file path
+     * @param  string  $fileName  The file name
+     * @param  string  $mimeType  The MIME type
+     * @param  int  $fileSize  The file size in bytes
+     * @param  UserModel  $user  The authenticated user
+     * @return TaskAttachmentEntity The created attachment entity
+     */
     public function uploadAttachmentToTask(
         int $taskId,
         string $filePath,
@@ -267,7 +289,7 @@ class WorkspaceService
         string $mimeType,
         int $fileSize,
         UserModel $user
-    ): void {
+    ): TaskAttachmentEntity {
         $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
         if (! in_array($mimeType, $allowedTypes)) {
             throw new \InvalidArgumentException('Invalid file type');
@@ -277,7 +299,14 @@ class WorkspaceService
             throw new \InvalidArgumentException('File size exceeds maximum limit');
         }
 
-        $this->workspaceRepository->uploadAttachmentToTask(
+        Log::channel('domain')->info('Uploading attachment to task', [
+            'task_id' => $taskId,
+            'file_name' => $fileName,
+            'user_id' => $user->id,
+        ]);
+
+        // returns TaskAttachmentEntity
+        return $this->workspaceRepository->uploadAttachmentToTask(
             $taskId,
             $filePath,
             $fileName,
@@ -285,11 +314,5 @@ class WorkspaceService
             $fileSize,
             $user->id
         );
-
-        Log::channel('domain')->info('Attachment uploaded to task', [
-            'task_id' => $taskId,
-            'file_name' => $fileName,
-            'user_id' => $user->id,
-        ]);
     }
 }

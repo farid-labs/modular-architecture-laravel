@@ -2,6 +2,7 @@
 
 namespace Modules\Workspace\Application\DTOs;
 
+use Carbon\CarbonInterface;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Spatie\DataTransferObject\DataTransferObject;
 
@@ -15,6 +16,10 @@ class ProjectDTO extends DataTransferObject
 
     public ProjectStatus $status = ProjectStatus::ACTIVE;
 
+    public ?CarbonInterface $createdAt = null;
+
+    public ?CarbonInterface $updatedAt = null;
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -27,6 +32,12 @@ class ProjectDTO extends DataTransferObject
             'status' => isset($data['status'])
                 ? ProjectStatus::from($data['status'])
                 : ProjectStatus::ACTIVE,
+            'createdAt' => isset($data['created_at'])
+                ? \Carbon\Carbon::parse($data['created_at'])
+                : null,
+            'updatedAt' => isset($data['updated_at'])
+                ? \Carbon\Carbon::parse($data['updated_at'])
+                : null,
         ]);
     }
 

@@ -23,6 +23,10 @@ class TaskDTO extends DataTransferObject
 
     public ?CarbonInterface $dueDate = null;
 
+    public ?CarbonInterface $createdAt = null;
+
+    public ?CarbonInterface $updatedAt = null;
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -41,6 +45,12 @@ class TaskDTO extends DataTransferObject
                 : TaskPriority::MEDIUM,
             'dueDate' => isset($data['due_date'])
                 ? \Carbon\Carbon::parse($data['due_date'])
+                : null,
+            'createdAt' => isset($data['created_at'])
+                ? \Carbon\Carbon::parse($data['created_at'])
+                : null,
+            'updatedAt' => isset($data['updated_at'])
+                ? \Carbon\Carbon::parse($data['updated_at'])
                 : null,
         ]);
     }
