@@ -7,8 +7,8 @@ use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
 
 /**
- * Domain entity representing a workspace task
- * Immutable value object with full encapsulation and business logic
+ * Domain entity representing a workspace task.
+ * Immutable value object with full encapsulation and business logic.
  */
 class TaskEntity
 {
@@ -20,7 +20,9 @@ class TaskEntity
         private readonly ?int $assignedTo,
         private readonly TaskStatus $status,
         private readonly TaskPriority $priority,
-        private readonly ?CarbonInterface $dueDate
+        private readonly ?CarbonInterface $dueDate,
+        private readonly ?CarbonInterface $createdAt = null,
+        private readonly ?CarbonInterface $updatedAt = null
     ) {}
 
     public function getId(): int
@@ -63,6 +65,16 @@ class TaskEntity
         return $this->dueDate;
     }
 
+    public function getCreatedAt(): ?CarbonInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): ?CarbonInterface
+    {
+        return $this->updatedAt;
+    }
+
     public function isOverdue(): bool
     {
         return $this->dueDate !== null
@@ -80,7 +92,9 @@ class TaskEntity
             $this->assignedTo,
             TaskStatus::COMPLETED,
             $this->priority,
-            $this->dueDate
+            $this->dueDate,
+            $this->createdAt,
+            $this->updatedAt
         );
     }
 
@@ -95,6 +109,8 @@ class TaskEntity
     }
 
     /**
+     * Convert entity to array for persistence or serialization.
+     *
      * @return array{
      *     id: int,
      *     title: string,
@@ -103,7 +119,9 @@ class TaskEntity
      *     assigned_to: int|null,
      *     status: string,
      *     priority: string,
-     *     due_date: string|null
+     *     due_date: string|null,
+     *     created_at: string|null,
+     *     updated_at: string|null
      * }
      */
     public function toArray(): array
@@ -117,6 +135,8 @@ class TaskEntity
             'status' => $this->status->value,
             'priority' => $this->priority->value,
             'due_date' => $this->dueDate?->toIso8601String(),
+            'created_at' => $this->createdAt?->toIso8601String(),
+            'updated_at' => $this->updatedAt?->toIso8601String(),
         ];
     }
 }

@@ -2,9 +2,11 @@
 
 namespace Modules\Workspace\Domain\Entities;
 
+use Carbon\CarbonInterface;
+
 /**
- * Value Object representing a task attachment
- * Immutable entity with full encapsulation
+ * Domain entity representing a task attachment.
+ * Immutable value object with full encapsulation.
  */
 class TaskAttachmentEntity
 {
@@ -15,7 +17,9 @@ class TaskAttachmentEntity
         private readonly string $filePath,
         private readonly string $fileName,
         private readonly string $mimeType,
-        private readonly int $fileSize
+        private readonly int $fileSize,
+        private readonly ?CarbonInterface $createdAt = null,
+        private readonly ?CarbonInterface $updatedAt = null
     ) {}
 
     public function getId(): int
@@ -53,9 +57,17 @@ class TaskAttachmentEntity
         return $this->fileSize;
     }
 
+    public function getCreatedAt(): ?CarbonInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): ?CarbonInterface
+    {
+        return $this->updatedAt;
+    }
+
     /**
-     * Convert entity to array for persistence or serialization.
-     *
      * @return array{
      *     id: int,
      *     task_id: int,
@@ -63,7 +75,9 @@ class TaskAttachmentEntity
      *     file_path: string,
      *     file_name: string,
      *     mime_type: string,
-     *     file_size: int
+     *     file_size: int,
+     *     created_at: string|null,
+     *     updated_at: string|null
      * }
      */
     public function toArray(): array
@@ -76,6 +90,8 @@ class TaskAttachmentEntity
             'file_name' => $this->fileName,
             'mime_type' => $this->mimeType,
             'file_size' => $this->fileSize,
+            'created_at' => $this->createdAt?->toIso8601String(),
+            'updated_at' => $this->updatedAt?->toIso8601String(),
         ];
     }
 }

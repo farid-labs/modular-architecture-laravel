@@ -2,9 +2,11 @@
 
 namespace Modules\Workspace\Domain\Entities;
 
+use Carbon\CarbonInterface;
+
 /**
- * Domain entity representing a task comment
- * Immutable value object with full encapsulation
+ * Domain entity representing a task comment.
+ * Immutable value object with full encapsulation.
  */
 class TaskCommentEntity
 {
@@ -12,7 +14,9 @@ class TaskCommentEntity
         private readonly int $id,
         private readonly int $taskId,
         private readonly int $userId,
-        private readonly string $comment
+        private readonly string $comment,
+        private readonly ?CarbonInterface $createdAt = null,
+        private readonly ?CarbonInterface $updatedAt = null
     ) {}
 
     public function getId(): int
@@ -35,13 +39,28 @@ class TaskCommentEntity
         return $this->comment;
     }
 
+    public function getCreatedAt(): ?CarbonInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): ?CarbonInterface
+    {
+        return $this->updatedAt;
+    }
+
+    /**
+     * Create a new instance with an updated comment (Immutable pattern).
+     */
     public function updateComment(string $newComment): self
     {
         return new self(
             $this->id,
             $this->taskId,
             $this->userId,
-            $newComment
+            $newComment,
+            $this->createdAt,
+            $this->updatedAt
         );
     }
 
@@ -50,7 +69,9 @@ class TaskCommentEntity
      *     id: int,
      *     task_id: int,
      *     user_id: int,
-     *     comment: string
+     *     comment: string,
+     *     created_at: string|null,
+     *     updated_at: string|null
      * }
      */
     public function toArray(): array
@@ -60,6 +81,8 @@ class TaskCommentEntity
             'task_id' => $this->taskId,
             'user_id' => $this->userId,
             'comment' => $this->comment,
+            'created_at' => $this->createdAt?->toIso8601String(),
+            'updated_at' => $this->updatedAt?->toIso8601String(),
         ];
     }
 }

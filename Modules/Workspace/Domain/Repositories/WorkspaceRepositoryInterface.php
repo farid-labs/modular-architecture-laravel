@@ -6,9 +6,15 @@ use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\DTOs\TaskDTO;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Domain\Entities\ProjectEntity;
+use Modules\Workspace\Domain\Entities\TaskAttachmentEntity;
+use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 
+/**
+ * Workspace repository interface.
+ * Defines the contract for workspace data access operations.
+ */
 interface WorkspaceRepositoryInterface
 {
     public function findById(int $id): ?WorkspaceEntity;
@@ -54,8 +60,27 @@ interface WorkspaceRepositoryInterface
 
     public function isUserMemberOfProject(int $projectId, int $userId): bool;
 
-    public function addCommentToTask(int $taskId, string $comment, int $userId): void;
+    /**
+     * Add a comment to a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @param  string  $comment  The comment text
+     * @param  int  $userId  The user ID
+     * @return TaskCommentEntity The created comment entity
+     */
+    public function addCommentToTask(int $taskId, string $comment, int $userId): TaskCommentEntity;
 
+    /**
+     * Upload an attachment to a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @param  string  $filePath  The file path
+     * @param  string  $fileName  The file name
+     * @param  string  $mimeType  The MIME type
+     * @param  int  $fileSize  The file size in bytes
+     * @param  int  $userId  The user ID
+     * @return TaskAttachmentEntity The created attachment entity
+     */
     public function uploadAttachmentToTask(
         int $taskId,
         string $filePath,
@@ -63,5 +88,5 @@ interface WorkspaceRepositoryInterface
         string $mimeType,
         int $fileSize,
         int $userId
-    ): void;
+    ): TaskAttachmentEntity;
 }

@@ -2,33 +2,24 @@
 
 namespace Modules\Workspace\Domain\Entities;
 
+use Carbon\CarbonInterface;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 
+/**
+ * Domain entity representing a workspace project.
+ * Immutable value object with full encapsulation and business logic.
+ */
 class ProjectEntity
 {
-    private int $id;
-
-    private string $name;
-
-    private ?string $description;
-
-    private int $workspaceId;
-
-    private ProjectStatus $status;
-
     public function __construct(
-        int $id,
-        string $name,
-        ?string $description,
-        int $workspaceId,
-        ProjectStatus $status
-    ) {
-        $this->id = $id;
-        $this->name = $name;
-        $this->description = $description;
-        $this->workspaceId = $workspaceId;
-        $this->status = $status;
-    }
+        private readonly int $id,
+        private readonly string $name,
+        private readonly ?string $description,
+        private readonly int $workspaceId,
+        private readonly ProjectStatus $status,
+        private readonly ?CarbonInterface $createdAt = null,
+        private readonly ?CarbonInterface $updatedAt = null
+    ) {}
 
     public function getId(): int
     {
@@ -55,10 +46,54 @@ class ProjectEntity
         return $this->status;
     }
 
+    public function getCreatedAt(): ?CarbonInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): ?CarbonInterface
+    {
+        return $this->updatedAt;
+    }
+
     public function isActive(): bool
     {
         return $this->status->isActive();
     }
 
-    // Additional domain methods as needed (e.g., completeProject)
+    public function isCompleted(): bool
+    {
+        return $this->status->isCompleted();
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->status->isArchived();
+    }
+
+    /**
+     * Convert entity to array for persistence or serialization.
+     *
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     description: string|null,
+     *     workspace_id: int,
+     *     status: string,
+     *     created_at: string|null,
+     *     updated_at: string|null
+     * }
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'description' => $this->description,
+            'workspace_id' => $this->workspaceId,
+            'status' => $this->status->value,
+            'created_at' => $this->createdAt?->toIso8601String(),
+            'updated_at' => $this->updatedAt?->toIso8601String(),
+        ];
+    }
 }
