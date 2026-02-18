@@ -8,8 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
-use Modules\Workspace\Presentation\Requests\StoreWorkspaceRequest;
+use Modules\Workspace\Presentation\Requests\StoreTaskCommentRequest;
 use Modules\Workspace\Presentation\Requests\UpdateWorkspaceRequest;
+use Modules\Workspace\Presentation\Resources\TaskCommentResource;
 use Modules\Workspace\Presentation\Resources\WorkspaceResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -147,20 +148,22 @@ class WorkspaceController extends Controller
             new OA\Response(response: 422, description: 'Validation error', ref: '#/components/schemas/ErrorResponse'),
         ]
     )]
-    public function store(StoreWorkspaceRequest $request): JsonResponse
+    public function store(StoreTaskCommentRequest $request, int $taskId): JsonResponse
     {
-        $workspaceDTO = WorkspaceDTO::fromArray($request->validated());
         $user = $request->user();
-
         if ($user === null) {
             throw new UnauthorizedHttpException('Unauthorized');
         }
 
-        $workspace = $this->workspaceService->createWorkspace($workspaceDTO, $user);
+        $comment = $this->workspaceService->addCommentToTask(
+            $taskId,
+            $request->comment,
+            $user
+        );
 
         return response()->json([
-            'data' => new WorkspaceResource($workspace),
-            'message' => __('workspaces.created'),
+            'data' => new TaskCommentResource($comment),
+            'message' => 'Comment added successfully',
         ], 201);
     }
 
