@@ -11,6 +11,8 @@ use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Infrastructure\Database\Factories\ProjectFactory;
 
 /**
+ * Project persistence model.
+ *
  * @property int $id
  * @property string $name
  * @property string|null $description
@@ -41,6 +43,8 @@ class ProjectModel extends Model
     ];
 
     /**
+     * Get the workspace that owns the project.
+     *
      * @return BelongsTo<WorkspaceModel, $this>
      */
     public function workspace(): BelongsTo
@@ -49,6 +53,8 @@ class ProjectModel extends Model
     }
 
     /**
+     * Get the tasks for the project.
+     *
      * @return HasMany<TaskModel, $this>
      */
     public function tasks(): HasMany
@@ -57,13 +63,8 @@ class ProjectModel extends Model
     }
 
     /**
-     * @return BelongsTo<WorkspaceModel, $this>
+     * Boot a new factory instance.
      */
-    public function projectModel(): BelongsTo
-    {
-        return $this->belongsTo(WorkspaceModel::class, 'workspace_id');
-    }
-
     protected static function newFactory(): ProjectFactory
     {
         return ProjectFactory::new();

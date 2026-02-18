@@ -13,7 +13,7 @@ class WorkspaceServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             WorkspaceRepositoryInterface::class,
-            fn ($app) => new WorkspaceRepository(new WorkspaceModel)
+            fn ($app) => new WorkspaceRepository(WorkspaceModel::class)
         );
     }
 

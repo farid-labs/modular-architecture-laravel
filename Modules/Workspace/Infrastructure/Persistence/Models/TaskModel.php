@@ -11,6 +11,8 @@ use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskFactory;
 
 /**
+ * Task persistence model.
+ *
  * @property int $id
  * @property string $title
  * @property string|null $description
@@ -25,9 +27,7 @@ use Modules\Workspace\Infrastructure\Database\Factories\TaskFactory;
 class TaskModel extends Model
 {
     /** @use HasFactory<TaskFactory> */
-    use HasFactory;
-
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'tasks';
 
@@ -48,14 +48,18 @@ class TaskModel extends Model
     ];
 
     /**
+     * Get the project that owns the task.
+     *
      * @return BelongsTo<ProjectModel, $this>
      */
-    public function ProjectModel(): BelongsTo
+    public function project(): BelongsTo
     {
-        return $this->belongsTo(ProjectModel::class);
+        return $this->belongsTo(ProjectModel::class, 'project_id');
     }
 
     /**
+     * Get the user assigned to the task.
+     *
      * @return BelongsTo<UserModel, $this>
      */
     public function assignedUser(): BelongsTo
@@ -64,31 +68,44 @@ class TaskModel extends Model
     }
 
     /**
+     * Get the comments for the task.
+     *
      * @return HasMany<TaskCommentModel, $this>
      */
     public function comments(): HasMany
     {
-        return $this->hasMany(TaskCommentModel::class);
+        return $this->hasMany(TaskCommentModel::class, 'task_id');
     }
 
     /**
+     * Get the attachments for the task.
+     *
      * @return HasMany<TaskAttachmentModel, $this>
      */
     public function attachments(): HasMany
     {
-        return $this->hasMany(TaskAttachmentModel::class);
+        return $this->hasMany(TaskAttachmentModel::class, 'task_id');
     }
 
+    /**
+     * Determine if the task is active (pending or in progress).
+     */
     public function isActive(): bool
     {
         return $this->status->value === 'pending' || $this->status->value === 'in_progress';
     }
 
+    /**
+     * Determine if the task is completed.
+     */
     public function isCompleted(): bool
     {
         return $this->status->value === 'completed';
     }
 
+    /**
+     * Determine if the task is overdue.
+     */
     public function isOverdue(): bool
     {
         return $this->due_date && $this->due_date->isPast() && ! $this->isCompleted();

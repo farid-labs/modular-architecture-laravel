@@ -33,9 +33,9 @@ class TaskCommentModel extends Model
     /**
      * @return BelongsTo<TaskModel, $this>
      */
-    public function TaskModel(): BelongsTo
+    public function task(): BelongsTo
     {
-        return $this->belongsTo(TaskModel::class);
+        return $this->belongsTo(TaskModel::class, 'task_id');
     }
 
     /**
