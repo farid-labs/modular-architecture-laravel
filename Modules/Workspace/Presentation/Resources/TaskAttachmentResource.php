@@ -26,17 +26,20 @@ use OpenApi\Attributes as OA;
 class TaskAttachmentResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform the resource into an array for API responses.
+     * Converts the TaskAttachmentEntity into a JSON-friendly format.
      *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
+        // Fallback to default array transformation if resource is not a TaskAttachmentEntity
         if (! $this->resource instanceof TaskAttachmentEntity) {
             /** @var array<string, mixed> */
             return parent::toArray($request);
         }
 
+        // Map TaskAttachmentEntity properties to array keys
         return [
             'id' => $this->resource->getId(),
             'task_id' => $this->resource->getTaskId(),

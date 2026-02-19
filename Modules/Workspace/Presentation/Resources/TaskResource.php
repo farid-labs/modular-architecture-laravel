@@ -40,17 +40,20 @@ use OpenApi\Attributes as OA;
 class TaskResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform the resource into an array for API responses.
+     * Converts the TaskEntity into a JSON-friendly format.
      *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
+        // Fallback to default array transformation if resource is not a TaskEntity
         if (! $this->resource instanceof TaskEntity) {
             /** @var array<string, mixed> */
             return parent::toArray($request);
         }
 
+        // Map TaskEntity properties to array keys
         return [
             'id' => $this->resource->getId(),
             'title' => $this->resource->getTitle(),

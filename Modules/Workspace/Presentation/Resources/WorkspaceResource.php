@@ -39,12 +39,14 @@ use OpenApi\Attributes as OA;
 class WorkspaceResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform the resource into an array for API responses.
+     * Converts either WorkspaceEntity or WorkspaceModel into a JSON-friendly format.
      *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
+        // Transform WorkspaceEntity instance
         if ($this->resource instanceof WorkspaceEntity) {
             return [
                 'id' => $this->resource->getId(),
@@ -60,6 +62,7 @@ class WorkspaceResource extends JsonResource
             ];
         }
 
+        // Transform WorkspaceModel instance (Eloquent model)
         if ($this->resource instanceof WorkspaceModel) {
             return [
                 'id' => $this->resource->id,
@@ -79,6 +82,7 @@ class WorkspaceResource extends JsonResource
             ];
         }
 
+        // Return empty array for unsupported resource types
         return [];
     }
 }
