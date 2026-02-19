@@ -8,9 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
-use Modules\Workspace\Presentation\Requests\StoreTaskCommentRequest;
+use Modules\Workspace\Presentation\Requests\StoreWorkspaceRequest;
 use Modules\Workspace\Presentation\Requests\UpdateWorkspaceRequest;
-use Modules\Workspace\Presentation\Resources\TaskCommentResource;
 use Modules\Workspace\Presentation\Resources\WorkspaceResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -18,8 +17,10 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 #[OA\Tag(name: 'Workspaces', description: 'Create and manage collaborative workspaces with member access control')]
 class WorkspaceController extends Controller
 {
+    // Inject WorkspaceService into the controller
     public function __construct(private WorkspaceService $workspaceService) {}
 
+    // ==================== LIST WORKSPACES ====================
     #[OA\Get(
         path: '/workspaces',
         operationId: 'listWorkspaces',
@@ -47,18 +48,22 @@ class WorkspaceController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
+        // Get authenticated user
         $user = $request->user();
         if ($user === null) {
             throw new UnauthorizedHttpException('Unauthorized');
         }
+
+        // Retrieve all workspaces for the user
         $workspaces = $this->workspaceService->getWorkspacesByUser($user->id);
 
         return response()->json([
             'data' => WorkspaceResource::collection($workspaces),
-            'message' => 'Workspaces retrieved successfully',
+            'message' => __('workspaces.workspaces_retrieved'),
         ]);
     }
 
+    // ==================== GET WORKSPACE BY SLUG ====================
     #[OA\Get(
         path: '/workspaces/{slug}',
         operationId: 'getWorkspaceBySlug',
@@ -80,12 +85,13 @@ class WorkspaceController extends Controller
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Unauthorized', ref: '#/components/schemas/ErrorResponse'),
-            new OA\Response(response: 404, description: 'Workspace not found', ref: '#/components/schemas/ErrorResponse'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 404, description: 'Workspace not found'),
         ]
     )]
     public function show(string $slug): JsonResponse
     {
+        // Prevent numeric slugs
         if (is_numeric($slug)) {
             return response()->json([
                 'message' => __('workspaces.invalid_parameter'),
@@ -93,14 +99,23 @@ class WorkspaceController extends Controller
             ], 400);
         }
 
-        $workspace = $this->workspaceService->getWorkspaceBySlug($slug);
+        try {
+            // Retrieve workspace by slug
+            $workspace = $this->workspaceService->getWorkspaceBySlug($slug);
 
-        return response()->json([
-            'data' => new WorkspaceResource($workspace),
-            'message' => __('workspaces.retrieved'),
-        ]);
+            return response()->json([
+                'data' => new WorkspaceResource($workspace),
+                'message' => __('workspaces.retrieved'),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            // Handle workspace not found
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 404);
+        }
     }
 
+    // ==================== CREATE WORKSPACE ====================
     #[OA\Post(
         path: '/workspaces',
         operationId: 'createWorkspace',
@@ -113,11 +128,7 @@ class WorkspaceController extends Controller
             content: new OA\JsonContent(
                 required: ['name', 'slug'],
                 properties: [
-                    new OA\Property(
-                        property: 'name',
-                        type: 'string',
-                        example: 'Marketing Team'
-                    ),
+                    new OA\Property(property: 'name', type: 'string', example: 'Marketing Team'),
                     new OA\Property(
                         property: 'slug',
                         type: 'string',
@@ -144,29 +155,31 @@ class WorkspaceController extends Controller
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Unauthorized', ref: '#/components/schemas/ErrorResponse'),
-            new OA\Response(response: 422, description: 'Validation error', ref: '#/components/schemas/ErrorResponse'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
-    public function store(StoreTaskCommentRequest $request, int $taskId): JsonResponse
+    public function store(StoreWorkspaceRequest $request): JsonResponse
     {
+        // Get authenticated user
         $user = $request->user();
         if ($user === null) {
             throw new UnauthorizedHttpException('Unauthorized');
         }
 
-        $comment = $this->workspaceService->addCommentToTask(
-            $taskId,
-            $request->comment,
-            $user
-        );
+        // Convert validated request data into DTO
+        $workspaceDTO = WorkspaceDTO::fromArray($request->validated());
+
+        // Create workspace via service
+        $workspace = $this->workspaceService->createWorkspace($workspaceDTO, $user);
 
         return response()->json([
-            'data' => new TaskCommentResource($comment),
-            'message' => 'Comment added successfully',
+            'data' => new WorkspaceResource($workspace),
+            'message' => __('workspaces.workspace_created'),
         ], 201);
     }
 
+    // ==================== UPDATE WORKSPACE ====================
     #[OA\Put(
         path: '/workspaces/{id}',
         operationId: 'updateWorkspace',
@@ -206,6 +219,7 @@ class WorkspaceController extends Controller
     )]
     public function update(UpdateWorkspaceRequest $request, int $id): JsonResponse
     {
+        // Validate workspace ID
         if ($id <= 0) {
             return response()->json([
                 'message' => __('workspaces.invalid_id_format'),
@@ -214,6 +228,7 @@ class WorkspaceController extends Controller
         }
 
         try {
+            // Remove null fields from validated data
             $validatedData = array_filter($request->validated(), fn ($value) => $value !== null);
 
             if (empty($validatedData)) {
@@ -222,6 +237,7 @@ class WorkspaceController extends Controller
                 ], 400);
             }
 
+            // Convert to DTO and update workspace
             $workspaceDTO = WorkspaceDTO::fromArray($validatedData);
             $workspace = $this->workspaceService->updateWorkspace($id, $workspaceDTO);
 
@@ -230,15 +246,18 @@ class WorkspaceController extends Controller
                 'message' => __('workspaces.updated'),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            // Return validation errors
             return response()->json([
                 'message' => __('workspaces.validation_failed'),
                 'errors' => $e->errors(),
             ], 422);
         } catch (\InvalidArgumentException $e) {
+            // Workspace not found
             return response()->json([
                 'message' => $e->getMessage(),
             ], 404);
         } catch (\Exception $e) {
+            // Log unexpected errors
             Log::error('Workspace update failed', [
                 'id' => $id,
                 'error' => $e->getMessage(),
@@ -250,6 +269,7 @@ class WorkspaceController extends Controller
         }
     }
 
+    // ==================== DELETE WORKSPACE ====================
     #[OA\Delete(
         path: '/workspaces/{id}',
         operationId: 'deleteWorkspace',
@@ -270,6 +290,7 @@ class WorkspaceController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
+            // Attempt to delete workspace
             $deleted = $this->workspaceService->deleteWorkspace($id);
 
             if (! $deleted) {
@@ -288,6 +309,7 @@ class WorkspaceController extends Controller
         }
     }
 
+    // ==================== ADD WORKSPACE MEMBER ====================
     #[OA\Post(
         path: '/workspaces/{workspaceId}/members',
         operationId: 'addWorkspaceMember',
@@ -318,11 +340,13 @@ class WorkspaceController extends Controller
     )]
     public function addMember(Request $request, int $workspaceId): JsonResponse
     {
+        // Validate request input
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'role' => 'required|in:owner,admin,member',
         ]);
 
+        // Add user to workspace via service
         $result = $this->workspaceService->addUserToWorkspace(
             $workspaceId,
             $request->user_id,
@@ -340,6 +364,7 @@ class WorkspaceController extends Controller
         ]);
     }
 
+    // ==================== REMOVE WORKSPACE MEMBER ====================
     #[OA\Delete(
         path: '/workspaces/{workspaceId}/members',
         operationId: 'removeWorkspaceMember',
@@ -358,27 +383,31 @@ class WorkspaceController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Member removed successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 204, description: 'Member removed successfully'),
             new OA\Response(response: 401, description: 'Unauthorized', ref: '#/components/schemas/ErrorResponse'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions', ref: '#/components/schemas/ErrorResponse'),
-            new OA\Response(response: 404, description: 'Workspace or user not found', ref: '#/components/schemas/ErrorResponse'),
+            new OA\Response(response: 404, description: 'Workspace, user or membership not found', ref: '#/components/schemas/ErrorResponse'),
             new OA\Response(response: 422, description: 'Validation error', ref: '#/components/schemas/ErrorResponse'),
         ]
     )]
     public function removeMember(Request $request, int $workspaceId): JsonResponse
     {
+        // Validate user_id
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'required|integer|exists:users,id',
         ]);
 
-        $result = $this->workspaceService->removeUserFromWorkspace(
-            $workspaceId,
-            $request->user_id
-        );
+        $targetUserId = $request->input('user_id');
 
-        if (! $result) {
+        // Remove user from workspace via service
+        $affected = $this->workspaceService->removeUserFromWorkspace($workspaceId, $targetUserId);
+
+        if ($affected === 0) {
             return response()->json([
-                'message' => __('workspaces.not_found_by_id', ['id' => $workspaceId]),
+                'message' => __('workspaces.membership_not_found', [
+                    'user_id' => $targetUserId,
+                    'workspace_id' => $workspaceId,
+                ]),
             ], 404);
         }
 
