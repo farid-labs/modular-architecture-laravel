@@ -48,7 +48,7 @@ class TaskModel extends Model
     ];
 
     /**
-     * Get the project that owns the task.
+     * Task belongs to a Project.
      *
      * @return BelongsTo<ProjectModel, $this>
      */
@@ -58,7 +58,7 @@ class TaskModel extends Model
     }
 
     /**
-     * Get the user assigned to the task.
+     * Task belongs to an assigned User.
      *
      * @return BelongsTo<UserModel, $this>
      */
@@ -68,7 +68,7 @@ class TaskModel extends Model
     }
 
     /**
-     * Get the comments for the task.
+     * Task has many comments.
      *
      * @return HasMany<TaskCommentModel, $this>
      */
@@ -78,7 +78,7 @@ class TaskModel extends Model
     }
 
     /**
-     * Get the attachments for the task.
+     * Task has many attachments.
      *
      * @return HasMany<TaskAttachmentModel, $this>
      */
@@ -88,26 +88,34 @@ class TaskModel extends Model
     }
 
     /**
-     * Determine if the task is active (pending or in progress).
+     * Determine if task is active (pending or in progress).
      */
     public function isActive(): bool
     {
-        return $this->status->value === 'pending' || $this->status->value === 'in_progress';
+        return $this->status->isPending() || $this->status->isInProgress();
     }
 
     /**
-     * Determine if the task is completed.
+     * Determine if task is completed.
      */
     public function isCompleted(): bool
     {
-        return $this->status->value === 'completed';
+        return $this->status->isCompleted();
     }
 
     /**
-     * Determine if the task is overdue.
+     * Determine if task is overdue.
      */
     public function isOverdue(): bool
     {
-        return $this->due_date && $this->due_date->isPast() && ! $this->isCompleted();
+        return $this->due_date?->isPast() && ! $this->isCompleted();
+    }
+
+    /**
+     * Boot a new factory instance for this model.
+     */
+    protected static function newFactory(): TaskFactory
+    {
+        return TaskFactory::new();
     }
 }

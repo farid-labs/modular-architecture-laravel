@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Domain\Enums\WorkspaceStatus;
 use Modules\Workspace\Domain\ValueObjects\WorkspaceName;
-use Modules\Workspace\Infrastructure\Database\Factories\WorkspaceFactory; // Assuming factory exists; implement if needed
+use Modules\Workspace\Infrastructure\Database\Factories\WorkspaceFactory;
 
 /**
  * @property int $id
@@ -29,9 +29,7 @@ use Modules\Workspace\Infrastructure\Database\Factories\WorkspaceFactory; // Ass
 class WorkspaceModel extends Model
 {
     /** @use HasFactory<WorkspaceFactory> */
-    use HasFactory;
-
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'workspaces';
 
@@ -48,6 +46,8 @@ class WorkspaceModel extends Model
     ];
 
     /**
+     * Workspace belongs to an owner (User).
+     *
      * @return BelongsTo<UserModel, $this>
      */
     public function owner(): BelongsTo
@@ -56,6 +56,8 @@ class WorkspaceModel extends Model
     }
 
     /**
+     * Workspace has many members (Users) via pivot table.
+     *
      * @return BelongsToMany<UserModel, $this, \Illuminate\Database\Eloquent\Relations\Pivot, 'pivot'>
      */
     public function members(): BelongsToMany
@@ -69,6 +71,8 @@ class WorkspaceModel extends Model
     }
 
     /**
+     * Workspace has many projects.
+     *
      * @return HasMany<ProjectModel, $this>
      */
     public function projects(): HasMany
@@ -76,34 +80,60 @@ class WorkspaceModel extends Model
         return $this->hasMany(ProjectModel::class, 'workspace_id');
     }
 
+    /**
+     * Get workspace name.
+     */
     public function getName(): string
     {
         return $this->name;
     }
 
+    /**
+     * Get workspace slug.
+     */
     public function getSlug(): string
     {
         return $this->slug;
     }
 
+    /**
+     * Check if workspace is active.
+     */
     public function isActive(): bool
     {
-        return $this->status === WorkspaceStatus::ACTIVE;
+        return $this->status->isActive();
     }
 
+    /**
+     * Update workspace name and slug using value object.
+     */
     public function updateName(WorkspaceName $name): void
     {
         $this->name = $name->getValue();
         $this->slug = $name->getSlug();
     }
 
+    /**
+     * Activate workspace.
+     */
     public function activate(): void
     {
         $this->status = WorkspaceStatus::ACTIVE;
     }
 
+    /**
+     * Deactivate workspace.
+     */
     public function deactivate(): void
     {
         $this->status = WorkspaceStatus::INACTIVE;
+    }
+
+    /**
+     * Boot a new factory instance.
+     */
+    protected static function newFactory(): WorkspaceFactory
+    {
+        return WorkspaceFactory::new();
     }
 }

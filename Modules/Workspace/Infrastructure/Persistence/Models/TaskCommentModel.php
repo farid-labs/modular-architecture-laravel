@@ -10,6 +10,8 @@ use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskCommentFactory;
 
 /**
+ * Eloquent model representing a Task Comment.
+ *
  * @property int $id
  * @property int $task_id
  * @property int $user_id
@@ -24,6 +26,7 @@ class TaskCommentModel extends Model
 
     protected $table = 'task_comments';
 
+    // Mass assignable attributes
     protected $fillable = [
         'task_id',
         'user_id',
@@ -31,6 +34,8 @@ class TaskCommentModel extends Model
     ];
 
     /**
+     * Relationship: Comment belongs to a Task.
+     *
      * @return BelongsTo<TaskModel, $this>
      */
     public function task(): BelongsTo
@@ -39,15 +44,17 @@ class TaskCommentModel extends Model
     }
 
     /**
+     * Relationship: Comment belongs to a User.
+     *
      * @return BelongsTo<UserModel, $this>
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(UserModel::class);
+        return $this->belongsTo(UserModel::class, 'user_id');
     }
 
     /**
-     * Override factory for PHPStan & IDEs
+     * Boot a new factory instance for this model.
      */
     protected static function newFactory(): TaskCommentFactory
     {

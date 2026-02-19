@@ -11,6 +11,8 @@ use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Infrastructure\Database\Factories\TaskAttachmentFactory;
 
 /**
+ * Eloquent model representing a Task Attachment.
+ *
  * @property int $id
  * @property int $task_id
  * @property string $file_name
@@ -29,6 +31,7 @@ class TaskAttachmentModel extends Model
 
     protected $table = 'task_attachments';
 
+    // Mass assignable attributes
     protected $fillable = [
         'task_id',
         'file_name',
@@ -39,6 +42,8 @@ class TaskAttachmentModel extends Model
     ];
 
     /**
+     * Relationship: Attachment belongs to a Task.
+     *
      * @return BelongsTo<TaskModel, $this>
      */
     public function task(): BelongsTo
@@ -47,6 +52,8 @@ class TaskAttachmentModel extends Model
     }
 
     /**
+     * Relationship: Attachment uploaded by a User.
+     *
      * @return BelongsTo<UserModel, $this>
      */
     public function uploadedBy(): BelongsTo
@@ -54,21 +61,37 @@ class TaskAttachmentModel extends Model
         return $this->belongsTo(UserModel::class, 'uploaded_by');
     }
 
+    /**
+     * Get full URL for the attachment file.
+     */
     public function getFileUrl(): string
     {
         return Storage::url($this->file_path);
     }
 
+    /**
+     * Check if the attachment is an image.
+     */
     public function isImage(): bool
     {
         return in_array($this->file_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
     }
 
+    /**
+     * Check if the attachment is a document.
+     */
     public function isDocument(): bool
     {
-        return in_array($this->file_type, ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+        return in_array($this->file_type, [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ]);
     }
 
+    /**
+     * Boot a new factory instance for this model.
+     */
     protected static function newFactory(): TaskAttachmentFactory
     {
         return TaskAttachmentFactory::new();

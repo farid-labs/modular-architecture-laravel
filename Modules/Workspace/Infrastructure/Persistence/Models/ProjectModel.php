@@ -11,7 +11,7 @@ use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Infrastructure\Database\Factories\ProjectFactory;
 
 /**
- * Project persistence model.
+ * Eloquent model representing a Project.
  *
  * @property int $id
  * @property string $name
@@ -31,6 +31,7 @@ class ProjectModel extends Model
 
     protected $table = 'projects';
 
+    // Mass assignable attributes
     protected $fillable = [
         'name',
         'description',
@@ -38,12 +39,13 @@ class ProjectModel extends Model
         'status',
     ];
 
+    // Cast status to ProjectStatus enum
     protected $casts = [
         'status' => ProjectStatus::class,
     ];
 
     /**
-     * Get the workspace that owns the project.
+     * Relationship: Project belongs to a Workspace.
      *
      * @return BelongsTo<WorkspaceModel, $this>
      */
@@ -53,7 +55,7 @@ class ProjectModel extends Model
     }
 
     /**
-     * Get the tasks for the project.
+     * Relationship: Project has many Tasks.
      *
      * @return HasMany<TaskModel, $this>
      */
@@ -63,7 +65,7 @@ class ProjectModel extends Model
     }
 
     /**
-     * Boot a new factory instance.
+     * Boot a new factory instance for this model.
      */
     protected static function newFactory(): ProjectFactory
     {
