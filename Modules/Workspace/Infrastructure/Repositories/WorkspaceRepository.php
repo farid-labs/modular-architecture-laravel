@@ -2,6 +2,7 @@
 
 namespace Modules\Workspace\Infrastructure\Repositories;
 
+use InvalidArgumentException;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\DTOs\TaskDTO;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
@@ -140,15 +141,15 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return true;
     }
 
-    public function removeUserFromWorkspace(int $workspaceId, int $userId): bool
+    public function removeUserFromWorkspace(int $workspaceId, int $userId): int
     {
         $model = $this->getModel()->find($workspaceId);
-        if (! $model) {
-            return false;
-        }
-        $model->members()->detach($userId);
 
-        return true;
+        if (! $model) {
+            return 0;
+        }
+
+        return $model->members()->detach($userId);
     }
 
     /**
@@ -180,6 +181,13 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $model ? $this->mapProjectToEntity($model) : null;
     }
 
+    public function getProjectsByWorkspace(int $workspaceId): array
+    {
+        $models = ProjectModel::where('workspace_id', $workspaceId)->get();
+
+        return $models->map(fn ($model) => $this->mapProjectToEntity($model))->all();
+    }
+
     public function createProject(ProjectDTO $projectDTO): ProjectEntity
     {
         $model = ProjectModel::create($projectDTO->toArray());
@@ -187,10 +195,30 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $this->mapProjectToEntity($model);
     }
 
+    /**
+     * Check if workspace exists by ID
+     */
+    public function workspaceExists(int $workspaceId): bool
+    {
+        return $this->getModel()->where('id', $workspaceId)->exists();
+    }
+
+    /**
+     * Check if user is a member of an existing workspace
+     *
+     * @throws InvalidArgumentException if workspace does not exist
+     */
     public function isUserMemberOfWorkspace(int $workspaceId, int $userId): bool
     {
-        return WorkspaceModel::where('id', $workspaceId)
-            ->whereHas('members', fn ($q) => $q->where('user_id', $userId))
+        if (! $this->workspaceExists($workspaceId)) {
+            throw new InvalidArgumentException(__('workspaces.not_found_by_id', ['id' => $workspaceId]));
+        }
+
+        return $this->getModel()
+            ->where('id', $workspaceId)
+            ->whereHas('members', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
             ->exists();
     }
 
