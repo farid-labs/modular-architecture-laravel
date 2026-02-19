@@ -9,6 +9,8 @@ use Modules\Workspace\Domain\Enums\WorkspaceStatus;
 use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
 
 /**
+ * Factory class for creating WorkspaceModel instances for testing or seeding.
+ *
  * @extends Factory<WorkspaceModel>
  */
 class WorkspaceFactory extends Factory
@@ -21,6 +23,8 @@ class WorkspaceFactory extends Factory
     protected $model = WorkspaceModel::class;
 
     /**
+     * Define the model's default state.
+     *
      * @return array<string, mixed>
      */
     public function definition(): array
@@ -28,16 +32,23 @@ class WorkspaceFactory extends Factory
         $name = $this->faker->company();
 
         return [
+            // Workspace name and slug
             'name' => $name,
             'slug' => Str::slug($name),
+
+            // Optional description
             'description' => $this->faker->optional()->paragraph(),
+
+            // Random status
             'status' => $this->faker->randomElement(WorkspaceStatus::cases()),
+
+            // Owner of the workspace
             'owner_id' => UserModel::factory(),
         ];
     }
 
     /**
-     * Indicate the workspace is active.
+     * Indicate that the workspace is active.
      */
     public function active(): static
     {
@@ -47,7 +58,7 @@ class WorkspaceFactory extends Factory
     }
 
     /**
-     * Indicate the workspace is inactive.
+     * Indicate that the workspace is inactive.
      */
     public function inactive(): static
     {
@@ -56,6 +67,9 @@ class WorkspaceFactory extends Factory
         ]);
     }
 
+    /**
+     * Set the workspace owner.
+     */
     public function forOwner(UserModel $user): static
     {
         return $this->state(fn () => [

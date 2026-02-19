@@ -10,6 +10,8 @@ use Modules\Workspace\Infrastructure\Persistence\Models\ProjectModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskModel;
 
 /**
+ * Factory class for creating TaskModel instances for testing or seeding.
+ *
  * @extends Factory<TaskModel>
  */
 class TaskFactory extends Factory
@@ -22,20 +24,32 @@ class TaskFactory extends Factory
     protected $model = TaskModel::class;
 
     /**
+     * Define the model's default state.
+     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
+        // Random status and priority
         $status = $this->faker->randomElement(TaskStatus::cases());
         $priority = $this->faker->randomElement(TaskPriority::cases());
 
         return [
+            // Task title and optional description
             'title' => $this->faker->sentence(4),
             'description' => $this->faker->optional()->paragraph(),
+
+            // Associate task with a project
             'project_id' => ProjectModel::factory(),
+
+            // Optionally assign to a random existing user
             'assigned_to' => $this->faker->optional()->randomElement(UserModel::pluck('id')->toArray()),
+
+            // Task status and priority
             'status' => $status,
             'priority' => $priority,
+
+            // Optional due date within the next month
             'due_date' => $this->faker->optional()->dateTimeBetween('now', '+1 month'),
         ];
     }
