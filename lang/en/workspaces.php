@@ -33,4 +33,29 @@ return [
     'no_fields_to_update' => 'No valid fields provided for update',
     'invalid_id_format' => 'Invalid ID format. ID must be a positive integer.',
     'hint_valid_id' => 'Example: /api/v1/workspaces/27',
+
+    'project_not_found' => 'Project with ID :id not found',
+    'not_member_of_project' => 'You do not have permission to create tasks in this project.',
+    'not_member_project' => 'User is not a member of this Project',
+    'date_cannot_past' => 'Due date cannot be in the past',
+    // Task messages
+    'task_not_found' => 'Task with ID :id not found',
+    'task_created' => 'Task created successfully',
+    'task_retrieved' => 'Task retrieved successfully',
+    'task_completed' => 'Task completed successfully',
+    'task_update_fail' => 'Task :taskId could not be updated to completed status',
+
+    'projects_retrieved' => 'Projects retrieved successfully',
+    'project_created' => 'Project created successfully',
+    'project_retrieved' => 'Project retrieved successfully',
+    'workspace_not_found' => 'Workspace with ID :id not found',
+    'not_member_of_workspace' => 'You do not have permission to access this workspace',
+    'workspaces_retrieved' => 'Workspaces retrieved successfully',
+    'workspace_created' => 'Workspace created successfully',
+
+    'membership_not_found' => 'User :user_id is not a member of workspace :workspace_id',
+    'comment_min_length' => 'Comment must be at least 3 characters',
+    'invalid_file_type' => 'Invalid file type. Allowed types: JPEG, PNG, PDF',
+    'file_size_exceeds_limit' => 'File size exceeds maximum limit of 10MB',
+
 ];
