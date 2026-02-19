@@ -17,47 +17,76 @@ use Modules\Workspace\Domain\Entities\WorkspaceEntity;
  */
 interface WorkspaceRepositoryInterface
 {
+    // Find workspace by its ID
     public function findById(int $id): ?WorkspaceEntity;
 
+    // Find workspace by its slug
     public function findBySlug(string $slug): ?WorkspaceEntity;
 
     /**
+     * Find all workspaces owned by a specific user.
+     *
      * @return array<int, WorkspaceEntity>
      */
     public function findByOwnerId(int $ownerId): array;
 
+    // Create a new workspace
     public function create(WorkspaceDTO $workspaceDTO): WorkspaceEntity;
 
+    // Update an existing workspace
     public function update(int $id, WorkspaceDTO $workspaceDTO): ?WorkspaceEntity;
 
+    // Delete a workspace by ID
     public function delete(int $id): bool;
 
     /**
+     * Get all workspaces
+     *
      * @return array<int, WorkspaceEntity>
      */
     public function getAll(): array;
 
     /**
+     * Get all workspaces a user is a member of
+     *
      * @return array<int, WorkspaceEntity>
      */
     public function getWorkspacesByUser(int $userId): array;
 
+    // Add a user to a workspace with a role
     public function addUserToWorkspace(int $workspaceId, int $userId, string $role): bool;
 
-    public function removeUserFromWorkspace(int $workspaceId, int $userId): bool;
+    // Remove a user from a workspace, returns number of affected rows
+    public function removeUserFromWorkspace(int $workspaceId, int $userId): int;
 
+    /**
+     * Check if a workspace exists by ID
+     */
+    public function workspaceExists(int $workspaceId): bool;
+
+    // Find project by ID
     public function findProjectById(int $id): ?ProjectEntity;
 
+    // Create a new project
     public function createProject(ProjectDTO $projectDTO): ProjectEntity;
 
+    /**
+     * Check if user is a member of a workspace
+     *
+     * @throws \InvalidArgumentException if workspace does not exist
+     */
     public function isUserMemberOfWorkspace(int $workspaceId, int $userId): bool;
 
+    // Find task by ID
     public function findTaskById(int $id): ?TaskEntity;
 
+    // Create a new task
     public function createTask(TaskDTO $taskDTO): TaskEntity;
 
+    // Update a task
     public function updateTask(int $id, TaskDTO $taskDTO): ?TaskEntity;
 
+    // Check if user is a member of a project
     public function isUserMemberOfProject(int $projectId, int $userId): bool;
 
     /**
@@ -69,6 +98,13 @@ interface WorkspaceRepositoryInterface
      * @return TaskCommentEntity The created comment entity
      */
     public function addCommentToTask(int $taskId, string $comment, int $userId): TaskCommentEntity;
+
+    /**
+     * Get all projects belonging to a workspace.
+     *
+     * @return array<int, ProjectEntity>
+     */
+    public function getProjectsByWorkspace(int $workspaceId): array;
 
     /**
      * Upload an attachment to a task.
