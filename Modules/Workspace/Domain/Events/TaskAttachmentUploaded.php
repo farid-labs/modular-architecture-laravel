@@ -17,6 +17,7 @@ final readonly class TaskAttachmentUploaded
         public TaskAttachmentEntity $attachment,
         public int $actorId
     ) {}
+
     /**
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
@@ -24,6 +25,7 @@ final readonly class TaskAttachmentUploaded
     {
         return [new PrivateChannel("task.{$this->task->getId()}")];
     }
+
     /**
      * @return array<string, mixed>
      */

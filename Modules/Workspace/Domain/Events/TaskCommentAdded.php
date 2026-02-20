@@ -9,7 +9,7 @@ use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Presentation\Resources\TaskCommentResource;
 
-final readonly class TaskCommentAdded implements ShouldBroadcast
+final class TaskCommentAdded implements ShouldBroadcast
 {
     use InteractsWithSockets;
 
@@ -24,6 +24,9 @@ final readonly class TaskCommentAdded implements ShouldBroadcast
         return [new PrivateChannel("task.{$this->task->getId()}")];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function broadcastWith(): array
     {
         return [
