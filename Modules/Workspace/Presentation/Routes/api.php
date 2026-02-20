@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Workspace\Presentation\Controllers\ProjectController;
+use Modules\Workspace\Presentation\Controllers\TaskAttachmentController;
+use Modules\Workspace\Presentation\Controllers\TaskCommentController;
 use Modules\Workspace\Presentation\Controllers\TaskController;
 use Modules\Workspace\Presentation\Controllers\WorkspaceController;
 
@@ -63,4 +65,18 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     // Mark a task as completed
     Route::put('/tasks/{id}/complete', [TaskController::class, 'complete'])
         ->whereNumber('id');
+
+    // ===== Task Comments =====
+    Route::get('/tasks/{taskId}/comments', [TaskCommentController::class, 'index'])
+        ->whereNumber('taskId');
+    Route::post('/tasks/{taskId}/comments', [TaskCommentController::class, 'store'])
+        ->whereNumber('taskId');
+    Route::put('/comments/{commentId}', [TaskCommentController::class, 'update'])
+        ->whereNumber('commentId');
+
+    // ===== Task Attachments =====
+    Route::get('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'index'])
+        ->whereNumber('taskId');
+    Route::post('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'store'])
+        ->whereNumber('taskId');
 });

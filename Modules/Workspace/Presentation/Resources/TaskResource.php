@@ -54,9 +54,9 @@ class TaskResource extends JsonResource
         }
 
         // Map TaskEntity properties to array keys
-        return [
+        $base = [
             'id' => $this->resource->getId(),
-            'title' => $this->resource->getTitle(),
+            'title' => $this->resource->getTitleVO(),
             'description' => $this->resource->getDescription(),
             'project_id' => $this->resource->getProjectId(),
             'assigned_to' => $this->resource->getAssignedTo(),
@@ -69,5 +69,23 @@ class TaskResource extends JsonResource
             'created_at' => $this->resource->getCreatedAt()?->toIso8601String(),
             'updated_at' => $this->resource->getUpdatedAt()?->toIso8601String(),
         ];
+
+        if ($request->has('include')) {
+            $includes = explode(',', $request->query('include'));
+
+            if (in_array('comments', $includes)) {
+                $base['comments'] = TaskCommentResource::collection(
+                    $this->resource->comments ?? [] // اگر relation لود شده باشد
+                );
+            }
+
+            if (in_array('attachments', $includes)) {
+                $base['attachments'] = TaskAttachmentResource::collection(
+                    $this->resource->attachments ?? []
+                );
+            }
+        }
+
+        return $base;
     }
 }

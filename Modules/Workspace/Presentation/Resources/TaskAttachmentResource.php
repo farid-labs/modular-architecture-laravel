@@ -43,8 +43,8 @@ class TaskAttachmentResource extends JsonResource
         return [
             'id' => $this->resource->getId(),
             'task_id' => $this->resource->getTaskId(),
-            'file_name' => $this->resource->getFileName(),
-            'file_path' => $this->resource->getFilePath(),
+            'file_name' => $this->resource->getFileNameVO(),
+            'file_path' => $this->resource->getFilePathVO(),
             'file_type' => $this->resource->getMimeType(),
             'file_size' => $this->resource->getFileSize(),
             'uploaded_by' => $this->resource->getUserId(),
