@@ -28,17 +28,49 @@ class TaskAttachmentController extends Controller
         ]);
     }
 
-    #[OA\Post(path: '/tasks/{taskId}/attachments', consumes: ['multipart/form-data'])]
+    #[OA\Post(
+        path: '/tasks/{taskId}/attachments',
+        summary: 'Upload an attachment to a task',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['file'],
+                    properties: [
+                        new OA\Property(
+                            property: 'file',
+                            type: 'string',
+                            format: 'binary',
+                            description: 'The file to upload'
+                        ),
+                    ]
+                )
+            )
+        ),
+        tags: ['Task Attachments']
+    )]
     public function store(StoreTaskAttachmentRequest $request, int $taskId): JsonResponse
     {
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
         $file = $request->file('file');
 
+        if (! $file->isValid()) {
+            return response()->json(['error' => 'Invalid file upload'], 422);
+        }
+
+        $storedPath = $file->store('task-attachments');
+        if ($storedPath === false) {
+            return response()->json(['error' => 'Failed to store file'], 500);
+        }
+
+        $mimeType = $file->getMimeType() ?? 'application/octet-stream';
+
         $attachment = $this->service->uploadAttachmentToTask(
             $taskId,
-            $file->store('task-attachments'),
+            $storedPath,               // string
             $file->getClientOriginalName(),
-            $file->getMimeType(),
+            $mimeType,                 // string (fallback)
             $file->getSize(),
             $user
         );

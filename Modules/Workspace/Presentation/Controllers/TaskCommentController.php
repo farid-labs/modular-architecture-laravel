@@ -3,8 +3,10 @@
 namespace Modules\Workspace\Presentation\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Application\Services\WorkspaceService;
 use Modules\Workspace\Presentation\Requests\StoreTaskCommentRequest;
 use Modules\Workspace\Presentation\Requests\UpdateTaskCommentRequest;
@@ -15,6 +17,8 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 #[OA\Tag(name: 'Task Comments', description: 'Manage comments on tasks')]
 class TaskCommentController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(private WorkspaceService $service) {}
 
     #[OA\Get(path: '/tasks/{taskId}/comments')]
@@ -32,7 +36,13 @@ class TaskCommentController extends Controller
     #[OA\Post(path: '/tasks/{taskId}/comments')]
     public function store(StoreTaskCommentRequest $request, int $taskId): JsonResponse
     {
+        /** @var UserModel $user */
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+
+        $task = $this->service->getTaskById($taskId);
+
+        $this->authorize('comment', $task);
+
         $comment = $this->service->addCommentToTask($taskId, $request->input('comment'), $user);
 
         return response()->json([
