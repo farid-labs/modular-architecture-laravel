@@ -21,11 +21,17 @@ class TaskAttachmentTest extends TestCase
 
         $this->member = UserModel::factory()->create();
 
-
         $taskModel = TaskModel::factory()->create();
         $this->taskId = $taskModel->id;
 
-        $workspaceId = $taskModel->project->workspace_id;
+        $project = $taskModel->project;
+
+        if (! $project) {
+            $this->fail('Created task has no associated project. Ensure factory sets project relation.');
+        }
+
+        $workspaceId = $project->workspace_id;
+
         $this->member->workspaces()->attach($workspaceId, [
             'role' => 'member',
             'joined_at' => now(),
@@ -38,10 +44,14 @@ class TaskAttachmentTest extends TestCase
 
         $file = UploadedFile::fake()->create('document.pdf', 500, 'application/pdf');
 
-        $response = $this->actingAs($this->member)
-            ->postJson("/api/v1/tasks/{$this->taskId}/attachments", [
-                'file' => $file,
-            ]);
+        $token = $this->member->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+            'Accept' => 'application/json',
+        ])->postJson(route('tasks.attachments.store', $this->taskId), [
+            'file' => $file,
+        ]);
 
         $response->assertCreated()
             ->assertJsonStructure(['data' => ['id', 'file_name']]);

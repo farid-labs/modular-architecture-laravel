@@ -24,7 +24,7 @@ class TaskCommentTest extends TestCase
         $this->taskId = $taskModel->id;
 
         $project = $taskModel->project;
-        if (!$project) {
+        if (! $project) {
             $this->fail('Task has no associated project');
         }
         $workspaceId = $project->workspace_id;
@@ -40,7 +40,7 @@ class TaskCommentTest extends TestCase
         Event::fake([TaskCommentAdded::class]);
 
         $response = $this->actingAs($this->member)
-            ->postJson("/api/v1/tasks/{$this->taskId}/comments", [
+            ->postJson(route('tasks.comments.store', $this->taskId), [
                 'comment' => 'This is a professional comment for testing.',
             ]);
 
@@ -58,7 +58,7 @@ class TaskCommentTest extends TestCase
         $outsider = UserModel::factory()->create();
 
         $response = $this->actingAs($outsider)
-            ->postJson("/api/v1/tasks/{$this->taskId}/comments", [
+            ->postJson(route('tasks.comments.store', $this->taskId), [
                 'comment' => 'Test from outsider',
             ]);
 
