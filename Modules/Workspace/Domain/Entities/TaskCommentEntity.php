@@ -3,6 +3,7 @@
 namespace Modules\Workspace\Domain\Entities;
 
 use Carbon\CarbonInterface;
+use Modules\Workspace\Domain\ValueObjects\CommentContent;
 
 /**
  * Domain entity representing a task comment.
@@ -29,6 +30,23 @@ class TaskCommentEntity
         // Comment last update timestamp
         private readonly ?CarbonInterface $updatedAt = null
     ) {}
+
+    public function getContent(): CommentContent
+    {
+        return new CommentContent($this->comment);
+    }
+
+    public function updateContent(CommentContent $newContent): self
+    {
+        return new self(
+            $this->id,
+            $this->taskId,
+            $this->userId,
+            $newContent->value(),
+            $this->createdAt,
+            now()
+        );
+    }
 
     // Get comment ID
     public function getId(): int

@@ -5,6 +5,7 @@ namespace Modules\Workspace\Domain\Entities;
 use Carbon\CarbonInterface;
 use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
+use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 
 /**
  * Domain entity representing a workspace task.
@@ -17,7 +18,7 @@ class TaskEntity
         private readonly int $id,
 
         // Task title
-        private readonly string $title,
+        private readonly TaskTitle $title,
 
         // Optional task description
         private readonly ?string $description,
@@ -51,7 +52,7 @@ class TaskEntity
     }
 
     // Get task title
-    public function getTitle(): string
+    public function getTitleVO(): TaskTitle
     {
         return $this->title;
     }

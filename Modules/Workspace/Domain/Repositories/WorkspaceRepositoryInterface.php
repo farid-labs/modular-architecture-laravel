@@ -125,4 +125,27 @@ interface WorkspaceRepositoryInterface
         int $fileSize,
         int $userId
     ): TaskAttachmentEntity;
+
+    /**
+     * Get all comments for a task.
+     *
+     * @return array<int, TaskCommentEntity>
+     */
+    public function getCommentsByTask(int $taskId, int $userId): array;
+
+    /**
+     * Update an existing comment (only owner within 30 minutes).
+     */
+    public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity;
+
+    /**
+     * Get all attachments for a task.
+     *
+     * @return array<int, TaskAttachmentEntity>
+     */
+    public function getAttachmentsByTask(int $taskId): array;
+
+    public function deleteComment(int $commentId, int $userId): bool;
+
+    public function deleteAttachment(int $attachmentId, int $userId): bool;
 }

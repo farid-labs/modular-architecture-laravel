@@ -3,6 +3,8 @@
 namespace Modules\Workspace\Domain\Entities;
 
 use Carbon\CarbonInterface;
+use Modules\Workspace\Domain\ValueObjects\FileName;
+use Modules\Workspace\Domain\ValueObjects\FilePath;
 
 /**
  * Domain entity representing a task attachment.
@@ -11,6 +13,7 @@ use Carbon\CarbonInterface;
 class TaskAttachmentEntity
 {
     public function __construct(
+
         // Unique attachment identifier
         private readonly int $id,
 
@@ -20,12 +23,6 @@ class TaskAttachmentEntity
         // User who uploaded the attachment
         private readonly int $userId,
 
-        // Stored file path
-        private readonly string $filePath,
-
-        // Original file name
-        private readonly string $fileName,
-
         // MIME type of the file
         private readonly string $mimeType,
 
@@ -33,10 +30,14 @@ class TaskAttachmentEntity
         private readonly int $fileSize,
 
         // Attachment creation timestamp
-        private readonly ?CarbonInterface $createdAt = null,
+        private readonly ?CarbonInterface $createdAt,
 
         // Attachment last update timestamp
-        private readonly ?CarbonInterface $updatedAt = null
+        private readonly ?CarbonInterface $updatedAt,
+
+        private readonly FileName $fileName,
+
+        private readonly FilePath $filePath,
     ) {}
 
     // Get attachment ID
@@ -58,13 +59,13 @@ class TaskAttachmentEntity
     }
 
     // Get stored file path
-    public function getFilePath(): string
+    public function getFilePathVO(): FilePath
     {
         return $this->filePath;
     }
 
     // Get original file name
-    public function getFileName(): string
+    public function getFileNameVO(): FileName
     {
         return $this->fileName;
     }
