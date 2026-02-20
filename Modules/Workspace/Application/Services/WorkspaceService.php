@@ -13,7 +13,10 @@ use Modules\Workspace\Domain\Entities\TaskAttachmentEntity;
 use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
+use Modules\Workspace\Domain\Events\TaskAttachmentUploaded;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
+use Modules\Workspace\Infrastructure\Jobs\ProcessTaskAttachmentJob;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class WorkspaceService
 {
@@ -90,7 +93,7 @@ class WorkspaceService
     {
         // Filter out null fields (partial update support)
         $data = $workspaceDTO->toArray();
-        $filteredData = array_filter($data, fn($value) => $value !== null);
+        $filteredData = array_filter($data, fn ($value) => $value !== null);
 
         if (empty($filteredData)) {
             throw new \InvalidArgumentException(__('workspaces.no_fields_to_update'));
@@ -358,10 +361,15 @@ class WorkspaceService
             'user_id' => $user->id,
         ]);
 
-        $commentEntity = $this->workspaceRepository->addCommentToTask($taskId, $comment, $user->id);
-
         // Dispatch domain event
         $task = $this->getTaskById($taskId);
+
+        if (! $this->workspaceRepository->isUserMemberOfProject($task->getProjectId(), $user->id)) {
+            throw new AccessDeniedHttpException(
+                __('workspaces.not_member_project')
+            );
+        }
+        $commentEntity = $this->workspaceRepository->addCommentToTask($taskId, $comment, $user->id);
         event(new \Modules\Workspace\Domain\Events\TaskCommentAdded($task, $commentEntity, $user->id));
 
         return $commentEntity;
@@ -401,15 +409,19 @@ class WorkspaceService
             $user->id
         );
 
-        // Dispatch domain event
+        // Dispatch job (thumbnail, virus scan, move to S3, etc.)
+        dispatch(new ProcessTaskAttachmentJob($attachmentEntity, $filePath));
+
+        // Dispatch event for real-time notification
         $task = $this->getTaskById($taskId);
-        event(new \Modules\Workspace\Domain\Events\TaskAttachmentUploaded($task, $attachmentEntity, $user->id));
+        event(new TaskAttachmentUploaded($task, $attachmentEntity, $user->id));
 
         return $attachmentEntity;
     }
 
     /**
      * Get all comments for a task (with authorization)
+     *
      * @return array<int, TaskCommentEntity>
      */
     public function getCommentsByTask(int $taskId, int $userId): array
@@ -422,7 +434,7 @@ class WorkspaceService
         return Cache::remember(
             "task:{$taskId}:comments",
             now()->addMinutes(10),
-            fn() => $this->workspaceRepository->getCommentsByTask($taskId, $userId)
+            fn () => $this->workspaceRepository->getCommentsByTask($taskId, $userId)
         );
     }
 
@@ -440,6 +452,7 @@ class WorkspaceService
 
     /**
      * Get all attachments for a task
+     *
      * @return array<int, TaskAttachmentEntity>
      */
     public function getAttachmentsByTask(int $taskId): array
@@ -447,7 +460,7 @@ class WorkspaceService
         return Cache::remember(
             "task:{$taskId}:attachments",
             now()->addMinutes(15),
-            fn() => $this->workspaceRepository->getAttachmentsByTask($taskId)
+            fn () => $this->workspaceRepository->getAttachmentsByTask($taskId)
         );
     }
 }
