@@ -13,6 +13,7 @@ use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
+use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 use Modules\Workspace\Tests\TestCase;
 
 class WorkspaceServiceTest extends TestCase
@@ -64,7 +65,7 @@ class WorkspaceServiceTest extends TestCase
         $expectedProject = new ProjectEntity(1, 'Test Project', null, 10, ProjectStatus::ACTIVE);
         $expectedTask = new TaskEntity(
             1,
-            'New Task',
+            new TaskTitle('New Task'),
             'Task description',
             1,
             2,
@@ -91,7 +92,7 @@ class WorkspaceServiceTest extends TestCase
         $this->repository
             ->shouldReceive('createTask')
             ->once()
-            ->with(\Mockery::on(fn ($arg) => $arg->title === $taskDTO->title))
+            ->with(\Mockery::on(fn($arg) => $arg->title === $taskDTO->title))
             ->andReturn($expectedTask);
 
         $result = $this->service->createTask($taskDTO, $this->user);
@@ -107,7 +108,7 @@ class WorkspaceServiceTest extends TestCase
         $taskId = 1;
         $existingTask = new TaskEntity(
             $taskId,
-            'Existing Task',
+            new TaskTitle('Existing Task'),
             null,
             1,
             null,
@@ -136,7 +137,7 @@ class WorkspaceServiceTest extends TestCase
         $this->repository
             ->shouldReceive('updateTask')
             ->once()
-            ->with($taskId, \Mockery::on(fn ($arg) => $arg->status->value === $completedTask->getStatus()->value))
+            ->with($taskId, \Mockery::on(fn($arg) => $arg->status->value === $completedTask->getStatus()->value))
             ->andReturn($completedTask);
 
         $result = $this->service->completeTask($taskId, $this->user);
@@ -156,7 +157,7 @@ class WorkspaceServiceTest extends TestCase
         $taskId = 1;
         $existingTask = new TaskEntity(
             $taskId,
-            'Task',
+            new TaskTitle('Task title'),
             null,
             1,
             null,

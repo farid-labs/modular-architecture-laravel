@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
+use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 use Modules\Workspace\Tests\TestCase;
 
 class TaskEntityTest extends TestCase
@@ -15,7 +16,7 @@ class TaskEntityTest extends TestCase
     {
         $task = new TaskEntity(
             1,
-            'Implement login feature',
+            new TaskTitle('Implement login feature'),
             'Create authentication flow',
             1,
             2,
@@ -27,7 +28,7 @@ class TaskEntityTest extends TestCase
         );
 
         $this->assertEquals(1, $task->getId());
-        $this->assertEquals('Implement login feature', $task->getTitle());
+        $this->assertEquals('Implement login feature', $task->getTitleVO());
         $this->assertEquals(TaskStatus::PENDING, $task->getStatus());
         $this->assertEquals(TaskPriority::HIGH, $task->getPriority());
         $this->assertNotNull($task->getCreatedAt());
@@ -39,7 +40,7 @@ class TaskEntityTest extends TestCase
     {
         $task = new TaskEntity(
             1,
-            'Test task',
+            new TaskTitle('Test task'),
             null,
             1,
             null,
@@ -62,7 +63,7 @@ class TaskEntityTest extends TestCase
     {
         $task = new TaskEntity(
             1,
-            'Overdue task',
+            new TaskTitle('Overdue task'),
             null,
             1,
             null,
@@ -79,7 +80,7 @@ class TaskEntityTest extends TestCase
     {
         $task = new TaskEntity(
             1,
-            'Completed task',
+            new TaskTitle('Completed task'),
             null,
             1,
             null,
@@ -96,7 +97,7 @@ class TaskEntityTest extends TestCase
     {
         $task = new TaskEntity(
             1,
-            'Future task',
+            new TaskTitle('Future task'),
             null,
             1,
             null,
@@ -113,7 +114,7 @@ class TaskEntityTest extends TestCase
     {
         $task = new TaskEntity(
             1,
-            'Test task',
+            new TaskTitle('Test task'),
             'Description',
             1,
             2,
@@ -136,7 +137,7 @@ class TaskEntityTest extends TestCase
     {
         $task = new TaskEntity(
             1,
-            'Simple task',
+            new TaskTitle('Simple task'),
             null,
             1,
             null,
