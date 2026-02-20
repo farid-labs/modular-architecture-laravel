@@ -2,6 +2,7 @@
 
 namespace Modules\Workspace\Application\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
@@ -89,7 +90,7 @@ class WorkspaceService
     {
         // Filter out null fields (partial update support)
         $data = $workspaceDTO->toArray();
-        $filteredData = array_filter($data, fn ($value) => $value !== null);
+        $filteredData = array_filter($data, fn($value) => $value !== null);
 
         if (empty($filteredData)) {
             throw new \InvalidArgumentException(__('workspaces.no_fields_to_update'));
@@ -344,27 +345,30 @@ class WorkspaceService
     }
 
     /**
-     * Add a comment to a task.
+     * Add a comment to a task + dispatch domain event
      */
     public function addCommentToTask(int $taskId, string $comment, UserModel $user): TaskCommentEntity
     {
-        // Validate minimum comment length
         if (strlen($comment) < 3) {
             throw new \InvalidArgumentException(__('workspaces.comment_min_length'));
         }
 
-        // Log comment creation
         Log::channel('domain')->info('Adding comment to task', [
             'task_id' => $taskId,
             'user_id' => $user->id,
         ]);
 
-        // Persist comment and return entity
-        return $this->workspaceRepository->addCommentToTask($taskId, $comment, $user->id);
+        $commentEntity = $this->workspaceRepository->addCommentToTask($taskId, $comment, $user->id);
+
+        // Dispatch domain event
+        $task = $this->getTaskById($taskId);
+        event(new \Modules\Workspace\Domain\Events\TaskCommentAdded($task, $commentEntity, $user->id));
+
+        return $commentEntity;
     }
 
     /**
-     * Upload an attachment to a task.
+     * Upload attachment + dispatch domain event
      */
     public function uploadAttachmentToTask(
         int $taskId,
@@ -374,33 +378,76 @@ class WorkspaceService
         int $fileSize,
         UserModel $user
     ): TaskAttachmentEntity {
-        // Allowed MIME types
         $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-
         if (! in_array($mimeType, $allowedTypes)) {
             throw new \InvalidArgumentException(__('workspaces.invalid_file_type'));
         }
-
-        // Enforce max file size (10MB)
         if ($fileSize > 10 * 1024 * 1024) {
             throw new \InvalidArgumentException(__('workspaces.file_size_exceeds_limit'));
         }
 
-        // Log upload attempt
         Log::channel('domain')->info('Uploading attachment to task', [
             'task_id' => $taskId,
             'file_name' => $fileName,
             'user_id' => $user->id,
         ]);
 
-        // Persist attachment and return entity
-        return $this->workspaceRepository->uploadAttachmentToTask(
+        $attachmentEntity = $this->workspaceRepository->uploadAttachmentToTask(
             $taskId,
             $filePath,
             $fileName,
             $mimeType,
             $fileSize,
             $user->id
+        );
+
+        // Dispatch domain event
+        $task = $this->getTaskById($taskId);
+        event(new \Modules\Workspace\Domain\Events\TaskAttachmentUploaded($task, $attachmentEntity, $user->id));
+
+        return $attachmentEntity;
+    }
+
+    /**
+     * Get all comments for a task (with authorization)
+     * @return array<int, TaskCommentEntity>
+     */
+    public function getCommentsByTask(int $taskId, int $userId): array
+    {
+        $task = $this->getTaskById($taskId);
+        if (! $this->workspaceRepository->isUserMemberOfProject($task->getProjectId(), $userId)) {
+            throw new \InvalidArgumentException(__('workspaces.not_member_project'));
+        }
+
+        return Cache::remember(
+            "task:{$taskId}:comments",
+            now()->addMinutes(10),
+            fn() => $this->workspaceRepository->getCommentsByTask($taskId, $userId)
+        );
+    }
+
+    /**
+     * Update comment (only owner + within 30 minutes)
+     */
+    public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity
+    {
+        if (strlen($newComment) < 3) {
+            throw new \InvalidArgumentException(__('workspaces.comment_min_length'));
+        }
+
+        return $this->workspaceRepository->updateComment($commentId, $newComment, $userId);
+    }
+
+    /**
+     * Get all attachments for a task
+     * @return array<int, TaskAttachmentEntity>
+     */
+    public function getAttachmentsByTask(int $taskId): array
+    {
+        return Cache::remember(
+            "task:{$taskId}:attachments",
+            now()->addMinutes(15),
+            fn() => $this->workspaceRepository->getAttachmentsByTask($taskId)
         );
     }
 }
