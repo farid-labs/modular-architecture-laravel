@@ -20,7 +20,7 @@ use Modules\Workspace\Infrastructure\Repositories\WorkspaceRepository;
 class WorkspaceServiceProvider extends ServiceProvider
 {
     /**
-     * Event listeners mapping (Laravel auto-registers these)
+     * @var array<class-string, array<class-string>>
      */
     protected $listen = [
         TaskCommentAdded::class => [

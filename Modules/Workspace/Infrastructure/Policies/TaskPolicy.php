@@ -24,7 +24,11 @@ class TaskPolicy
 
     private function isMemberOfProject(UserModel $user, TaskEntity $task): bool
     {
-
         return true;
+    }
+
+    public function comment(UserModel $user, TaskEntity $task): bool
+    {
+        return $this->isMemberOfProject($user, $task);
     }
 }
