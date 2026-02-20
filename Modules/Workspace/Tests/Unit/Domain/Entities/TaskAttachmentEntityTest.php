@@ -10,53 +10,44 @@ use Modules\Workspace\Tests\TestCase;
 
 class TaskAttachmentEntityTest extends TestCase
 {
-    /**
-     * Test that a TaskAttachmentEntity can be properly created
-     * and that getters return the expected values.
-     */
     public function test_task_attachment_entity_can_be_created(): void
     {
         $now = Carbon::now();
 
         $attachment = new TaskAttachmentEntity(
-            1,                         // ID
-            10,                        // Task ID
-            5,                         // User ID (uploaded by)
-            'application/pdf', // File path
-            102400,            // File name
-            $now,                      // created_at
-            $now,                  // updated_at
-            new FileName('document.pdf'),
-            new FilePath('attachments/document.pdf')
-
+            1,                                 // id
+            10,                                // taskId
+            5,                                 // userId
+            'application/pdf',                 // mimeType (string)
+            102400,                            // fileSize (int)
+            $now,                              // createdAt
+            $now,                              // updatedAt
+            new FileName('document.pdf'),      // fileName
+            new FilePath('task-attachments/document.pdf')  // filePath
         );
 
         $this->assertEquals(1, $attachment->getId());
         $this->assertEquals(10, $attachment->getTaskId());
         $this->assertEquals(5, $attachment->getUserId());
-        $this->assertEquals('document.pdf', $attachment->getFileNameVO());
+        $this->assertEquals('document.pdf', $attachment->getFileNameVO()->value());
         $this->assertEquals('application/pdf', $attachment->getMimeType());
         $this->assertEquals(102400, $attachment->getFileSize());
     }
 
-    /**
-     * Test that the entity can convert itself to an array correctly
-     * (useful for API resources or serialization).
-     */
     public function test_to_array_conversion(): void
     {
         $now = Carbon::now();
+
         $attachment = new TaskAttachmentEntity(
-            1,
-            10,
-            5,
-            'attachments/image.jpg',
-            204800,
+            1,                                 // id
+            10,                                // taskId
+            5,                                 // userId
+            'image/jpeg',                      // mimeType
+            204800,                            // fileSize
             $now,
             $now,
             new FileName('image.jpg'),
-            new FilePath('attachments/image.jpg')
-
+            new FilePath('task-attachments/image.jpg')
         );
 
         $array = $attachment->toArray();
@@ -65,5 +56,6 @@ class TaskAttachmentEntityTest extends TestCase
         $this->assertEquals(10, $array['task_id']);
         $this->assertEquals('image.jpg', $array['file_name']);
         $this->assertEquals('image/jpeg', $array['mime_type']);
+        $this->assertEquals(204800, $array['file_size']);
     }
 }

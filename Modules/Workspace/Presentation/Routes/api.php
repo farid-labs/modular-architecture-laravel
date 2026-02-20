@@ -70,7 +70,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/tasks/{taskId}/comments', [TaskCommentController::class, 'index'])
         ->whereNumber('taskId');
     Route::post('/tasks/{taskId}/comments', [TaskCommentController::class, 'store'])
-        ->whereNumber('taskId');
+        ->whereNumber('taskId')->name('tasks.comments.store');
     Route::put('/comments/{commentId}', [TaskCommentController::class, 'update'])
         ->whereNumber('commentId');
 
@@ -78,5 +78,5 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'index'])
         ->whereNumber('taskId');
     Route::post('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'store'])
-        ->whereNumber('taskId');
+        ->whereNumber('taskId')->name('tasks.attachments.store');
 });

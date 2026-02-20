@@ -70,7 +70,9 @@ class UserModel extends Authenticatable
         return (bool) ($this->attributes['is_admin'] ?? false);
     }
 
-
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<WorkspaceModel, $this>
+     */
     public function workspaces()
     {
         return $this->belongsToMany(WorkspaceModel::class, 'workspace_members', 'user_id', 'workspace_id')

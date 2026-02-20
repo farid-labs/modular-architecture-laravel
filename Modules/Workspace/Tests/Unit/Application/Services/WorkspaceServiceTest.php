@@ -92,7 +92,7 @@ class WorkspaceServiceTest extends TestCase
         $this->repository
             ->shouldReceive('createTask')
             ->once()
-            ->with(\Mockery::on(fn($arg) => $arg->title === $taskDTO->title))
+            ->with(\Mockery::on(fn ($arg) => $arg->title === $taskDTO->title))
             ->andReturn($expectedTask);
 
         $result = $this->service->createTask($taskDTO, $this->user);
@@ -137,7 +137,7 @@ class WorkspaceServiceTest extends TestCase
         $this->repository
             ->shouldReceive('updateTask')
             ->once()
-            ->with($taskId, \Mockery::on(fn($arg) => $arg->status->value === $completedTask->getStatus()->value))
+            ->with($taskId, \Mockery::on(fn ($arg) => $arg->status->value === $completedTask->getStatus()->value))
             ->andReturn($completedTask);
 
         $result = $this->service->completeTask($taskId, $this->user);
