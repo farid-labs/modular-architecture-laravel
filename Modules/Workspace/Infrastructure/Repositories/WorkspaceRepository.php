@@ -2,6 +2,7 @@
 
 namespace Modules\Workspace\Infrastructure\Repositories;
 
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\DTOs\TaskDTO;
@@ -12,6 +13,9 @@ use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
+use Modules\Workspace\Domain\ValueObjects\FileName;
+use Modules\Workspace\Domain\ValueObjects\FilePath;
+use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 use Modules\Workspace\Infrastructure\Persistence\Models\ProjectModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachmentModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskCommentModel;
@@ -58,7 +62,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = $this->getModel()->with(['members'])->where('owner_id', $ownerId)->get();
 
-        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function create(WorkspaceDTO $workspaceDTO): WorkspaceEntity
@@ -82,7 +86,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             return null;
         }
 
-        $data = array_filter($workspaceDTO->toArray(), fn ($value) => $value !== null);
+        $data = array_filter($workspaceDTO->toArray(), fn($value) => $value !== null);
         $model->update($data);
 
         return $this->mapToEntity($model);
@@ -99,7 +103,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = $this->getModel()->with(['owner'])->get();
 
-        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function getWorkspacesByUser(int $userId): array
@@ -108,11 +112,11 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             ->withCount(['members', 'projects'])
             ->where(function ($query) use ($userId) {
                 $query->where('owner_id', $userId)
-                    ->orWhereHas('members', fn ($q) => $q->where('user_id', $userId));
+                    ->orWhereHas('members', fn($q) => $q->where('user_id', $userId));
             })
             ->get();
 
-        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function addUserToWorkspace(int $workspaceId, int $userId, string $role): bool
@@ -185,7 +189,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = ProjectModel::where('workspace_id', $workspaceId)->get();
 
-        return $models->map(fn ($model) => $this->mapProjectToEntity($model))->all();
+        return $models->map(fn($model) => $this->mapProjectToEntity($model))->all();
     }
 
     public function createProject(ProjectDTO $projectDTO): ProjectEntity
@@ -248,7 +252,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         }
 
         // Filter null values before update
-        $data = array_filter($taskDTO->toArray(), fn ($value) => $value !== null);
+        $data = array_filter($taskDTO->toArray(), fn($value) => $value !== null);
         $model->update($data);
 
         // Refresh model to get updated attributes
@@ -323,7 +327,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         return new TaskEntity(
             $model->id,
-            $model->title,
+            new TaskTitle($model->title),
             $model->description,
             $model->project_id,
             $model->assigned_to,
@@ -361,12 +365,94 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             $model->id,
             $model->task_id,
             $model->uploaded_by,
-            $model->file_path,
-            $model->file_name,
             $model->file_type,
             $model->file_size,
             $model->created_at,
-            $model->updated_at
+            $model->updated_at,
+            new FileName($model->file_name),
+            new FilePath($model->file_path)
         );
+    }
+
+    public function getCommentsByTask(int $taskId, int $userId): array
+    {
+        // Authorization check already done in service
+        $models = TaskCommentModel::where('task_id', $taskId)
+            ->with('user')
+            ->latest()
+            ->get();
+
+        return $models->map(fn($m) => $this->mapTaskCommentToEntity($m))->all();
+    }
+
+    public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity
+    {
+        $model = TaskCommentModel::findOrFail($commentId);
+
+        if ($model->user_id !== $userId) {
+            throw new InvalidArgumentException(__('workspaces.comment_not_owned'));
+        }
+
+        if ($model->created_at->lt(now()->subMinutes(30))) {
+            throw new InvalidArgumentException(__('workspaces.comment_edit_expired'));
+        }
+
+        $model->update(['comment' => $newComment]);
+
+        return $this->mapTaskCommentToEntity($model->fresh());
+    }
+
+    public function getAttachmentsByTask(int $taskId): array
+    {
+        $models = TaskAttachmentModel::where('task_id', $taskId)->latest()->get();
+
+        return $models->map(fn($m) => $this->mapTaskAttachmentToEntity($m))->all();
+    }
+
+    /**
+     * Delete a task comment (only owner can delete)
+     *
+     * @return bool true if deleted, false if not found or unauthorized
+     *
+     * @throws InvalidArgumentException if not owned by the user
+     */
+    public function deleteComment(int $commentId, int $userId): bool
+    {
+        /** @var TaskCommentModel|null $model */
+        $model = TaskCommentModel::find($commentId);
+
+        if (! $model) {
+            return false;
+        }
+
+        if ($model->user_id !== $userId) {
+            throw new InvalidArgumentException(__('workspaces.comment_not_owned'));
+        }
+
+        return (bool) $model->delete();
+    }
+
+    /**
+     * Delete a task attachment (only uploader can delete)
+     *
+     * @return bool true if deleted, false if not found or unauthorized
+     */
+    public function deleteAttachment(int $attachmentId, int $userId): bool
+    {
+        $model = TaskAttachmentModel::find($attachmentId);
+
+        if (! $model) {
+            return false;
+        }
+
+        if ($model->uploaded_by !== $userId) {
+            throw new InvalidArgumentException(__('workspaces.attachment_not_owned'));
+        }
+
+        if (Storage::exists($model->file_path)) {
+            Storage::delete($model->file_path);
+        }
+
+        return (bool) $model->delete();
     }
 }
