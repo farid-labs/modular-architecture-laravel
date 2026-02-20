@@ -62,7 +62,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = $this->getModel()->with(['members'])->where('owner_id', $ownerId)->get();
 
-        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function create(WorkspaceDTO $workspaceDTO): WorkspaceEntity
@@ -86,7 +86,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             return null;
         }
 
-        $data = array_filter($workspaceDTO->toArray(), fn($value) => $value !== null);
+        $data = array_filter($workspaceDTO->toArray(), fn ($value) => $value !== null);
         $model->update($data);
 
         return $this->mapToEntity($model);
@@ -103,7 +103,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = $this->getModel()->with(['owner'])->get();
 
-        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function getWorkspacesByUser(int $userId): array
@@ -112,11 +112,11 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             ->withCount(['members', 'projects'])
             ->where(function ($query) use ($userId) {
                 $query->where('owner_id', $userId)
-                    ->orWhereHas('members', fn($q) => $q->where('user_id', $userId));
+                    ->orWhereHas('members', fn ($q) => $q->where('user_id', $userId));
             })
             ->get();
 
-        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function addUserToWorkspace(int $workspaceId, int $userId, string $role): bool
@@ -189,7 +189,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     {
         $models = ProjectModel::where('workspace_id', $workspaceId)->get();
 
-        return $models->map(fn($model) => $this->mapProjectToEntity($model))->all();
+        return $models->map(fn ($model) => $this->mapProjectToEntity($model))->all();
     }
 
     public function createProject(ProjectDTO $projectDTO): ProjectEntity
@@ -252,7 +252,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         }
 
         // Filter null values before update
-        $data = array_filter($taskDTO->toArray(), fn($value) => $value !== null);
+        $data = array_filter($taskDTO->toArray(), fn ($value) => $value !== null);
         $model->update($data);
 
         // Refresh model to get updated attributes
@@ -339,10 +339,6 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         );
     }
 
-    /**
-     * Map task comment model to task comment entity.
-     * Now properly used in addCommentToTask method
-     */
     private function mapTaskCommentToEntity(TaskCommentModel $model): TaskCommentEntity
     {
         return new TaskCommentEntity(
@@ -382,7 +378,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             ->latest()
             ->get();
 
-        return $models->map(fn($m) => $this->mapTaskCommentToEntity($m))->all();
+        return $models->map(fn ($m) => $this->mapTaskCommentToEntity($m))->all();
     }
 
     public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity
@@ -399,14 +395,20 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
         $model->update(['comment' => $newComment]);
 
-        return $this->mapTaskCommentToEntity($model->fresh());
+        $freshModel = $model->fresh();
+
+        if (! $freshModel) {
+            throw new \RuntimeException('Failed to refresh comment model');
+        }
+
+        return $this->mapTaskCommentToEntity($freshModel);
     }
 
     public function getAttachmentsByTask(int $taskId): array
     {
         $models = TaskAttachmentModel::where('task_id', $taskId)->latest()->get();
 
-        return $models->map(fn($m) => $this->mapTaskAttachmentToEntity($m))->all();
+        return $models->map(fn ($m) => $this->mapTaskAttachmentToEntity($m))->all();
     }
 
     /**
