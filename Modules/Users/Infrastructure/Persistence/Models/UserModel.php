@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Modules\Users\Infrastructure\Database\Factories\UserFactory;
+use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -67,5 +68,12 @@ class UserModel extends Authenticatable
     public function getIsAdminAttribute(): bool
     {
         return (bool) ($this->attributes['is_admin'] ?? false);
+    }
+
+
+    public function workspaces()
+    {
+        return $this->belongsToMany(WorkspaceModel::class, 'workspace_members', 'user_id', 'workspace_id')
+            ->withPivot('role', 'joined_at');
     }
 }
