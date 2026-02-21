@@ -481,6 +481,11 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $model ? (bool) $model->delete() : false;
     }
 
+    /**
+     * Get all tasks for a project.
+     *
+     * @return array<int, \Modules\Workspace\Domain\Entities\TaskEntity>
+     */
     public function getTasksByProject(int $projectId): array
     {
         $models = TaskModel::where('project_id', $projectId)
