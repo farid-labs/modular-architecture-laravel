@@ -71,7 +71,7 @@ class TaskCommentTest extends TestCase
         $token = $this->member->createToken('test-token')->plainTextToken;
 
         // Test empty comment
-        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
             ->postJson(route('tasks.comments.store', $this->taskId), [
                 'comment' => '',
             ]);
@@ -80,7 +80,7 @@ class TaskCommentTest extends TestCase
             ->assertJsonValidationErrors('comment');
 
         // Test comment too short
-        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
             ->postJson(route('tasks.comments.store', $this->taskId), [
                 'comment' => 'ab',
             ]);
@@ -89,7 +89,7 @@ class TaskCommentTest extends TestCase
             ->assertJsonValidationErrors('comment');
 
         // Test comment too long
-        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
             ->postJson(route('tasks.comments.store', $this->taskId), [
                 'comment' => str_repeat('a', 2001),
             ]);
@@ -103,7 +103,7 @@ class TaskCommentTest extends TestCase
         $token = $this->member->createToken('test-token')->plainTextToken;
 
         // Create a comment first
-        $createResponse = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
+        $createResponse = $this->withHeaders(['Authorization' => 'Bearer '.$token])
             ->postJson(route('tasks.comments.store', $this->taskId), [
                 'comment' => 'Initial comment',
             ]);
@@ -111,7 +111,7 @@ class TaskCommentTest extends TestCase
         $commentId = $createResponse->json('data.id');
 
         // Test update with invalid data
-        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
             ->putJson(route('comments.update', $commentId), [
                 'comment' => 'ab',
             ]);

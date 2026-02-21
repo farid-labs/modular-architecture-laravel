@@ -43,7 +43,7 @@ class ProjectController extends Controller
         path: '/workspaces/{workspaceId}/projects',
         operationId: 'listProjects',
         summary: 'List projects in a workspace',
-        description: 'Retrieve all projects belonging to a specific workspace. ' .
+        description: 'Retrieve all projects belonging to a specific workspace. '.
             'Requires workspace membership for authorization.',
         security: [['bearerAuth' => []]],
         tags: ['Projects'],
@@ -121,7 +121,7 @@ class ProjectController extends Controller
         path: '/workspaces/{workspaceId}/projects',
         operationId: 'createProject',
         summary: 'Create a new project',
-        description: 'Create a new project within a specific workspace. ' .
+        description: 'Create a new project within a specific workspace. '.
             'Requires workspace membership for authorization.',
         security: [['bearerAuth' => []]],
         tags: ['Projects'],
@@ -303,7 +303,7 @@ class ProjectController extends Controller
         path: '/projects/{id}',
         operationId: 'updateProject',
         summary: 'Update project',
-        description: 'Update an existing project with new data. ' .
+        description: 'Update an existing project with new data. '.
             'Supports partial updates. Requires workspace membership.',
         security: [['bearerAuth' => []]],
         tags: ['Projects'],
@@ -352,7 +352,7 @@ class ProjectController extends Controller
 
         try {
             // Filter out null values for partial update
-            $validatedData = array_filter($request->validated(), fn($value) => $value !== null);
+            $validatedData = array_filter($request->validated(), fn ($value) => $value !== null);
 
             // Check if there are any fields to update
             if (empty($validatedData)) {
@@ -391,7 +391,7 @@ class ProjectController extends Controller
         path: '/projects/{id}',
         operationId: 'deleteProject',
         summary: 'Delete project',
-        description: 'Permanently delete a project and all its associated tasks. ' .
+        description: 'Permanently delete a project and all its associated tasks. '.
             'This action cannot be undone. Requires workspace membership.',
         security: [['bearerAuth' => []]],
         tags: ['Projects'],
@@ -448,7 +448,7 @@ class ProjectController extends Controller
         path: '/projects/{projectId}/tasks',
         operationId: 'listTasksByProject',
         summary: 'List tasks in a project',
-        description: 'Retrieve all tasks belonging to a specific project. ' .
+        description: 'Retrieve all tasks belonging to a specific project. '.
             'Requires workspace membership for authorization.',
         security: [['bearerAuth' => []]],
         tags: ['Tasks'],
