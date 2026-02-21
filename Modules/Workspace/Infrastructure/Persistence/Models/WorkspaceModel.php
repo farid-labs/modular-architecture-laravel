@@ -58,7 +58,7 @@ class WorkspaceModel extends Model
     /**
      * Workspace has many members (Users) via pivot table.
      *
-     * @return BelongsToMany<UserModel, $this, \Illuminate\Database\Eloquent\Relations\Pivot, 'pivot'>
+     * @return BelongsToMany<UserModel, $this, WorkspaceMemberPivot, 'pivot'>
      */
     public function members(): BelongsToMany
     {
@@ -67,7 +67,10 @@ class WorkspaceModel extends Model
             'workspace_members',
             'workspace_id',
             'user_id'
-        )->withPivot('role', 'joined_at')->withTimestamps();
+        )
+            ->using(WorkspaceMemberPivot::class)
+            ->withPivot('role', 'joined_at')
+            ->withTimestamps();
     }
 
     /**
