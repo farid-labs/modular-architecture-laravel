@@ -58,4 +58,50 @@ class TaskAttachmentTest extends TestCase
 
         Queue::assertPushed(ProcessTaskAttachmentJob::class);
     }
+
+    public function test_upload_attachment_validation(): void
+    {
+        $token = $this->member->createToken('test-token')->plainTextToken;
+
+        // Test missing file
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson(route('tasks.attachments.store', $this->taskId), []);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
+
+        // Test file too large (create fake file > 10MB)
+        $largeFile = UploadedFile::fake()->create('large.pdf', 10240 * 2, 'application/pdf');
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson(route('tasks.attachments.store', $this->taskId), [
+                'file' => $largeFile,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
+    }
+
+    public function test_delete_attachment_success(): void
+    {
+        // First upload an attachment
+        $token = $this->member->createToken('test-token')->plainTextToken;
+        $file = UploadedFile::fake()->create('test.pdf', 500, 'application/pdf');
+
+        $uploadResponse = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson(route('tasks.attachments.store', $this->taskId), [
+                'file' => $file,
+            ]);
+
+        $attachmentId = $uploadResponse->json('data.id');
+
+        // Delete the attachment
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->deleteJson("/api/v1/tasks/{$this->taskId}/attachments/{$attachmentId}");
+
+        $response->assertOk()
+            ->assertJson([
+                'message' => __('workspaces.attachment_deleted'),
+            ]);
+    }
 }

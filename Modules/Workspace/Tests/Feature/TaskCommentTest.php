@@ -64,4 +64,58 @@ class TaskCommentTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_add_comment_validation(): void
+    {
+        $token = $this->member->createToken('test-token')->plainTextToken;
+
+        // Test empty comment
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson(route('tasks.comments.store', $this->taskId), [
+                'comment' => '',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('comment');
+
+        // Test comment too short
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson(route('tasks.comments.store', $this->taskId), [
+                'comment' => 'ab',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('comment');
+
+        // Test comment too long
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson(route('tasks.comments.store', $this->taskId), [
+                'comment' => str_repeat('a', 2001),
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('comment');
+    }
+
+    public function test_update_comment_validation(): void
+    {
+        $token = $this->member->createToken('test-token')->plainTextToken;
+
+        // Create a comment first
+        $createResponse = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->postJson(route('tasks.comments.store', $this->taskId), [
+                'comment' => 'Initial comment',
+            ]);
+
+        $commentId = $createResponse->json('data.id');
+
+        // Test update with invalid data
+        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+            ->putJson("/api/v1/comments/{$commentId}", [
+                'comment' => 'ab',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('comment');
+    }
 }
