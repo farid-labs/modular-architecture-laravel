@@ -178,7 +178,7 @@ MIT License - see <a href="https://raw.githubusercontent.com/farid-labs/modular-
 
 ## 👨‍💻 About Farid Labs
 
-### Engineering-focused open-source repositories exploring scalable architectures, modern PHP practices, and enterprise patterns.
+#### Engineering-focused open-source repositories exploring scalable architectures, modern PHP practices, and enterprise patterns.
 
 #### 🔗 Portfolio: https://faridteymouri.vercel.app/
 
