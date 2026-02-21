@@ -7,11 +7,14 @@ use Modules\Workspace\Domain\Events\TaskAttachmentUploaded;
 
 /**
  * Listener to log attachment upload events.
+ * Records attachment activity for audit trail.
  */
 class LogAttachmentUploadListener
 {
     /**
      * Handle the event.
+     *
+     * @param  TaskAttachmentUploaded  $event  The attachment upload event
      */
     public function handle(TaskAttachmentUploaded $event): void
     {

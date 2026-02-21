@@ -10,11 +10,14 @@ use Modules\Workspace\Infrastructure\Persistence\Models\ProjectModel;
 
 /**
  * Listener to send notifications for task events.
+ * Subscribes to task created and completed events.
  */
 class SendTaskNotificationListener
 {
     /**
      * Handle task created event.
+     *
+     * @param  TaskCreated  $event  The task created event
      */
     public function onTaskCreated(TaskCreated $event): void
     {
@@ -34,6 +37,8 @@ class SendTaskNotificationListener
 
     /**
      * Handle task completed event.
+     *
+     * @param  TaskCompleted  $event  The task completed event
      */
     public function onTaskCompleted(TaskCompleted $event): void
     {
@@ -52,10 +57,12 @@ class SendTaskNotificationListener
 
     /**
      * Get workspace ID from project ID.
+     *
+     * @param  int  $projectId  The project ID
+     * @return int
      */
     private function getWorkspaceIdFromProject(int $projectId): int
     {
-        // Get project model and return workspace_id (default to 0 if not found)
         $project = ProjectModel::find($projectId);
 
         if ($project === null) {
