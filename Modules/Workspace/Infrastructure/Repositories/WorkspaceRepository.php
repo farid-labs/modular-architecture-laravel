@@ -2,6 +2,7 @@
 
 namespace Modules\Workspace\Infrastructure\Repositories;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
@@ -26,19 +27,27 @@ use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
 
 /**
  * Workspace repository implementation.
+ *
  * Handles data access and mapping between persistence models and domain entities.
+ * Implements the Repository pattern for clean separation of concerns.
+ * All methods work with domain entities, not Eloquent models directly.
+ *
+ * @see WorkspaceRepositoryInterface For interface contract
+ * @see WorkspaceEntity For domain entity representation
  */
 class WorkspaceRepository implements WorkspaceRepositoryInterface
 {
     /**
      * Create a new repository instance.
      *
-     * @param  string  $modelClass  The workspace model class name
+     * @param  string  $modelClass  The workspace model class name for dependency injection
      */
     public function __construct(private string $modelClass = WorkspaceModel::class) {}
 
     /**
      * Get a new workspace model instance.
+     *
+     * @return WorkspaceModel New model instance
      */
     private function getModel(): WorkspaceModel
     {
@@ -46,30 +55,56 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return new $this->modelClass;
     }
 
+    /**
+     * Find workspace by its ID.
+     *
+     * @param  int  $id  The workspace ID
+     */
     public function findById(int $id): ?WorkspaceEntity
     {
+        /** @var WorkspaceModel|null $model */
         $model = $this->getModel()->with(['owner', 'members'])->find($id);
 
         return $model ? $this->mapToEntity($model) : null;
     }
 
+    /**
+     * Find workspace by its slug.
+     *
+     * @param  string  $slug  The workspace slug
+     */
     public function findBySlug(string $slug): ?WorkspaceEntity
     {
+        /** @var WorkspaceModel|null $model */
         $model = $this->getModel()->with(['owner', 'members'])->where('slug', $slug)->first();
 
         return $model ? $this->mapToEntity($model) : null;
     }
 
+    /**
+     * Find all workspaces owned by a specific user.
+     *
+     * @param  int  $ownerId  The owner user ID
+     * @return array<int, WorkspaceEntity>
+     */
     public function findByOwnerId(int $ownerId): array
     {
+        /** @var Collection<int, WorkspaceModel> $models */
         $models = $this->getModel()->with(['members'])->where('owner_id', $ownerId)->get();
 
-        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn (WorkspaceModel $m) => $this->mapToEntity($m))->toArray();
     }
 
+    /**
+     * Create a new workspace.
+     *
+     * @param  WorkspaceDTO  $workspaceDTO  The workspace data transfer object
+     */
     public function create(WorkspaceDTO $workspaceDTO): WorkspaceEntity
     {
         $data = $workspaceDTO->toArray();
+
+        /** @var WorkspaceModel $model */
         $model = $this->getModel()->create($data);
 
         // Attach owner as a member with 'owner' role
@@ -81,9 +116,17 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $this->mapToEntity($model);
     }
 
+    /**
+     * Update an existing workspace.
+     *
+     * @param  int  $id  The workspace ID
+     * @param  WorkspaceDTO  $workspaceDTO  The workspace data transfer object
+     */
     public function update(int $id, WorkspaceDTO $workspaceDTO): ?WorkspaceEntity
     {
+        /** @var WorkspaceModel|null $model */
         $model = $this->getModel()->find($id);
+
         if (! $model) {
             return null;
         }
@@ -94,22 +137,41 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $this->mapToEntity($model);
     }
 
+    /**
+     * Delete a workspace by ID.
+     *
+     * @param  int  $id  The workspace ID
+     */
     public function delete(int $id): bool
     {
+        /** @var WorkspaceModel|null $model */
         $model = $this->getModel()->find($id);
 
         return $model ? (bool) $model->delete() : false;
     }
 
+    /**
+     * Get all workspaces.
+     *
+     * @return array<int, WorkspaceEntity>
+     */
     public function getAll(): array
     {
+        /** @var Collection<int, WorkspaceModel> $models */
         $models = $this->getModel()->with(['owner'])->get();
 
-        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn (WorkspaceModel $m) => $this->mapToEntity($m))->toArray();
     }
 
+    /**
+     * Get all workspaces a user is a member of.
+     *
+     * @param  int  $userId  The user ID
+     * @return array<int, WorkspaceEntity>
+     */
     public function getWorkspacesByUser(int $userId): array
     {
+        /** @var Collection<int, WorkspaceModel> $models */
         $models = $this->getModel()->with(['members', 'owner'])
             ->withCount(['members', 'projects'])
             ->where(function ($query) use ($userId) {
@@ -118,12 +180,21 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             })
             ->get();
 
-        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn (WorkspaceModel $m) => $this->mapToEntity($m))->toArray();
     }
 
+    /**
+     * Add a user to a workspace with a role.
+     *
+     * @param  int  $workspaceId  The workspace ID
+     * @param  int  $userId  The user ID
+     * @param  string  $role  The role to assign
+     */
     public function addUserToWorkspace(int $workspaceId, int $userId, string $role): bool
     {
+        /** @var WorkspaceModel|null $model */
         $model = $this->getModel()->find($workspaceId);
+
         if (! $model) {
             return false;
         }
@@ -147,8 +218,16 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return true;
     }
 
+    /**
+     * Remove a user from a workspace.
+     *
+     * @param  int  $workspaceId  The workspace ID
+     * @param  int  $userId  The user ID
+     * @return int Number of affected rows
+     */
     public function removeUserFromWorkspace(int $workspaceId, int $userId): int
     {
+        /** @var WorkspaceModel|null $model */
         $model = $this->getModel()->find($workspaceId);
 
         if (! $model) {
@@ -160,6 +239,8 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     /**
      * Map workspace model to workspace entity.
+     *
+     * @param  WorkspaceModel  $model  The workspace model
      */
     private function mapToEntity(WorkspaceModel $model): WorkspaceEntity
     {
@@ -180,29 +261,50 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         );
     }
 
+    /**
+     * Find project by ID.
+     *
+     * @param  int  $id  The project ID
+     */
     public function findProjectById(int $id): ?ProjectEntity
     {
+        /** @var ProjectModel|null $model */
         $model = ProjectModel::with(['workspace'])->find($id);
 
         return $model ? $this->mapProjectToEntity($model) : null;
     }
 
+    /**
+     * Get all projects belonging to a workspace.
+     *
+     * @param  int  $workspaceId  The workspace ID
+     * @return array<int, ProjectEntity>
+     */
     public function getProjectsByWorkspace(int $workspaceId): array
     {
+        /** @var Collection<int, ProjectModel> $models */
         $models = ProjectModel::where('workspace_id', $workspaceId)->get();
 
-        return $models->map(fn ($model) => $this->mapProjectToEntity($model))->all();
+        return $models->map(fn (ProjectModel $model) => $this->mapProjectToEntity($model))->all();
     }
 
+    /**
+     * Create a new project.
+     *
+     * @param  ProjectDTO  $projectDTO  The project data transfer object
+     */
     public function createProject(ProjectDTO $projectDTO): ProjectEntity
     {
+        /** @var ProjectModel $model */
         $model = ProjectModel::create($projectDTO->toArray());
 
         return $this->mapProjectToEntity($model);
     }
 
     /**
-     * Check if workspace exists by ID
+     * Check if workspace exists by ID.
+     *
+     * @param  int  $workspaceId  The workspace ID
      */
     public function workspaceExists(int $workspaceId): bool
     {
@@ -210,7 +312,10 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     }
 
     /**
-     * Check if user is a member of an existing workspace
+     * Check if user is a member of an existing workspace.
+     *
+     * @param  int  $workspaceId  The workspace ID
+     * @param  int  $userId  The user ID
      *
      * @throws InvalidArgumentException if workspace does not exist
      */
@@ -228,25 +333,41 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             ->exists();
     }
 
+    /**
+     * Find task by ID.
+     *
+     * @param  int  $id  The task ID
+     */
     public function findTaskById(int $id): ?TaskEntity
     {
-        // Use correct relationship name 'project' instead of 'projectModel'
-        $model = TaskModel::with(['project', 'assignedUser', 'comments', 'attachments'])
-            ->find($id);
+        /** @var TaskModel|null $model */
+        $model = TaskModel::with(['project', 'assignedUser', 'comments', 'attachments'])->find($id);
 
         return $model ? $this->mapTaskToEntity($model) : null;
     }
 
+    /**
+     * Create a new task.
+     *
+     * @param  TaskDTO  $taskDTO  The task data transfer object
+     */
     public function createTask(TaskDTO $taskDTO): TaskEntity
     {
+        /** @var TaskModel $model */
         $model = TaskModel::create($taskDTO->toArray());
 
         return $this->mapTaskToEntity($model);
     }
 
+    /**
+     * Update a task.
+     *
+     * @param  int  $id  The task ID
+     * @param  TaskDTO  $taskDTO  The task data transfer object
+     */
     public function updateTask(int $id, TaskDTO $taskDTO): ?TaskEntity
     {
-        // Use query builder properly to ensure model instance
+        /** @var TaskModel|null $model */
         $model = TaskModel::query()->find($id);
 
         if (! $model) {
@@ -263,9 +384,17 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $this->mapTaskToEntity($model);
     }
 
+    /**
+     * Check if user is a member of a project.
+     *
+     * @param  int  $projectId  The project ID
+     * @param  int  $userId  The user ID
+     */
     public function isUserMemberOfProject(int $projectId, int $userId): bool
     {
+        /** @var ProjectModel|null $project */
         $project = ProjectModel::with('workspace')->find($projectId);
+
         if (! $project) {
             return false;
         }
@@ -273,18 +402,35 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $this->isUserMemberOfWorkspace($project->workspace_id, $userId);
     }
 
+    /**
+     * Add a comment to a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @param  string  $comment  The comment text
+     * @param  int  $userId  The user ID
+     */
     public function addCommentToTask(int $taskId, string $comment, int $userId): TaskCommentEntity
     {
+        /** @var TaskCommentModel $commentModel */
         $commentModel = TaskCommentModel::create([
             'task_id' => $taskId,
             'user_id' => $userId,
             'comment' => $comment,
         ]);
 
-        // Return mapped entity instead of void
         return $this->mapTaskCommentToEntity($commentModel);
     }
 
+    /**
+     * Upload an attachment to a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @param  string  $filePath  The file path
+     * @param  string  $fileName  The file name
+     * @param  string  $mimeType  The MIME type
+     * @param  int  $fileSize  The file size in bytes
+     * @param  int  $userId  The user ID
+     */
     public function uploadAttachmentToTask(
         int $taskId,
         string $filePath,
@@ -293,6 +439,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         int $fileSize,
         int $userId
     ): TaskAttachmentEntity {
+        /** @var TaskAttachmentModel $attachmentModel */
         $attachmentModel = TaskAttachmentModel::create([
             'task_id' => $taskId,
             'file_path' => $filePath,
@@ -302,12 +449,13 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
             'uploaded_by' => $userId,
         ]);
 
-        // Return mapped entity instead of void
         return $this->mapTaskAttachmentToEntity($attachmentModel);
     }
 
     /**
      * Map project model to project entity.
+     *
+     * @param  ProjectModel  $model  The project model
      */
     private function mapProjectToEntity(ProjectModel $model): ProjectEntity
     {
@@ -324,6 +472,8 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     /**
      * Map task model to task entity.
+     *
+     * @param  TaskModel  $model  The task model
      */
     private function mapTaskToEntity(TaskModel $model): TaskEntity
     {
@@ -341,6 +491,11 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         );
     }
 
+    /**
+     * Map task comment model to task comment entity.
+     *
+     * @param  TaskCommentModel  $model  The task comment model
+     */
     private function mapTaskCommentToEntity(TaskCommentModel $model): TaskCommentEntity
     {
         return new TaskCommentEntity(
@@ -355,7 +510,8 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
     /**
      * Map task attachment model to task attachment entity.
-     * Now properly used in uploadAttachmentToTask method
+     *
+     * @param  TaskAttachmentModel  $model  The task attachment model
      */
     private function mapTaskAttachmentToEntity(TaskAttachmentModel $model): TaskAttachmentEntity
     {
@@ -372,19 +528,34 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         );
     }
 
+    /**
+     * Get all comments for a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @param  int  $userId  The user ID
+     * @return array<int, TaskCommentEntity>
+     */
     public function getCommentsByTask(int $taskId, int $userId): array
     {
-        // Authorization check already done in service
+        /** @var Collection<int, TaskCommentModel> $models */
         $models = TaskCommentModel::where('task_id', $taskId)
             ->with('user')
             ->latest()
             ->get();
 
-        return $models->map(fn ($m) => $this->mapTaskCommentToEntity($m))->all();
+        return $models->map(fn (TaskCommentModel $m) => $this->mapTaskCommentToEntity($m))->all();
     }
 
+    /**
+     * Update an existing comment (only owner within 30 minutes).
+     *
+     * @param  int  $commentId  The comment ID
+     * @param  string  $newComment  The new comment text
+     * @param  int  $userId  The user ID
+     */
     public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity
     {
+        /** @var TaskCommentModel $model */
         $model = TaskCommentModel::findOrFail($commentId);
 
         if ($model->user_id !== $userId) {
@@ -397,26 +568,32 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
 
         $model->update(['comment' => $newComment]);
 
+        // Fresh is guaranteed to return model after findOrFail()
+        /** @var TaskCommentModel $freshModel */
         $freshModel = $model->fresh();
-
-        if (! $freshModel) {
-            throw new \RuntimeException('Failed to refresh comment model');
-        }
 
         return $this->mapTaskCommentToEntity($freshModel);
     }
 
+    /**
+     * Get all attachments for a task.
+     *
+     * @param  int  $taskId  The task ID
+     * @return array<int, TaskAttachmentEntity>
+     */
     public function getAttachmentsByTask(int $taskId): array
     {
+        /** @var Collection<int, TaskAttachmentModel> $models */
         $models = TaskAttachmentModel::where('task_id', $taskId)->latest()->get();
 
-        return $models->map(fn ($m) => $this->mapTaskAttachmentToEntity($m))->all();
+        return $models->map(fn (TaskAttachmentModel $m) => $this->mapTaskAttachmentToEntity($m))->all();
     }
 
     /**
-     * Delete a task comment (only owner can delete)
+     * Delete a task comment (only owner can delete).
      *
-     * @return bool true if deleted, false if not found or unauthorized
+     * @param  int  $commentId  The comment ID
+     * @param  int  $userId  The user ID
      *
      * @throws InvalidArgumentException if not owned by the user
      */
@@ -437,12 +614,14 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     }
 
     /**
-     * Delete a task attachment (only uploader can delete)
+     * Delete a task attachment (only uploader can delete).
      *
-     * @return bool true if deleted, false if not found or unauthorized
+     * @param  int  $attachmentId  The attachment ID
+     * @param  int  $userId  The user ID
      */
     public function deleteAttachment(int $attachmentId, int $userId): bool
     {
+        /** @var TaskAttachmentModel|null $model */
         $model = TaskAttachmentModel::find($attachmentId);
 
         if (! $model) {
@@ -460,9 +639,17 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return (bool) $model->delete();
     }
 
+    /**
+     * Update an existing project.
+     *
+     * @param  int  $id  The project ID
+     * @param  ProjectDTO  $projectDTO  The project data transfer object
+     */
     public function updateProject(int $id, ProjectDTO $projectDTO): ?ProjectEntity
     {
+        /** @var ProjectModel|null $model */
         $model = ProjectModel::find($id);
+
         if (! $model) {
             return null;
         }
@@ -474,8 +661,14 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $this->mapProjectToEntity($model);
     }
 
+    /**
+     * Delete a project by ID.
+     *
+     * @param  int  $id  The project ID
+     */
     public function deleteProject(int $id): bool
     {
+        /** @var ProjectModel|null $model */
         $model = ProjectModel::find($id);
 
         return $model ? (bool) $model->delete() : false;
@@ -484,20 +677,28 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     /**
      * Get all tasks for a project.
      *
-     * @return array<int, \Modules\Workspace\Domain\Entities\TaskEntity>
+     * @param  int  $projectId  The project ID
+     * @return array<int, TaskEntity>
      */
     public function getTasksByProject(int $projectId): array
     {
+        /** @var Collection<int, TaskModel> $models */
         $models = TaskModel::where('project_id', $projectId)
             ->with(['assignedUser', 'comments', 'attachments'])
             ->latest()
             ->get();
 
-        return $models->map(fn ($m) => $this->mapTaskToEntity($m))->all();
+        return $models->map(fn (TaskModel $m) => $this->mapTaskToEntity($m))->all();
     }
 
+    /**
+     * Delete a task by ID.
+     *
+     * @param  int  $id  The task ID
+     */
     public function deleteTask(int $id): bool
     {
+        /** @var TaskModel|null $model */
         $model = TaskModel::find($id);
 
         return $model ? (bool) $model->delete() : false;
@@ -506,11 +707,14 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     /**
      * Get all members of a workspace.
      *
+     * @param  int  $workspaceId  The workspace ID
      * @return array<int, array<string, mixed>>
      */
     public function getWorkspaceMembers(int $workspaceId): array
     {
+        /** @var WorkspaceModel|null $workspace */
         $workspace = $this->getModel()->with(['members'])->find($workspaceId);
+
         if (! $workspace) {
             throw new \InvalidArgumentException(__('workspaces.workspace_not_found', ['id' => $workspaceId]));
         }
