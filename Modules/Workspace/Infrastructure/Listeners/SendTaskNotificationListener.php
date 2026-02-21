@@ -59,7 +59,6 @@ class SendTaskNotificationListener
      * Get workspace ID from project ID.
      *
      * @param  int  $projectId  The project ID
-     * @return int
      */
     private function getWorkspaceIdFromProject(int $projectId): int
     {

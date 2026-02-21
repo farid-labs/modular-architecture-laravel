@@ -55,7 +55,7 @@ class WorkspaceServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             WorkspaceRepositoryInterface::class,
-            fn($app) => new WorkspaceRepository(WorkspaceModel::class)
+            fn ($app) => new WorkspaceRepository(WorkspaceModel::class)
         );
     }
 
@@ -65,10 +65,10 @@ class WorkspaceServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Load module routes
-        $this->loadRoutesFrom(__DIR__ . '/../../Presentation/Routes/api.php');
+        $this->loadRoutesFrom(__DIR__.'/../../Presentation/Routes/api.php');
 
         // Load module migrations
-        $this->loadMigrationsFrom(__DIR__ . '/../../Infrastructure/Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../Infrastructure/Database/Migrations');
 
         // Register Policies
         Gate::policy(TaskEntity::class, TaskPolicy::class);
