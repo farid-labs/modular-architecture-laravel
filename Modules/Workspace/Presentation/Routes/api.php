@@ -36,6 +36,10 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
         ->whereNumber('workspaceId')
         ->name('workspaces.members.remove');
 
+    // Workspace members list
+    Route::get('/workspaces/{workspaceId}/members', [WorkspaceController::class, 'indexMembers'])
+        ->whereNumber('workspaceId');
+
     // ===== Projects (Nested under Workspaces) =====
     // List projects within a workspace
     Route::get('/workspaces/{workspaceId}/projects', [ProjectController::class, 'index'])
@@ -49,7 +53,10 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/projects/{id}', [ProjectController::class, 'show'])
         ->whereNumber('id');
 
-    // ===== Tasks (Nested under Projects) =====
+    // Projects full CRUD
+    Route::put('/projects/{id}', [ProjectController::class, 'update'])->whereNumber('id');
+    Route::delete('/projects/{id}', [ProjectController::class, 'destroy'])->whereNumber('id');
+
     // List tasks within a project
     Route::get('/projects/{projectId}/tasks', [TaskController::class, 'index'])
         ->whereNumber('projectId');
@@ -57,6 +64,8 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     // Create a new task within a project
     Route::post('/projects/{projectId}/tasks', [TaskController::class, 'store'])
         ->whereNumber('projectId');
+
+    // ===== Tasks (Nested under Projects) =====
 
     // Get a single task by numeric ID
     Route::get('/tasks/{id}', [TaskController::class, 'show'])
@@ -66,6 +75,10 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::put('/tasks/{id}/complete', [TaskController::class, 'complete'])
         ->whereNumber('id');
 
+    Route::put('/tasks/{id}', [TaskController::class, 'update'])->whereNumber('id');
+
+    Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])->whereNumber('id');
+
     // ===== Task Comments =====
     Route::get('/tasks/{taskId}/comments', [TaskCommentController::class, 'index'])
         ->whereNumber('taskId');
@@ -73,10 +86,16 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
         ->whereNumber('taskId')->name('tasks.comments.store');
     Route::put('/comments/{commentId}', [TaskCommentController::class, 'update'])
         ->whereNumber('commentId');
-
+    // Comments delete
+    Route::delete('/tasks/{taskId}/comments/{commentId}', [TaskCommentController::class, 'destroy'])
+        ->whereNumber(['taskId', 'commentId']);
     // ===== Task Attachments =====
     Route::get('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'index'])
         ->whereNumber('taskId');
     Route::post('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'store'])
         ->whereNumber('taskId')->name('tasks.attachments.store');
+
+    // Attachments delete
+    Route::delete('/tasks/{taskId}/attachments/{attachmentId}', [TaskAttachmentController::class, 'destroy'])
+        ->whereNumber(['taskId', 'attachmentId']);
 });
