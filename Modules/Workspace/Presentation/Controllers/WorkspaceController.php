@@ -5,7 +5,7 @@ namespace Modules\Workspace\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
 use Modules\Workspace\Presentation\Requests\StoreWorkspaceRequest;
@@ -107,7 +107,7 @@ class WorkspaceController extends Controller
                 'data' => new WorkspaceResource($workspace),
                 'message' => __('workspaces.retrieved'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             // Handle workspace not found
             return response()->json([
                 'message' => $e->getMessage(),
@@ -201,24 +201,18 @@ class WorkspaceController extends Controller
             )
         ),
         responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Workspace updated successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'data', ref: '#/components/schemas/WorkspaceResource'),
-                        new OA\Property(property: 'message', type: 'string'),
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: 'Unauthorized', ref: '#/components/schemas/ErrorResponse'),
-            new OA\Response(response: 403, description: 'Forbidden - Not workspace owner', ref: '#/components/schemas/ErrorResponse'),
-            new OA\Response(response: 404, description: 'Workspace not found', ref: '#/components/schemas/ErrorResponse'),
-            new OA\Response(response: 422, description: 'Validation error', ref: '#/components/schemas/ErrorResponse'),
+            new OA\Response(response: 200, description: 'Workspace updated successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Not workspace owner'),
+            new OA\Response(response: 404, description: 'Workspace not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function update(UpdateWorkspaceRequest $request, int $id): JsonResponse
     {
+        // Get authenticated user
+        $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+
         // Validate workspace ID
         if ($id <= 0) {
             return response()->json([
@@ -230,7 +224,6 @@ class WorkspaceController extends Controller
         try {
             // Remove null fields from validated data
             $validatedData = array_filter($request->validated(), fn ($value) => $value !== null);
-
             if (empty($validatedData)) {
                 return response()->json([
                     'message' => __('workspaces.no_fields_to_update'),
@@ -239,33 +232,24 @@ class WorkspaceController extends Controller
 
             // Convert to DTO and update workspace
             $workspaceDTO = WorkspaceDTO::fromArray($validatedData);
-            $workspace = $this->workspaceService->updateWorkspace($id, $workspaceDTO);
+            $workspace = $this->workspaceService->updateWorkspace($id, $workspaceDTO, $user);
 
             return response()->json([
                 'data' => new WorkspaceResource($workspace),
                 'message' => __('workspaces.updated'),
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Return validation errors
-            return response()->json([
-                'message' => __('workspaces.validation_failed'),
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
+            // Check if error is about ownership
+            if (str_contains($e->getMessage(), 'owner')) {
+                return response()->json([
+                    'message' => __('workspaces.not_owner'),
+                ], 403);
+            }
+
             // Workspace not found
             return response()->json([
                 'message' => $e->getMessage(),
             ], 404);
-        } catch (\Exception $e) {
-            // Log unexpected errors
-            Log::error('Workspace update failed', [
-                'id' => $id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => __('workspaces.update_failed'),
-            ], 500);
         }
     }
 
@@ -302,7 +286,7 @@ class WorkspaceController extends Controller
             return response()->json([
                 'message' => __('workspaces.deleted'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 404);
@@ -346,22 +330,28 @@ class WorkspaceController extends Controller
             'role' => 'required|in:owner,admin,member',
         ]);
 
-        // Add user to workspace via service
-        $result = $this->workspaceService->addUserToWorkspace(
-            $workspaceId,
-            $request->user_id,
-            $request->role
-        );
+        try {
+            // Add user to workspace via service
+            $result = $this->workspaceService->addUserToWorkspace(
+                $workspaceId,
+                $request->user_id,
+                $request->role
+            );
 
-        if (! $result) {
+            if (! $result) {
+                return response()->json([
+                    'message' => __('workspaces.not_found_by_id', ['id' => $workspaceId]),
+                ], 404);
+            }
+
             return response()->json([
-                'message' => __('workspaces.not_found_by_id', ['id' => $workspaceId]),
+                'message' => __('workspaces.member_added'),
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
             ], 404);
         }
-
-        return response()->json([
-            'message' => __('workspaces.member_added'),
-        ]);
     }
 
     // ==================== REMOVE WORKSPACE MEMBER ====================
@@ -399,21 +389,27 @@ class WorkspaceController extends Controller
 
         $targetUserId = $request->input('user_id');
 
-        // Remove user from workspace via service
-        $affected = $this->workspaceService->removeUserFromWorkspace($workspaceId, $targetUserId);
+        try {
+            // Remove user from workspace via service
+            $affected = $this->workspaceService->removeUserFromWorkspace($workspaceId, $targetUserId);
 
-        if ($affected === 0) {
+            if ($affected === 0) {
+                return response()->json([
+                    'message' => __('workspaces.membership_not_found', [
+                        'user_id' => $targetUserId,
+                        'workspace_id' => $workspaceId,
+                    ]),
+                ], 404);
+            }
+
             return response()->json([
-                'message' => __('workspaces.membership_not_found', [
-                    'user_id' => $targetUserId,
-                    'workspace_id' => $workspaceId,
-                ]),
+                'message' => __('workspaces.member_removed'),
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
             ], 404);
         }
-
-        return response()->json([
-            'message' => __('workspaces.member_removed'),
-        ]);
     }
 
     // ==================== LIST WORKSPACE MEMBERS ====================
@@ -444,7 +440,7 @@ class WorkspaceController extends Controller
                 'data' => $members,
                 'message' => __('workspaces.members_retrieved'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
     }
