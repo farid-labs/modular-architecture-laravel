@@ -9,11 +9,18 @@ use Modules\Workspace\Domain\Entities\TaskEntity;
 
 /**
  * Event fired when a task is marked as completed.
+ * Broadcasts to private channel for real-time notifications.
  */
 final class TaskCompleted implements ShouldBroadcast
 {
     use InteractsWithSockets;
 
+    /**
+     * Create a new event instance.
+     *
+     * @param  TaskEntity  $task  The completed task entity
+     * @param  int  $actorId  The user ID who completed the task
+     */
     public function __construct(
         public TaskEntity $task,
         public int $actorId

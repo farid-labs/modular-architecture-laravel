@@ -11,11 +11,19 @@ use Modules\Workspace\Presentation\Resources\TaskCommentResource;
 
 /**
  * Event fired when a task comment is updated.
+ * Broadcasts to private channel for real-time updates.
  */
 final class TaskCommentUpdated implements ShouldBroadcast
 {
     use InteractsWithSockets;
 
+    /**
+     * Create a new event instance.
+     *
+     * @param  TaskEntity  $task  The task entity
+     * @param  TaskCommentEntity  $comment  The updated comment entity
+     * @param  int  $actorId  The user ID who updated the comment
+     */
     public function __construct(
         public TaskEntity $task,
         public TaskCommentEntity $comment,

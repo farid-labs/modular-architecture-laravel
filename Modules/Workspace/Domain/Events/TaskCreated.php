@@ -10,11 +10,18 @@ use Modules\Workspace\Presentation\Resources\TaskResource;
 
 /**
  * Event fired when a new task is created.
+ * Broadcasts to private channel for real-time notifications.
  */
 final class TaskCreated implements ShouldBroadcast
 {
     use InteractsWithSockets;
 
+    /**
+     * Create a new event instance.
+     *
+     * @param  TaskEntity  $task  The newly created task entity
+     * @param  int  $actorId  The user ID who created the task
+     */
     public function __construct(
         public TaskEntity $task,
         public int $actorId
