@@ -463,4 +463,137 @@ class WorkspaceService
             fn () => $this->workspaceRepository->getAttachmentsByTask($taskId)
         );
     }
+
+    /**
+     * Update an existing project.
+     */
+    public function updateProject(int $id, ProjectDTO $projectDTO, UserModel $user): ProjectEntity
+    {
+        $project = $this->getProjectById($id);
+
+        // Check if user is member of workspace
+        if (! $this->workspaceRepository->isUserMemberOfWorkspace($project->getWorkspaceId(), $user->id)) {
+            throw new \InvalidArgumentException(__('workspaces.not_member'));
+        }
+
+        $updatedProject = $this->workspaceRepository->updateProject($id, $projectDTO);
+
+        if (! $updatedProject) {
+            throw new \InvalidArgumentException(__('workspaces.project_not_found', ['id' => $id]));
+        }
+
+        Log::channel('domain')->info('Project updated', [
+            'project_id' => $id,
+            'user_id' => $user->id,
+        ]);
+
+        return $updatedProject;
+    }
+
+    /**
+     * Delete a project by ID.
+     */
+    public function deleteProject(int $id): bool
+    {
+        $project = $this->getProjectById($id);
+
+        $result = $this->workspaceRepository->deleteProject($id);
+
+        if (! $result) {
+            throw new \InvalidArgumentException(__('workspaces.project_not_found', ['id' => $id]));
+        }
+
+        Log::channel('domain')->info('Project deleted', ['project_id' => $id]);
+
+        return true;
+    }
+
+    /**
+     * Get all tasks for a project.
+     *
+     * @return array<int, TaskEntity>
+     */
+    public function getTasksByProject(int $projectId, int $userId): array
+    {
+        $project = $this->getProjectById($projectId);
+
+        if (! $this->workspaceRepository->isUserMemberOfWorkspace($project->getWorkspaceId(), $userId)) {
+            throw new \InvalidArgumentException(__('workspaces.not_member'));
+        }
+
+        return $this->workspaceRepository->getTasksByProject($projectId);
+    }
+
+    /**
+     * Update an existing task.
+     */
+    public function updateTask(int $id, TaskDTO $taskDTO, UserModel $user): TaskEntity
+    {
+        $task = $this->getTaskById($id);
+
+        if (! $this->workspaceRepository->isUserMemberOfProject($task->getProjectId(), $user->id)) {
+            throw new \InvalidArgumentException(__('workspaces.not_member_of_project'));
+        }
+
+        $updatedTask = $this->workspaceRepository->updateTask($id, $taskDTO);
+
+        if (! $updatedTask) {
+            throw new \InvalidArgumentException(__('workspaces.task_not_found', ['id' => $id]));
+        }
+
+        Log::channel('domain')->info('Task updated', [
+            'task_id' => $id,
+            'user_id' => $user->id,
+        ]);
+
+        return $updatedTask;
+    }
+
+    /**
+     * Delete a task by ID.
+     */
+    public function deleteTask(int $id): bool
+    {
+        $task = $this->getTaskById($id);
+
+        $result = $this->workspaceRepository->deleteTask($id);
+
+        if (! $result) {
+            throw new \InvalidArgumentException(__('workspaces.task_not_found', ['id' => $id]));
+        }
+
+        Log::channel('domain')->info('Task deleted', ['task_id' => $id]);
+
+        return true;
+    }
+
+    /**
+     * Get workspace members.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getWorkspaceMembers(int $workspaceId, int $userId): array
+    {
+        if (! $this->workspaceRepository->isUserMemberOfWorkspace($workspaceId, $userId)) {
+            throw new \InvalidArgumentException(__('workspaces.not_member'));
+        }
+
+        return $this->workspaceRepository->getWorkspaceMembers($workspaceId);
+    }
+
+    /**
+     * Delete a comment.
+     */
+    public function deleteComment(int $commentId, int $userId): bool
+    {
+        return $this->workspaceRepository->deleteComment($commentId, $userId);
+    }
+
+    /**
+     * Delete an attachment.
+     */
+    public function deleteAttachment(int $attachmentId, int $userId): bool
+    {
+        return $this->workspaceRepository->deleteAttachment($attachmentId, $userId);
+    }
 }

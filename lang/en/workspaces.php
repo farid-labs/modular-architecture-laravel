@@ -58,4 +58,42 @@ return [
     'invalid_file_type' => 'Invalid file type. Allowed types: JPEG, PNG, PDF',
     'file_size_exceeds_limit' => 'File size exceeds maximum limit of 10MB',
 
+    // Project Messages
+    'project_updated' => 'Project updated successfully',
+    'project_deleted' => 'Project deleted successfully',
+    'tasks_retrieved' => 'Tasks retrieved successfully',
+    'task_updated' => 'Task updated successfully',
+    'task_deleted' => 'Task deleted successfully',
+
+    // Comment Messages
+    'comment_deleted' => 'Comment deleted successfully',
+    'comment_updated' => 'Comment updated successfully',
+    'comment_added' => 'Comment added successfully',
+    'comments_retrieved' => 'Comments retrieved successfully',
+    'comment_not_owned' => 'You can only delete your own comments',
+    'comment_edit_expired' => 'Comment can only be edited within 30 minutes of creation',
+    'comment_max_length' => 'Comment must not exceed 2000 characters',
+
+    // Attachment Messages
+    'attachment_deleted' => 'Attachment deleted successfully',
+    'attachment_uploaded' => 'Attachment uploaded successfully',
+    'attachments_retrieved' => 'Attachments retrieved successfully',
+    'attachment_not_owned' => 'You can only delete your own attachments',
+    'invalid_file_name' => 'Invalid file name',
+    'invalid_file_path' => 'Invalid file path',
+
+    // Task Messages
+    'task_title_min_length' => 'Task title must be at least 3 characters',
+    'task_title_max_length' => 'Task title must not exceed 255 characters',
+
+    // Member Messages
+    'members_retrieved' => 'Workspace members retrieved successfully',
+
+    // Validation Messages
+    'validation_failed' => 'Validation failed',
+    'update_failed' => 'Update failed',
+
+    // Workspace ID Messages
+    'workspace_id_required' => 'Workspace ID is required',
+    'workspace_id_invalid' => 'Invalid workspace ID: :value',
 ];
