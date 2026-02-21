@@ -7,39 +7,83 @@ use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
 use Spatie\DataTransferObject\DataTransferObject;
 
+/**
+ * Data Transfer Object for Task operations.
+ *
+ * Encapsulates task data for transfer between application layers.
+ * Supports both snake_case and camelCase array keys for flexibility.
+ * Validates task status, priority, and due date during instantiation.
+ */
 class TaskDTO extends DataTransferObject
 {
-    // Task title
+    /**
+     * Task title.
+     * Required field, must be between 3-255 characters.
+     * Brief summary of the task.
+     */
     public string $title;
 
-    // Optional task description
+    /**
+     * Optional task description.
+     * Can contain detailed information about task requirements.
+     */
     public ?string $description = null;
 
-    // Related project ID
+    /**
+     * Related project ID.
+     * Associates the task with a specific project.
+     * Must be a positive integer.
+     */
     public int $projectId;
 
-    // Optional assigned user ID
+    /**
+     * Optional assigned user ID.
+     * Tracks who is responsible for completing the task.
+     * Null if task is unassigned.
+     */
     public ?int $assignedTo = null;
 
-    // Current task status (default: PENDING)
+    /**
+     * Current task status.
+     * Defaults to PENDING if not specified.
+     * Valid values: pending, in_progress, completed, blocked, cancelled
+     */
     public TaskStatus $status = TaskStatus::PENDING;
 
-    // Task priority level (default: MEDIUM)
+    /**
+     * Task priority level.
+     * Defaults to MEDIUM if not specified.
+     * Valid values: low, medium, high, urgent
+     */
     public TaskPriority $priority = TaskPriority::MEDIUM;
 
-    // Optional due date
+    /**
+     * Optional due date.
+     * Target completion date for the task.
+     * Cannot be in the past when creating a task.
+     */
     public ?CarbonInterface $dueDate = null;
 
-    // Task creation timestamp
+    /**
+     * Task creation timestamp.
+     * Automatically set when task is created.
+     */
     public ?CarbonInterface $createdAt = null;
 
-    // Task last update timestamp
+    /**
+     * Task last update timestamp.
+     * Updated whenever task data is modified.
+     */
     public ?CarbonInterface $updatedAt = null;
 
     /**
      * Create a TaskDTO instance from an array.
      *
-     * @param  array<string, mixed>  $data
+     * Accepts both snake_case and camelCase keys for all fields.
+     * Maps status and priority strings to their respective enums.
+     * Parses due date and timestamps to Carbon instances if provided.
+     *
+     * @param  array<string, mixed>  $data  Associative array containing task data
      */
     public static function fromArray(array $data): self
     {
@@ -86,7 +130,11 @@ class TaskDTO extends DataTransferObject
     /**
      * Convert the DTO to an array representation.
      *
-     * @return array<string, mixed>
+     * Transforms camelCase property names to snake_case for database persistence.
+     * Converts enum values to their string representations.
+     * Formats due date as standard datetime string.
+     *
+     * @return array<string, mixed> Associative array with snake_case keys
      */
     public function toArray(): array
     {

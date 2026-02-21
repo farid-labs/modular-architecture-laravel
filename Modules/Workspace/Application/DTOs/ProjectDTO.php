@@ -6,30 +6,63 @@ use Carbon\CarbonInterface;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Spatie\DataTransferObject\DataTransferObject;
 
+/**
+ * Data Transfer Object for Project operations.
+ *
+ * Encapsulates project data for transfer between application layers.
+ * Supports both snake_case and camelCase array keys for flexibility.
+ * Validates workspace ID and project status during instantiation.
+ */
 class ProjectDTO extends DataTransferObject
 {
-    // The project name
+    /**
+     * The project name.
+     * Required field, must be between 3-100 characters.
+     */
     public string $name;
 
-    // Optional project description
+    /**
+     * Optional project description.
+     * Can contain detailed information about project goals and scope.
+     */
     public ?string $description = null;
 
-    // Related workspace ID
+    /**
+     * Related workspace ID.
+     * Associates the project with a specific workspace.
+     * Must be a positive integer.
+     */
     public int $workspaceId;
 
-    // Current project status (default: ACTIVE)
+    /**
+     * Current project status.
+     * Defaults to ACTIVE if not specified.
+     * Valid values: active, completed, archived
+     */
     public ProjectStatus $status = ProjectStatus::ACTIVE;
 
-    // Project creation timestamp
+    /**
+     * Project creation timestamp.
+     * Automatically set when project is created.
+     */
     public ?CarbonInterface $createdAt = null;
 
-    // Project last update timestamp
+    /**
+     * Project last update timestamp.
+     * Updated whenever project data is modified.
+     */
     public ?CarbonInterface $updatedAt = null;
 
     /**
      * Create a ProjectDTO instance from an array.
      *
-     * @param  array<string, mixed>  $data
+     * Accepts both snake_case and camelCase keys for workspace ID.
+     * Validates workspace ID is provided and is a positive integer.
+     * Maps status string to ProjectStatus enum if provided.
+     *
+     * @param  array<string, mixed>  $data  Associative array containing project data
+     *
+     * @throws \InvalidArgumentException If workspace ID is missing or invalid
      */
     public static function fromArray(array $data): self
     {
@@ -81,7 +114,11 @@ class ProjectDTO extends DataTransferObject
     /**
      * Convert the DTO to an array representation.
      *
-     * @return array<string, mixed>
+     * Transforms camelCase property names to snake_case for database persistence.
+     * Converts enum values to their string representations.
+     * Formats timestamps as ISO 8601 strings.
+     *
+     * @return array<string, mixed> Associative array with snake_case keys
      */
     public function toArray(): array
     {

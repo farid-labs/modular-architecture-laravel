@@ -5,27 +5,56 @@ namespace Modules\Workspace\Application\DTOs;
 use Illuminate\Support\Str;
 use Spatie\DataTransferObject\DataTransferObject;
 
+/**
+ * Data Transfer Object for Workspace operations.
+ *
+ * Encapsulates workspace data for transfer between application layers.
+ * Supports partial updates by allowing null values for optional fields.
+ * Automatically generates URL-friendly slugs from workspace names.
+ */
 class WorkspaceDTO extends DataTransferObject
 {
-    // Workspace name
+    /**
+     * Workspace name.
+     * Human-readable identifier for the workspace.
+     * Used for display purposes and slug generation.
+     */
     public ?string $name = null;
 
-    // URL-friendly workspace slug
+    /**
+     * URL-friendly workspace slug.
+     * Unique identifier for workspace URLs.
+     * Generated from name if not explicitly provided.
+     */
     public ?string $slug = null;
 
-    // Optional workspace description
+    /**
+     * Optional workspace description.
+     * Can contain detailed information about workspace purpose.
+     */
     public ?string $description = null;
 
-    // Owner user ID
+    /**
+     * Owner user ID.
+     * Tracks who created and owns the workspace.
+     * Set automatically during workspace creation.
+     */
     public ?int $owner_id = null;
 
-    // Workspace status (default: active)
+    /**
+     * Workspace status.
+     * Defaults to 'active' if not specified.
+     * Valid values: active, inactive, suspended
+     */
     public string $status = 'active';
 
     /**
      * Create a WorkspaceDTO instance from an array.
      *
-     * @param  array<string, mixed>  $data
+     * Filters out null values to support partial updates.
+     * Allows flexible data input for workspace operations.
+     *
+     * @param  array<string, mixed>  $data  Associative array containing workspace data
      */
     public static function fromArray(array $data): self
     {
@@ -38,7 +67,11 @@ class WorkspaceDTO extends DataTransferObject
     /**
      * Convert the DTO to an array representation.
      *
-     * @return array<string, mixed>
+     * Generates slug from name if not explicitly provided.
+     * Uses Laravel's Str::slug for URL-friendly formatting.
+     * Preserves all workspace properties for persistence.
+     *
+     * @return array<string, mixed> Associative array with workspace data
      */
     public function toArray(): array
     {
