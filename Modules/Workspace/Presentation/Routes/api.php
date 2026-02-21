@@ -11,91 +11,103 @@ use Modules\Workspace\Presentation\Controllers\WorkspaceController;
 Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
 
     // ===== Workspaces =====
-    // Base workspace routes (show uses slug; no numeric constraint)
     Route::apiResource('workspaces', WorkspaceController::class)
         ->only(['index', 'store', 'show']);
 
-    // Update workspace by numeric ID only
     Route::put('/workspaces/{id}', [WorkspaceController::class, 'update'])
         ->whereNumber('id')
         ->name('workspaces.update');
 
-    // Delete workspace by numeric ID only
     Route::delete('/workspaces/{id}', [WorkspaceController::class, 'destroy'])
         ->whereNumber('id')
         ->name('workspaces.destroy');
 
     // ===== Workspace members =====
-    // Add a member to a workspace
     Route::post('/workspaces/{workspaceId}/members', [WorkspaceController::class, 'addMember'])
         ->whereNumber('workspaceId')
         ->name('workspaces.members.add');
 
-    // Remove a member from a workspace
     Route::delete('/workspaces/{workspaceId}/members', [WorkspaceController::class, 'removeMember'])
         ->whereNumber('workspaceId')
         ->name('workspaces.members.remove');
 
-    // Workspace members list
     Route::get('/workspaces/{workspaceId}/members', [WorkspaceController::class, 'indexMembers'])
-        ->whereNumber('workspaceId');
+        ->whereNumber('workspaceId')
+        ->name('workspaces.members.index');
 
     // ===== Projects (Nested under Workspaces) =====
-    // List projects within a workspace
     Route::get('/workspaces/{workspaceId}/projects', [ProjectController::class, 'index'])
-        ->whereNumber('workspaceId');
+        ->whereNumber('workspaceId')
+        ->name('projects.index');
 
-    // Create a new project within a workspace
     Route::post('/workspaces/{workspaceId}/projects', [ProjectController::class, 'store'])
-        ->whereNumber('workspaceId');
+        ->whereNumber('workspaceId')
+        ->name('projects.create');
 
-    // Get a single project by numeric ID
     Route::get('/projects/{id}', [ProjectController::class, 'show'])
-        ->whereNumber('id');
+        ->whereNumber('id')
+        ->name('projects.show');
 
-    // Projects full CRUD
-    Route::put('/projects/{id}', [ProjectController::class, 'update'])->whereNumber('id');
-    Route::delete('/projects/{id}', [ProjectController::class, 'destroy'])->whereNumber('id');
+    Route::put('/projects/{id}', [ProjectController::class, 'update'])
+        ->whereNumber('id')
+        ->name('projects.update');
 
-    // List tasks within a project
+    Route::delete('/projects/{id}', [ProjectController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('projects.destroy');
+
+    // ===== Tasks =====
     Route::get('/projects/{projectId}/tasks', [TaskController::class, 'index'])
-        ->whereNumber('projectId');
+        ->whereNumber('projectId')
+        ->name('tasks.index');
 
-    // Create a new task within a project
     Route::post('/projects/{projectId}/tasks', [TaskController::class, 'store'])
-        ->whereNumber('projectId');
+        ->whereNumber('projectId')
+        ->name('tasks.store');
 
-    // ===== Tasks (Nested under Projects) =====
-
-    // Get a single task by numeric ID
     Route::get('/tasks/{id}', [TaskController::class, 'show'])
-        ->whereNumber('id');
+        ->whereNumber('id')
+        ->name('tasks.show');
 
-    // Mark a task as completed
     Route::put('/tasks/{id}/complete', [TaskController::class, 'complete'])
-        ->whereNumber('id');
+        ->whereNumber('id')
+        ->name('tasks.complete');
 
-    Route::put('/tasks/{id}', [TaskController::class, 'update'])->whereNumber('id');
+    Route::put('/tasks/{id}', [TaskController::class, 'update'])
+        ->whereNumber('id')
+        ->name('tasks.update');
 
-    Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])->whereNumber('id');
+    Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])
+        ->whereNumber('id')
+        ->name('tasks.destroy');
 
     // ===== Task Comments =====
     Route::get('/tasks/{taskId}/comments', [TaskCommentController::class, 'index'])
-        ->whereNumber('taskId');
+        ->whereNumber('taskId')
+        ->name('tasks.comments.index');
+
     Route::post('/tasks/{taskId}/comments', [TaskCommentController::class, 'store'])
-        ->whereNumber('taskId')->name('tasks.comments.store');
+        ->whereNumber('taskId')
+        ->name('tasks.comments.store');
+
     Route::put('/comments/{commentId}', [TaskCommentController::class, 'update'])
-        ->whereNumber('commentId');
-    // Comments delete
+        ->whereNumber('commentId')
+        ->name('comments.update');
+
     Route::delete('/tasks/{taskId}/comments/{commentId}', [TaskCommentController::class, 'destroy'])
-        ->whereNumber(['taskId', 'commentId']);
+        ->whereNumber(['taskId', 'commentId'])
+        ->name('tasks.comments.destroy');
+
     // ===== Task Attachments =====
     Route::get('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'index'])
-        ->whereNumber('taskId');
-    Route::post('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'store'])
-        ->whereNumber('taskId')->name('tasks.attachments.store');
+        ->whereNumber('taskId')
+        ->name('tasks.attachments.index');
 
-    // Attachments delete
+    Route::post('/tasks/{taskId}/attachments', [TaskAttachmentController::class, 'store'])
+        ->whereNumber('taskId')
+        ->name('tasks.attachments.store');
+
     Route::delete('/tasks/{taskId}/attachments/{attachmentId}', [TaskAttachmentController::class, 'destroy'])
-        ->whereNumber(['taskId', 'attachmentId']);
+        ->whereNumber(['taskId', 'attachmentId'])
+        ->name('tasks.attachments.destroy');
 });
