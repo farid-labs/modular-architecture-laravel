@@ -2,157 +2,94 @@
 
 # Modular Architecture Laravel (Monolith API)
 
-A production-grade Laravel modular monolith demonstrating **Domain-Driven Design**, **Clean Architecture**, and **Enterprise Patterns**. Built for scalability, maintainability, and developer experience. <br>
+A production-grade Laravel modular monolith demonstrating **Domain-Driven Design**, **Clean Architecture**, **Hexagonal Architecture**, and **Enterprise Patterns**. Designed for scalability, maintainability, testability, and developer experience. <br>
 
 [![CI](https://github.com/farid-labs/modular-architecture-laravel/workflows/CI/badge.svg)](https://github.com/farid-labs/modular-architecture-laravel/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PHPStan Level 8](https://img.shields.io/badge/PHPStan-Level%208-brightgreen)](https://phpstan.org/)
 
 ## 🎯 Architecture Highlights
 
-### 🏗️ Modular Monolith Structure
+### Core Principles
 
-- **Bounded Contexts**: Users, Billing, Notifications modules with clear boundaries
-- **Domain-Driven Design**: Entities, Value Objects, Repositories, Services
-- **Layered Architecture**: Presentation → Application → Domain → Infrastructure
+- **Bounded Contexts** — Isolated modules: Users, Workspace, Notifications
+- **Domain-Driven Design** — Rich domain models, value objects, domain events
+- **Clean/Hexagonal Architecture** — Separation of concerns across layers
+- **Vertical Slice Architecture** — Features organized by business capability
+- **Test-Driven Development** — Comprehensive unit, feature, and integration tests
 
-### ⚙️ Core Patterns & Practices
-
-#### **Domain Layer**
-
-- **Entities**: Rich domain models with business logic
-- **Value Objects**: Immutable objects representing concepts
-- **Repositories**: Interface segregation for data access
-- **Domain Events**: Event-driven architecture within modules
-
-#### **Application Layer**
-
-- **Service Layer**: Application-specific business logic
-- **DTOs**: Data Transfer Objects for clean boundaries
-- **Commands**: CQRS-inspired command pattern
-- **Policies**: Authorization logic separated from controllers
-- **Validators**: Form request validation with custom rules
-
-#### **Infrastructure Layer**
-
-- **Repository Pattern**: Eloquent implementations with interfaces
-- **Caching Strategy**: Redis-backed caching with cache invalidation
-- **Queue System**: Job dispatching for async operations
-- **Event Listeners**: Decoupled event handling
-
-### 🗄️ Technology Stack
-
-- **Framework**: Laravel 11.x
-- **Database**: PostgreSQL 15 (Enterprise-grade)
-- **Cache/Queue**: Redis 7.x
-- **Containerization**: Docker & Docker Compose
-- **Testing**: PHPUnit with 85%+ coverage target
-- **CI/CD**: GitHub Actions for automated testing & deployment
-
-## 📦 Module Structure
+### Layered Structure (per module)
 
 Each module follows the same architectural pattern:
 
 ```bash
 Module/
-├── Application/ # Use cases, services, DTOs
-├── Domain/ # Entities, value objects, domain logic
-├── Infrastructure/ # Persistence, caching, jobs
-└── Presentation/ # API controllers, routes, resources
-└── Tests/ # Unit, Feature
+├── Application/          # Use cases, services, DTOs, commands
+├── Domain/               # Entities, value objects, domain events, enums, repositories
+├── Infrastructure/       # Persistence (Eloquent), jobs, listeners, caching, policies
+└── Presentation/         # API controllers, routes, resources, requests
 ```
+
+### Key Patterns Implemented
+
+- **Entities** & **Value Objects** — Immutable domain models with business invariants
+- **Repository Pattern** — Interface-based data access with Eloquent implementation
+- **Domain Events** — Event-driven communication within and across modules
+- **Application Services** — Orchestration of use cases with transaction boundaries
+- **Policies & Gates** — Fine-grained authorization
+- **Jobs & Queues** — Asynchronous processing (e.g., notifications, file processing)
+- **OpenAPI / Swagger** — Auto-generated API documentation
+
+## 🗄️ Current Modules
+
+- **Users** — Authentication, authorization, roles & permissions (Spatie)
+- **Workspace** — Projects, tasks, comments, attachments, real-time events
+- **Notifications** — Multi-channel notifications, queued delivery
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Docker & Docker Compose
-- PHP 8.2+ (for local development)
-- Composer
+- Git
 
 ### Installation
 
+# Clone the repository
+
 ```bash
-# Clone repository
 git clone https://github.com/farid-labs/modular-architecture-laravel.git
 cd modular-architecture-laravel
 
 # Copy environment file
+
 cp .env.example .env
 
-# Start containers (this will build images and start services)
-docker compose up -d
+# Start all services
 
-# Wait for containers to be ready (optional but recommended)
-sleep 5
+docker compose up -d --build
 
 # Install PHP dependencies
-docker compose exec app composer install
+
+docker compose exec app composer install --optimize-autoloader --no-dev
 
 # Generate application key
+
 docker compose exec app php artisan key:generate
 
-# Run migrations and seeders
+# Run migrations and seed test data
+
 docker compose exec app php artisan migrate:fresh --seed
 
-# Install frontend dependencies (if needed)
-# docker compose exec app npm install
-```
+# (Optional) Generate API documentation
 
-### 🧪 Testing Strategy
-
-```bash
-# Run all tests
-docker compose exec app php artisan test
-
-# Run unit tests only
-docker compose exec app php artisan test --testsuite=Unit
-
-# Run feature tests only
-docker compose exec app php artisan test --testsuite=Feature
-
-# Run tests with coverage
-docker compose exec app php artisan test --coverage
-
-# Run specific test file
-docker compose exec app php artisan test --filter=UserControllerTest
-```
-
-### Development Commands
-
-```bash
-# Access application container
-docker compose exec app sh
-
-# View logs
-docker compose logs -f app
-
-# Restart services
-docker compose restart
-
-# Stop all services
-docker compose down
-
-# Stop and remove all containers, networks, and volumes
-docker compose down -v
-```
-
-### API Documentation
-
-```bash
-# Generate Swagger/OpenAPI documentation
 docker compose exec app php artisan l5-swagger:generate
 
-# Access API documentation at:
-# http://localhost:8080/api/documentation
 ```
 
-### Accessing the Application
+Application will be available at: `http://localhost:8080`
 
-- API Base URL: `http://localhost:8080/api/v1`
-- API Documentation: `http://localhost:8080/api/documentation`
-- Telescope (if enabled): `http://localhost:8080/telescope`
-
-### Default Test User
+### Default Credentials (after seeding)
 
 #### After running migrations with seeders, you can use this user for testing:
 
@@ -163,49 +100,88 @@ docker compose exec app php artisan l5-swagger:generate
 }
 ```
 
-## 📊 Code Quality
+#### API Base URL: http://localhost:8080/api/v1
 
-- PSR-12 coding standards
-- PHPStan level 8 static analysis
-- PHPUnit with comprehensive test coverage
-- Laravel Pint for code formatting
+#### Swagger Docs: http://localhost:8080/api/documentation
 
-## 🔐 Security
+### 🧪 Testing Strategy
 
-- Rate limiting on all API endpoints
-- CSRF protection
-- SQL injection prevention (Eloquent ORM)
-- XSS protection (Blade escaping)
-- Secure password hashing (bcrypt)
+```bash
+# Run all tests
+docker compose exec app php artisan test
+
+# Run specific module tests
+docker compose exec app php artisan test --filter=Workspace
+
+# Run only unit tests
+docker compose exec app php artisan test --testsuite=Unit
+
+# Run only feature/API tests
+docker compose exec app php artisan test --testsuite=Feature
+
+# Run with code coverage (HTML report in storage/logs/coverage)
+docker compose exec app php artisan test --coverage-html storage/logs/coverage
+```
+
+## 📊 Code Quality & Tooling
+
+- PHPStan — Level 8 static analysis
+- Laravel Pint — Code style fixer (PSR-12)
+- PHPUnit — Unit & feature testing
+- PHP_CodeSniffer — Enforce coding standards
+- Larastan — PHPStan integration for Laravel
+
+Run full quality check PHPStan:
+
+```bash
+docker compose exec app vendor/bin/phpstan analyse -vv
+```
+
+## 🔐 Security Features
+
+- Sanctum API authentication
+- Rate limiting on all endpoints
+- Policy-based authorization
+- Secure password hashing (bcrypt/argon2)
+- Input validation & sanitization
+- CSRF & XSS protection
 
 ## 📈 Performance Optimizations
 
-- Redis Caching: Query result caching with TTL
-- Queue Workers: Async job processing
-- Database Indexing: Optimized queries
-- Eager Loading: N+1 query prevention
-- Response Caching: API response caching
+- Redis caching (query & response level)
+- Eager loading & query optimization
+- Async jobs & queued notifications
+- Database indexing on foreign keys
+- Response compression (Gzip/Brotli)
 
 ## 🤝 Contributing
 
-### This repository demonstrates engineering excellence. Contributions that maintain architectural integrity are welcome.
+### Contributions that preserve architectural integrity are welcome.
 
 1. Fork the repository
-2. Create feature branch (git checkout -b feature/amazing-feature)
-3. Commit changes (git commit -m 'Add amazing feature')
-4. Push to branch (git push origin feature/amazing-feature)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
+   Please follow Conventional Commits:
+
+- `feat`: new feature
+- `fix`: bug fix
+- `refactor`: code restructuring
+- `test`: adding/updating tests
+- `docs`: documentation changes
+- `chore`: maintenance tasks
 
 ## 📄 License
 
-MIT License - see <a href="" >LICENSE</a> file for details
+MIT License - see <a href="https://raw.githubusercontent.com/farid-labs/modular-architecture-laravel/refs/heads/main/LICENSE" >LICENSE</a> file for details
 
 ## 👨‍💻 About Farid Labs
 
-### Engineering-focused repositories exploring software architecture, scalable systems, and modern web technologies.
+### Engineering-focused open-source repositories exploring scalable architectures, modern PHP practices, and enterprise patterns.
 
 #### 🔗 Portfolio: https://faridteymouri.vercel.app/
 
 ---
 
-Built with ❤️ and engineering excellence
+Built with precision and care for long-term maintainability.
