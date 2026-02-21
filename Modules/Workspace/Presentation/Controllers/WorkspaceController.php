@@ -14,13 +14,60 @@ use Modules\Workspace\Presentation\Resources\WorkspaceResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
+/**
+ * Controller responsible for managing workspaces.
+ *
+ * Provides RESTful endpoints to create, read, update, and delete workspaces.
+ * All operations require authentication via Sanctum token and proper authorization.
+ * Workspace owners have full control, members have limited access based on roles.
+ *
+ * @see WorkspaceService For business logic implementation
+ * @see WorkspaceResource For API response formatting
+ */
 #[OA\Tag(name: 'Workspaces', description: 'Create and manage collaborative workspaces with member access control')]
 class WorkspaceController extends Controller
 {
-    // Inject WorkspaceService into the controller
+    /**
+     * Create a new WorkspaceController instance.
+     *
+     * @param  WorkspaceService  $workspaceService  The workspace service dependency for business logic
+     */
     public function __construct(private WorkspaceService $workspaceService) {}
 
     // ==================== LIST WORKSPACES ====================
+    /**
+     * Retrieve all workspaces the authenticated user is a member of.
+     *
+     * Returns a collection of workspaces where the user is either owner or member.
+     * Includes member count and project count for each workspace.
+     * Results are ordered by creation date (newest first).
+     *
+     * @param  Request  $request  The HTTP request containing authentication token
+     * @return JsonResponse JSON response with workspace collection
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     *
+     * @OA\Get(
+     *     path="/api/v1/workspaces",
+     *     summary="List user workspaces",
+     *     description="Get all workspaces the authenticated user is a member of",
+     *     security={{"bearerAuth": {}}},
+     *     tags={"Workspaces"},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/WorkspaceResource")),
+     *             @OA\Property(property="message", type="string", example="Workspaces retrieved successfully")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
+     */
     #[OA\Get(
         path: '/workspaces',
         operationId: 'listWorkspaces',
@@ -48,7 +95,7 @@ class WorkspaceController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
-        // Get authenticated user
+        // Get authenticated user from request
         $user = $request->user();
         if ($user === null) {
             throw new UnauthorizedHttpException('Unauthorized');
@@ -64,6 +111,17 @@ class WorkspaceController extends Controller
     }
 
     // ==================== GET WORKSPACE BY SLUG ====================
+    /**
+     * Retrieve a single workspace using its URL-friendly slug.
+     *
+     * Prevents numeric slug access to avoid confusion with ID-based endpoints.
+     * Returns detailed workspace information including owner and counts.
+     *
+     * @param  string  $slug  The workspace slug identifier
+     * @return JsonResponse JSON response with workspace details
+     *
+     * @throws InvalidArgumentException If workspace is not found
+     */
     #[OA\Get(
         path: '/workspaces/{slug}',
         operationId: 'getWorkspaceBySlug',
@@ -91,7 +149,7 @@ class WorkspaceController extends Controller
     )]
     public function show(string $slug): JsonResponse
     {
-        // Prevent numeric slugs
+        // Prevent numeric slugs to avoid confusion with ID-based endpoints
         if (is_numeric($slug)) {
             return response()->json([
                 'message' => __('workspaces.invalid_parameter'),
@@ -116,6 +174,17 @@ class WorkspaceController extends Controller
     }
 
     // ==================== CREATE WORKSPACE ====================
+    /**
+     * Create a new workspace owned by the authenticated user.
+     *
+     * The creating user automatically becomes the workspace owner.
+     * Owner has full control over workspace settings and member management.
+     *
+     * @param  StoreWorkspaceRequest  $request  The validated request containing workspace data
+     * @return JsonResponse JSON response with created workspace
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     */
     #[OA\Post(
         path: '/workspaces',
         operationId: 'createWorkspace',
@@ -180,6 +249,19 @@ class WorkspaceController extends Controller
     }
 
     // ==================== UPDATE WORKSPACE ====================
+    /**
+     * Update an existing workspace (owner only).
+     *
+     * Supports partial updates - only provided fields will be updated.
+     * Only workspace owner can perform this action.
+     *
+     * @param  UpdateWorkspaceRequest  $request  The validated request containing update data
+     * @param  int  $id  The workspace ID
+     * @return JsonResponse JSON response with updated workspace
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     * @throws InvalidArgumentException If user is not owner or workspace not found
+     */
     #[OA\Put(
         path: '/workspaces/{id}',
         operationId: 'updateWorkspace',
@@ -213,7 +295,7 @@ class WorkspaceController extends Controller
         // Get authenticated user
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
 
-        // Validate workspace ID
+        // Validate workspace ID is positive integer
         if ($id <= 0) {
             return response()->json([
                 'message' => __('workspaces.invalid_id_format'),
@@ -222,8 +304,10 @@ class WorkspaceController extends Controller
         }
 
         try {
-            // Remove null fields from validated data
+            // Remove null fields from validated data for partial update
             $validatedData = array_filter($request->validated(), fn ($value) => $value !== null);
+
+            // Check if there are any fields to update
             if (empty($validatedData)) {
                 return response()->json([
                     'message' => __('workspaces.no_fields_to_update'),
@@ -254,6 +338,17 @@ class WorkspaceController extends Controller
     }
 
     // ==================== DELETE WORKSPACE ====================
+    /**
+     * Permanently delete a workspace (owner only).
+     *
+     * This action cannot be undone. All associated projects and tasks
+     * will be cascade deleted. Only workspace owner can perform this action.
+     *
+     * @param  int  $id  The workspace ID
+     * @return JsonResponse JSON response with success message
+     *
+     * @throws InvalidArgumentException If workspace is not found
+     */
     #[OA\Delete(
         path: '/workspaces/{id}',
         operationId: 'deleteWorkspace',
@@ -294,6 +389,18 @@ class WorkspaceController extends Controller
     }
 
     // ==================== ADD WORKSPACE MEMBER ====================
+    /**
+     * Add a user as a member to the workspace with specified role.
+     *
+     * Available roles: owner, admin, member.
+     * Only workspace owners and admins can add new members.
+     *
+     * @param  Request  $request  The request containing user_id and role
+     * @param  int  $workspaceId  The workspace ID
+     * @return JsonResponse JSON response with success message
+     *
+     * @throws InvalidArgumentException If workspace or user is not found
+     */
     #[OA\Post(
         path: '/workspaces/{workspaceId}/members',
         operationId: 'addWorkspaceMember',
@@ -355,6 +462,18 @@ class WorkspaceController extends Controller
     }
 
     // ==================== REMOVE WORKSPACE MEMBER ====================
+    /**
+     * Remove a user from workspace membership.
+     *
+     * Revokes all workspace access for the removed user.
+     * Only workspace owners and admins can remove members.
+     *
+     * @param  Request  $request  The request containing user_id
+     * @param  int  $workspaceId  The workspace ID
+     * @return JsonResponse JSON response with success message
+     *
+     * @throws InvalidArgumentException If membership is not found
+     */
     #[OA\Delete(
         path: '/workspaces/{workspaceId}/members',
         operationId: 'removeWorkspaceMember',
@@ -413,10 +532,23 @@ class WorkspaceController extends Controller
     }
 
     // ==================== LIST WORKSPACE MEMBERS ====================
+    /**
+     * Retrieve all members of a specific workspace.
+     *
+     * Returns member details including role and join date.
+     * Only workspace members can view the member list.
+     *
+     * @param  Request  $request  The HTTP request containing authentication token
+     * @param  int  $workspaceId  The workspace ID
+     * @return JsonResponse JSON response with member collection
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     */
     #[OA\Get(
         path: '/workspaces/{workspaceId}/members',
         operationId: 'listWorkspaceMembers',
         summary: 'List workspace members',
+        description: 'Retrieve all members of a specific workspace',
         security: [['bearerAuth' => []]],
         tags: ['Workspaces'],
         parameters: [

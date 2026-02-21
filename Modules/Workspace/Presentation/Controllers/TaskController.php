@@ -5,6 +5,7 @@ namespace Modules\Workspace\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Modules\Workspace\Application\DTOs\TaskDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
 use Modules\Workspace\Presentation\Requests\StoreTaskRequest;
@@ -13,13 +14,38 @@ use Modules\Workspace\Presentation\Resources\TaskResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
+/**
+ * Controller responsible for managing tasks within projects.
+ *
+ * Provides endpoints to create, read, update, delete, and complete tasks.
+ * All operations require authentication and proper project membership authorization.
+ *
+ * @see WorkspaceService For business logic implementation
+ * @see TaskResource For API response formatting
+ */
 #[OA\Tag(name: 'Tasks', description: 'Manage tasks within projects')]
 class TaskController extends Controller
 {
-    // Inject WorkspaceService into the controller
+    /**
+     * Create a new TaskController instance.
+     *
+     * @param  WorkspaceService  $workspaceService  The workspace service dependency
+     */
     public function __construct(private WorkspaceService $workspaceService) {}
 
     // ==================== LIST TASKS BY PROJECT ====================
+    /**
+     * Retrieve all tasks belonging to a specific project.
+     *
+     * Returns a collection of tasks with their current status and priority.
+     * User must be a member of the project's workspace to view tasks.
+     *
+     * @param  Request  $request  The HTTP request containing authentication token
+     * @param  int  $projectId  The project ID
+     * @return JsonResponse JSON response with task collection
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     */
     #[OA\Get(
         path: '/projects/{projectId}/tasks',
         operationId: 'getTasksByProject',
@@ -92,6 +118,18 @@ class TaskController extends Controller
     }
 
     // ==================== CREATE TASK ====================
+    /**
+     * Create a new task within a specific project.
+     *
+     * Creates a task with title, description, priority, and optional due date.
+     * User must be a member of the project's workspace to create tasks.
+     *
+     * @param  StoreTaskRequest  $request  The validated request containing task data
+     * @param  int  $projectId  The project ID
+     * @return JsonResponse JSON response with created task
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     */
     #[OA\Post(
         path: '/projects/{projectId}/tasks',
         operationId: 'createTask',
@@ -181,6 +219,17 @@ class TaskController extends Controller
     }
 
     // ==================== GET TASK BY ID ====================
+    /**
+     * Retrieve a single task by its unique identifier.
+     *
+     * Returns detailed task information including status, priority, and due date.
+     * User must have access to the task's project.
+     *
+     * @param  int  $id  The task ID
+     * @return JsonResponse JSON response with task details
+     *
+     * @throws InvalidArgumentException If task is not found
+     */
     #[OA\Get(
         path: '/tasks/{id}',
         operationId: 'getTaskById',
@@ -235,6 +284,18 @@ class TaskController extends Controller
     }
 
     // ==================== COMPLETE TASK ====================
+    /**
+     * Mark a task as completed.
+     *
+     * Updates task status to COMPLETED using immutable entity pattern.
+     * User must be a member of the project to complete tasks.
+     *
+     * @param  Request  $request  The HTTP request containing authentication token
+     * @param  int  $id  The task ID
+     * @return JsonResponse JSON response with completed task
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     */
     #[OA\Put(
         path: '/tasks/{id}/complete',
         operationId: 'completeTask',
@@ -295,6 +356,18 @@ class TaskController extends Controller
     }
 
     // ==================== UPDATE TASK ====================
+    /**
+     * Update an existing task with new data.
+     *
+     * Supports partial updates - only provided fields will be updated.
+     * User must be a member of the project to update tasks.
+     *
+     * @param  UpdateTaskRequest  $request  The validated request containing update data
+     * @param  int  $id  The task ID
+     * @return JsonResponse JSON response with updated task
+     *
+     * @throws UnauthorizedHttpException If user is not authenticated
+     */
     #[OA\Put(
         path: '/tasks/{id}',
         operationId: 'updateTask',
@@ -348,12 +421,18 @@ class TaskController extends Controller
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
 
         try {
+            // Filter out null values for partial update
             $validatedData = array_filter($request->validated(), fn ($value) => $value !== null);
+
+            // Check if there are any fields to update
             if (empty($validatedData)) {
                 return response()->json(['message' => __('workspaces.no_fields_to_update')], 400);
             }
 
+            // Get project_id from existing task to maintain referential integrity
             $taskDTO = TaskDTO::fromArray([...$validatedData, 'project_id' => $this->workspaceService->getTaskById($id)->getProjectId()]);
+
+            // Update the task
             $task = $this->workspaceService->updateTask($id, $taskDTO, $user);
 
             return response()->json([
@@ -366,6 +445,17 @@ class TaskController extends Controller
     }
 
     // ==================== DELETE TASK ====================
+    /**
+     * Permanently delete a task.
+     *
+     * This action cannot be undone. All associated comments and attachments
+     * will be cascade deleted. User must be a member of the project.
+     *
+     * @param  int  $id  The task ID
+     * @return JsonResponse JSON response with success message
+     *
+     * @throws InvalidArgumentException If task is not found
+     */
     #[OA\Delete(
         path: '/tasks/{id}',
         operationId: 'deleteTask',
@@ -401,6 +491,7 @@ class TaskController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
+            // Delete the task
             $this->workspaceService->deleteTask($id);
 
             return response()->json(['message' => __('workspaces.task_deleted')]);
