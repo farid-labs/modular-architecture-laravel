@@ -47,7 +47,7 @@ class TaskAttachmentTest extends TestCase
         $token = $this->member->createToken('test-token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => 'Bearer '.$token,
+            'Authorization' => "Bearer $token",
             'Accept' => 'application/json',
         ])->postJson(route('tasks.attachments.store', $this->taskId), [
             'file' => $file,
@@ -64,7 +64,10 @@ class TaskAttachmentTest extends TestCase
         $token = $this->member->createToken('test-token')->plainTextToken;
 
         // Test missing file
-        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
             ->postJson(route('tasks.attachments.store', $this->taskId), []);
 
         $response->assertUnprocessable()
@@ -73,7 +76,10 @@ class TaskAttachmentTest extends TestCase
         // Test file too large (create fake file > 10MB)
         $largeFile = UploadedFile::fake()->create('large.pdf', 10240 * 2, 'application/pdf');
 
-        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
             ->postJson(route('tasks.attachments.store', $this->taskId), [
                 'file' => $largeFile,
             ]);
@@ -88,7 +94,10 @@ class TaskAttachmentTest extends TestCase
         $token = $this->member->createToken('test-token')->plainTextToken;
         $file = UploadedFile::fake()->create('test.pdf', 500, 'application/pdf');
 
-        $uploadResponse = $this->withHeaders(['Authorization' => 'Bearer '.$token])
+        $uploadResponse = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
             ->postJson(route('tasks.attachments.store', $this->taskId), [
                 'file' => $file,
             ]);
@@ -96,12 +105,71 @@ class TaskAttachmentTest extends TestCase
         $attachmentId = $uploadResponse->json('data.id');
 
         // Delete the attachment
-        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
-            ->deleteJson("/api/v1/tasks/{$this->taskId}/attachments/{$attachmentId}");
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
+            ->deleteJson(route('tasks.attachments.destroy', [
+                'taskId' => $this->taskId,
+                'attachmentId' => $attachmentId,
+            ]));
 
         $response->assertOk()
             ->assertJson([
                 'message' => __('workspaces.attachment_deleted'),
+            ]);
+    }
+
+    /**
+     * Test listing all attachments for a task.
+     *
+     * Verifies that workspace members can retrieve all file attachments
+     * associated with a specific task they have access to.
+     */
+    public function test_list_attachments_by_task_success(): void
+    {
+        // First upload some attachments
+        $token = $this->member->createToken('test-token')->plainTextToken;
+
+        $files = [
+            UploadedFile::fake()->create('document1.pdf', 500, 'application/pdf'),
+            UploadedFile::fake()->create('image1.png', 300, 'image/png'),
+            UploadedFile::fake()->create('document2.pdf', 600, 'application/pdf'),
+        ];
+
+        foreach ($files as $file) {
+            $this->withHeaders([
+                'Authorization' => "Bearer $token",
+                'Accept' => 'application/json',
+            ])
+                ->postJson(route('tasks.attachments.store', $this->taskId), [
+                    'file' => $file,
+                ]);
+        }
+
+        // List all attachments
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
+            ->getJson(route('tasks.attachments.index', $this->taskId));
+
+        $response->assertOk()
+            ->assertJson([
+                'message' => __('workspaces.attachments_retrieved'),
+            ])
+            ->assertJsonStructure([
+                'data' => [[
+                    'id',
+                    'task_id',
+                    'file_name',
+                    'file_path',
+                    'file_type',
+                    'file_size',
+                    'uploaded_by',
+                    'created_at',
+                    'updated_at',
+                ]],
             ]);
     }
 }

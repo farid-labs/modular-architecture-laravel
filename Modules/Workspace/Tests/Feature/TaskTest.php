@@ -23,14 +23,23 @@ class TaskTest extends TestCase
         $this->owner = UserModel::factory()->create();
         $this->workspace = WorkspaceModel::factory()->active()->forOwner($this->owner)->create();
         $this->project = ProjectModel::factory()->active()->create(['workspace_id' => $this->workspace->id]);
+
+        // ✅ FIX: Manually attach owner as member since factory doesn't do this
+        $this->workspace->members()->attach($this->owner->id, [
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
     }
 
     public function test_create_task_success(): void
     {
         $token = $this->owner->createToken('test-token')->plainTextToken;
 
-        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
-            ->postJson("/api/v1/projects/{$this->project->id}/tasks", [
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
+            ->postJson(route('tasks.store', $this->project->id), [
                 'title' => 'Test Task',
                 'description' => 'Test description',
                 'priority' => 'high',
@@ -39,6 +48,9 @@ class TaskTest extends TestCase
         $response->assertCreated()
             ->assertJson([
                 'message' => __('workspaces.task_created'),
+            ])
+            ->assertJsonStructure([
+                'data' => ['id', 'title', 'project_id', 'status', 'priority'],
             ]);
     }
 
@@ -47,8 +59,11 @@ class TaskTest extends TestCase
         $task = TaskModel::factory()->pending()->create(['project_id' => $this->project->id]);
         $token = $this->owner->createToken('test-token')->plainTextToken;
 
-        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
-            ->putJson("/api/v1/tasks/{$task->id}", [
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
+            ->putJson(route('tasks.update', $task->id), [
                 'title' => 'Updated Task Title',
                 'status' => 'in_progress',
             ]);
@@ -56,6 +71,9 @@ class TaskTest extends TestCase
         $response->assertOk()
             ->assertJson([
                 'message' => __('workspaces.task_updated'),
+            ])
+            ->assertJsonStructure([
+                'data' => ['id', 'title', 'status'],
             ]);
     }
 
@@ -64,8 +82,11 @@ class TaskTest extends TestCase
         $task = TaskModel::factory()->create(['project_id' => $this->project->id]);
         $token = $this->owner->createToken('test-token')->plainTextToken;
 
-        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
-            ->deleteJson("/api/v1/tasks/{$task->id}");
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
+            ->deleteJson(route('tasks.destroy', $task->id));
 
         $response->assertOk()
             ->assertJson([
@@ -78,13 +99,60 @@ class TaskTest extends TestCase
         $task = TaskModel::factory()->pending()->create(['project_id' => $this->project->id]);
         $token = $this->owner->createToken('test-token')->plainTextToken;
 
-        $response = $this->withHeaders(['Authorization' => 'Bearer '.$token])
-            ->putJson("/api/v1/tasks/{$task->id}/complete");
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
+            ->putJson(route('tasks.complete', $task->id));
 
         $response->assertOk()
             ->assertJson([
                 'message' => __('workspaces.task_completed'),
             ])
             ->assertJsonPath('data.status', 'completed');
+    }
+
+    /**
+     * Test retrieving a single task by its ID.
+     *
+     * Verifies that authenticated users can fetch detailed information
+     * about a specific task including status, priority, and due date.
+     */
+    public function test_get_task_by_id_success(): void
+    {
+        $task = TaskModel::factory()->pending()->highPriority()->create([
+            'project_id' => $this->project->id,
+            'title' => 'Test Task for Retrieval',
+        ]);
+
+        $token = $this->owner->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+            'Accept' => 'application/json',
+        ])
+            ->getJson(route('tasks.show', $task->id));
+
+        $response->assertOk()
+            ->assertJson([
+                'message' => __('workspaces.task_retrieved'),
+            ])
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'title',
+                    'description',
+                    'project_id',
+                    'assigned_to',
+                    'status',
+                    'priority',
+                    'due_date',
+                    'is_overdue',
+                    'is_completed',
+                    'is_assigned',
+                    'created_at',
+                    'updated_at',
+                ],
+            ]);
     }
 }
