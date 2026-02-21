@@ -415,4 +415,37 @@ class WorkspaceController extends Controller
             'message' => __('workspaces.member_removed'),
         ]);
     }
+
+    // ==================== LIST WORKSPACE MEMBERS ====================
+    #[OA\Get(
+        path: '/workspaces/{workspaceId}/members',
+        operationId: 'listWorkspaceMembers',
+        summary: 'List workspace members',
+        security: [['bearerAuth' => []]],
+        tags: ['Workspaces'],
+        parameters: [
+            new OA\Parameter(name: 'workspaceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Members retrieved successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Workspace not found'),
+        ]
+    )]
+    public function indexMembers(Request $request, int $workspaceId): JsonResponse
+    {
+        $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+
+        try {
+            $members = $this->workspaceService->getWorkspaceMembers($workspaceId, $user->id);
+
+            return response()->json([
+                'data' => $members,
+                'message' => __('workspaces.members_retrieved'),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+    }
 }

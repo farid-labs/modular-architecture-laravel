@@ -8,8 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
+use Modules\Workspace\Domain\Entities\ProjectEntity;
 use Modules\Workspace\Presentation\Requests\StoreProjectRequest;
+use Modules\Workspace\Presentation\Requests\UpdateProjectRequest;
 use Modules\Workspace\Presentation\Resources\ProjectResource;
+use Modules\Workspace\Presentation\Resources\TaskResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
@@ -217,5 +220,123 @@ class ProjectController extends Controller
             'data' => new ProjectResource($project),
             'message' => 'Project retrieved successfully',
         ]);
+    }
+
+    // ==================== UPDATE PROJECT ====================
+    #[OA\Put(
+        path: '/projects/{id}',
+        operationId: 'updateProject',
+        summary: 'Update project',
+        security: [['bearerAuth' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', nullable: true),
+                    new OA\Property(property: 'description', type: 'string', nullable: true),
+                    new OA\Property(property: 'status', type: 'string', enum: ['active', 'completed', 'archived'], nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Project updated successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Project not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function update(UpdateProjectRequest $request, int $id): JsonResponse
+    {
+        $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+
+        try {
+            $validatedData = array_filter($request->validated(), fn ($value) => $value !== null);
+            if (empty($validatedData)) {
+                return response()->json([
+                    'message' => __('workspaces.no_fields_to_update'),
+                ], 400);
+            }
+
+            $projectDTO = ProjectDTO::fromArray([...$validatedData, 'workspace_id' => $this->getProjectById($id)->getWorkspaceId()]);
+            $project = $this->workspaceService->updateProject($id, $projectDTO, $user);
+
+            return response()->json([
+                'data' => new ProjectResource($project),
+                'message' => __('workspaces.project_updated'),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+    }
+
+    // ==================== DELETE PROJECT ====================
+    #[OA\Delete(
+        path: '/projects/{id}',
+        operationId: 'deleteProject',
+        summary: 'Delete project',
+        security: [['bearerAuth' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Project deleted successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Project not found'),
+        ]
+    )]
+    public function destroy(int $id): JsonResponse
+    {
+        try {
+            $this->workspaceService->deleteProject($id);
+
+            return response()->json(['message' => __('workspaces.project_deleted')]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+    }
+
+    // ==================== LIST TASKS BY PROJECT ====================
+    #[OA\Get(
+        path: '/projects/{projectId}/tasks',
+        operationId: 'listTasksByProject',
+        summary: 'List tasks in a project',
+        security: [['bearerAuth' => []]],
+        tags: ['Tasks'],
+        parameters: [
+            new OA\Parameter(name: 'projectId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Tasks retrieved successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Project not found'),
+        ]
+    )]
+    public function indexTasks(Request $request, int $projectId): JsonResponse
+    {
+        $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+
+        try {
+            $tasks = $this->workspaceService->getTasksByProject($projectId, $user->id);
+
+            return response()->json([
+                'data' => TaskResource::collection($tasks),
+                'message' => __('workspaces.tasks_retrieved'),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+    }
+
+    private function getProjectById(int $id): ProjectEntity
+    {
+        return $this->workspaceService->getProjectById($id);
     }
 }

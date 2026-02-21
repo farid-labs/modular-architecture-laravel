@@ -8,6 +8,7 @@ use Illuminate\Http\Request;                    // ← Correct import
 use Modules\Workspace\Application\DTOs\TaskDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
 use Modules\Workspace\Presentation\Requests\StoreTaskRequest;
+use Modules\Workspace\Presentation\Requests\UpdateTaskRequest;
 use Modules\Workspace\Presentation\Resources\TaskResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -175,6 +176,87 @@ class TaskController extends Controller
 
             // Return other task completion errors
             return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    // ==================== UPDATE TASK ====================
+    #[OA\Put(
+        path: '/tasks/{id}',
+        operationId: 'updateTask',
+        summary: 'Update task',
+        security: [['bearerAuth' => []]],
+        tags: ['Tasks'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'title', type: 'string', nullable: true),
+                    new OA\Property(property: 'description', type: 'string', nullable: true),
+                    new OA\Property(property: 'assigned_to', type: 'integer', nullable: true),
+                    new OA\Property(property: 'status', type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'], nullable: true),
+                    new OA\Property(property: 'priority', type: 'string', enum: ['low', 'medium', 'high', 'urgent'], nullable: true),
+                    new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Task updated successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Task not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function update(UpdateTaskRequest $request, int $id): JsonResponse
+    {
+        $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+
+        try {
+            $validatedData = array_filter($request->validated(), fn ($value) => $value !== null);
+            if (empty($validatedData)) {
+                return response()->json(['message' => __('workspaces.no_fields_to_update')], 400);
+            }
+
+            $taskDTO = TaskDTO::fromArray([...$validatedData, 'project_id' => $this->workspaceService->getTaskById($id)->getProjectId()]);
+            $task = $this->workspaceService->updateTask($id, $taskDTO, $user);
+
+            return response()->json([
+                'data' => new TaskResource($task),
+                'message' => __('workspaces.task_updated'),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+    }
+
+    // ==================== DELETE TASK ====================
+    #[OA\Delete(
+        path: '/tasks/{id}',
+        operationId: 'deleteTask',
+        summary: 'Delete task',
+        security: [['bearerAuth' => []]],
+        tags: ['Tasks'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Task deleted successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Task not found'),
+        ]
+    )]
+    public function destroy(int $id): JsonResponse
+    {
+        try {
+            $this->workspaceService->deleteTask($id);
+
+            return response()->json(['message' => __('workspaces.task_deleted')]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
         }
     }
 }
