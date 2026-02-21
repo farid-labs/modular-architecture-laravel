@@ -4,6 +4,7 @@ namespace Modules\Workspace\Infrastructure\Repositories;
 
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\DTOs\TaskDTO;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
@@ -20,6 +21,7 @@ use Modules\Workspace\Infrastructure\Persistence\Models\ProjectModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachmentModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskCommentModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskModel;
+use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceMemberPivot;
 use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
 
 /**
@@ -456,5 +458,76 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         }
 
         return (bool) $model->delete();
+    }
+
+    public function updateProject(int $id, ProjectDTO $projectDTO): ?ProjectEntity
+    {
+        $model = ProjectModel::find($id);
+        if (! $model) {
+            return null;
+        }
+
+        $data = array_filter($projectDTO->toArray(), fn ($value) => $value !== null);
+        $model->update($data);
+        $model->refresh();
+
+        return $this->mapProjectToEntity($model);
+    }
+
+    public function deleteProject(int $id): bool
+    {
+        $model = ProjectModel::find($id);
+
+        return $model ? (bool) $model->delete() : false;
+    }
+
+    public function getTasksByProject(int $projectId): array
+    {
+        $models = TaskModel::where('project_id', $projectId)
+            ->with(['assignedUser', 'comments', 'attachments'])
+            ->latest()
+            ->get();
+
+        return $models->map(fn ($m) => $this->mapTaskToEntity($m))->all();
+    }
+
+    public function deleteTask(int $id): bool
+    {
+        $model = TaskModel::find($id);
+
+        return $model ? (bool) $model->delete() : false;
+    }
+
+    /**
+     * Get all members of a workspace.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getWorkspaceMembers(int $workspaceId): array
+    {
+        $workspace = $this->getModel()->with(['members'])->find($workspaceId);
+        if (! $workspace) {
+            throw new \InvalidArgumentException(__('workspaces.workspace_not_found', ['id' => $workspaceId]));
+        }
+
+        /** @var array<int, array<string, mixed>> $members */
+        $members = $workspace->members->map(function (UserModel $member) {
+            /**
+             * @var WorkspaceMemberPivot $pivot
+             *
+             * @phpstan-ignore-next-line
+             */
+            $pivot = $member->pivot;
+
+            return [
+                'id' => $member->id,
+                'name' => $member->name,
+                'email' => $member->email,
+                'role' => $pivot->role,
+                'joined_at' => $pivot->joined_at?->toIso8601String(),
+            ];
+        })->all();
+
+        return $members;
     }
 }

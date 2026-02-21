@@ -148,4 +148,24 @@ interface WorkspaceRepositoryInterface
     public function deleteComment(int $commentId, int $userId): bool;
 
     public function deleteAttachment(int $attachmentId, int $userId): bool;
+
+    public function updateProject(int $id, ProjectDTO $projectDTO): ?ProjectEntity;
+
+    public function deleteProject(int $id): bool;
+
+    /**
+     * Get all tasks for a project.
+     *
+     * @return array<int, TaskEntity>
+     */
+    public function getTasksByProject(int $projectId): array;
+
+    public function deleteTask(int $id): bool;
+
+    /**
+     * Get all members of a workspace.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getWorkspaceMembers(int $workspaceId): array;
 }
