@@ -74,59 +74,48 @@ class TaskCommentController extends Controller
      *
      * @throws UnauthorizedHttpException If user is not authenticated
      * @throws \InvalidArgumentException If task is not found or user lacks permission
-     *
-     * @OA\Get(
-     *     path="/api/v1/tasks/{taskId}/comments",
-     *     summary="List all comments for a task",
-     *     description="Returns a list of comments linked to the specified task. The authenticated user must have access to the task's project. Comments are ordered by creation date (newest first).",
-     *     security={{"sanctum": {}}},
-     *     tags={"Task Comments"},
-     *
-     *     @OA\Parameter(
-     *         name="taskId",
-     *         description="The unique identifier of the task",
-     *         in="path",
-     *         required=true,
-     *
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Comments retrieved successfully",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *
-     *                 @OA\Items(ref="#/components/schemas/TaskCommentResource"),
-     *                 description="Collection of task comment resources"
-     *             ),
-     *
-     *             @OA\Property(
-     *                 property="message",
-     *                 type="string",
-     *                 example="Comments retrieved successfully"
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated - Missing or invalid authentication token"
-     *     ),
-     *     @OA\Response(
-     *         response=403,
-     *         description="Forbidden - User does not have permission to view comments"
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Task not found"
-     *     )
-     * )
      */
+    #[OA\Get(
+        path: '/tasks/{taskId}/comments',
+        operationId: 'listTaskComments',
+        summary: 'List all comments for a task',
+        description: 'Returns a list of comments linked to the specified task. The authenticated user must have access to the task\'s project. Comments are ordered by creation date (newest first).',
+        security: [['sanctum' => []]],
+        tags: ['Task Comments'],
+        parameters: [
+            new OA\Parameter(
+                name: 'taskId',
+                description: 'The unique identifier of the task',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Comments retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/TaskCommentResource'),
+                            description: 'Collection of task comment resources'
+                        ),
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            example: 'Comments retrieved successfully'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated - Missing or invalid authentication token'),
+            new OA\Response(response: 403, description: 'Forbidden - User does not have permission to view comments'),
+            new OA\Response(response: 404, description: 'Task not found'),
+        ]
+    )]
     public function index(Request $request, int $taskId): JsonResponse
     {
         // Retrieve authenticated user from request
@@ -173,65 +162,64 @@ class TaskCommentController extends Controller
      * @throws UnauthorizedHttpException If user is not authenticated
      * @throws \Illuminate\Auth\Access\AuthorizationException If user lacks comment permission
      * @throws \InvalidArgumentException If task is not found or validation fails
-     *
-     * @OA\Post(
-     *     path="/api/v1/tasks/{taskId}/comments",
-     *     summary="Create a new comment on a task",
-     *     description="Adds a comment to the specified task. The authenticated user must be a member of the task's project. Comment content must meet minimum length requirements.",
-     *     security={{"sanctum": {}}},
-     *     tags={"Task Comments"},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(
-     *             required={"comment"},
-     *
-     *             @OA\Property(
-     *                 property="comment",
-     *                 type="string",
-     *                 description="The comment text",
-     *                 minLength=3,
-     *                 maxLength=2000,
-     *                 example="This is a professional comment for discussion."
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Parameter(
-     *         name="taskId",
-     *         description="The unique identifier of the task",
-     *         in="path",
-     *         required=true,
-     *
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=201,
-     *         description="Comment created successfully",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(
-     *                 property="data",
-     *                 ref="#/components/schemas/TaskCommentResource",
-     *                 description="The newly created comment resource"
-     *             ),
-     *             @OA\Property(
-     *                 property="message",
-     *                 type="string",
-     *                 example="Comment added successfully"
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=403, description="Forbidden - User lacks permission to comment"),
-     *     @OA\Response(response=404, description="Task not found"),
-     *     @OA\Response(response=422, description="Validation error (e.g., comment too short)")
-     * )
      */
+    #[OA\Post(
+        path: '/tasks/{taskId}/comments',
+        operationId: 'createTaskComment',
+        summary: 'Create a new comment on a task',
+        description: 'Adds a comment to the specified task. The authenticated user must be a member of the task\'s project. Comment content must meet minimum length requirements.',
+        security: [['sanctum' => []]],
+        tags: ['Task Comments'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['comment'],
+                properties: [
+                    new OA\Property(
+                        property: 'comment',
+                        type: 'string',
+                        description: 'The comment text',
+                        minLength: 3,
+                        maxLength: 2000,
+                        example: 'This is a professional comment for discussion.'
+                    ),
+                ]
+            )
+        ),
+        parameters: [
+            new OA\Parameter(
+                name: 'taskId',
+                description: 'The unique identifier of the task',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Comment created successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/TaskCommentResource',
+                            description: 'The newly created comment resource'
+                        ),
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            example: 'Comment added successfully'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - User lacks permission to comment'),
+            new OA\Response(response: 404, description: 'Task not found'),
+            new OA\Response(response: 422, description: 'Validation error (e.g., comment too short)'),
+        ]
+    )]
     public function store(StoreTaskCommentRequest $request, int $taskId): JsonResponse
     {
         // Retrieve authenticated user from request
@@ -294,65 +282,64 @@ class TaskCommentController extends Controller
      *
      * @throws UnauthorizedHttpException If user is not authenticated
      * @throws \InvalidArgumentException If comment is not found, user is not author, or time window expired
-     *
-     * @OA\Put(
-     *     path="/api/v1/comments/{commentId}",
-     *     summary="Update an existing comment",
-     *     description="Updates the content of a comment. Only the comment author can edit, and only within the allowed time frame (e.g., 30 minutes).",
-     *     security={{"sanctum": {}}},
-     *     tags={"Task Comments"},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(
-     *             required={"comment"},
-     *
-     *             @OA\Property(
-     *                 property="comment",
-     *                 type="string",
-     *                 description="The updated comment text",
-     *                 minLength=3,
-     *                 maxLength=2000,
-     *                 example="Updated comment with additional details."
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Parameter(
-     *         name="commentId",
-     *         description="The unique identifier of the comment to update",
-     *         in="path",
-     *         required=true,
-     *
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Comment updated successfully",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(
-     *                 property="data",
-     *                 ref="#/components/schemas/TaskCommentResource",
-     *                 description="The updated comment resource"
-     *             ),
-     *             @OA\Property(
-     *                 property="message",
-     *                 type="string",
-     *                 example="Comment updated successfully"
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=403, description="Forbidden - Not the comment owner or edit time expired"),
-     *     @OA\Response(response=404, description="Comment not found"),
-     *     @OA\Response(response=422, description="Validation error (e.g., comment too short)")
-     * )
      */
+    #[OA\Put(
+        path: '/comments/{commentId}',
+        operationId: 'updateTaskComment',
+        summary: 'Update an existing comment',
+        description: 'Updates the content of a comment. Only the comment author can edit, and only within the allowed time frame (e.g., 30 minutes).',
+        security: [['sanctum' => []]],
+        tags: ['Task Comments'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['comment'],
+                properties: [
+                    new OA\Property(
+                        property: 'comment',
+                        type: 'string',
+                        description: 'The updated comment text',
+                        minLength: 3,
+                        maxLength: 2000,
+                        example: 'Updated comment with additional details.'
+                    ),
+                ]
+            )
+        ),
+        parameters: [
+            new OA\Parameter(
+                name: 'commentId',
+                description: 'The unique identifier of the comment to update',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Comment updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            ref: '#/components/schemas/TaskCommentResource',
+                            description: 'The updated comment resource'
+                        ),
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            example: 'Comment updated successfully'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Not the comment owner or edit time expired'),
+            new OA\Response(response: 404, description: 'Comment not found'),
+            new OA\Response(response: 422, description: 'Validation error (e.g., comment too short)'),
+        ]
+    )]
     public function update(UpdateTaskCommentRequest $request, int $commentId): JsonResponse
     {
         // Retrieve authenticated user from request
@@ -401,52 +388,49 @@ class TaskCommentController extends Controller
      *
      * @throws UnauthorizedHttpException If user is not authenticated
      * @throws \InvalidArgumentException If comment is not found or user is not author
-     *
-     * @OA\Delete(
-     *     path="/api/v1/tasks/{taskId}/comments/{commentId}",
-     *     operationId="deleteComment",
-     *     summary="Delete a comment",
-     *     description="Permanently delete a comment. Only the comment author can delete their own comments.",
-     *     security={{"sanctum": {}}},
-     *     tags={"Task Comments"},
-     *
-     *     @OA\Parameter(
-     *         name="taskId",
-     *         description="The unique identifier of the task",
-     *         in="path",
-     *         required=true,
-     *
-     *         @OA\Schema(type="integer")
-     *     ),
-     *
-     *     @OA\Parameter(
-     *         name="commentId",
-     *         description="The unique identifier of the comment to delete",
-     *         in="path",
-     *         required=true,
-     *
-     *         @OA\Schema(type="integer")
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Comment deleted successfully",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(
-     *                 property="message",
-     *                 type="string",
-     *                 example="Comment deleted successfully"
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=403, description="Forbidden - Not comment owner"),
-     *     @OA\Response(response=404, description="Comment not found")
-     * )
      */
+    #[OA\Delete(
+        path: '/tasks/{taskId}/comments/{commentId}',
+        operationId: 'deleteComment',
+        summary: 'Delete a comment',
+        description: 'Permanently delete a comment. Only the comment author can delete their own comments.',
+        security: [['sanctum' => []]],
+        tags: ['Task Comments'],
+        parameters: [
+            new OA\Parameter(
+                name: 'taskId',
+                description: 'The unique identifier of the task',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'commentId',
+                description: 'The unique identifier of the comment to delete',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Comment deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            example: 'Comment deleted successfully'
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Not comment owner'),
+            new OA\Response(response: 404, description: 'Comment not found'),
+        ]
+    )]
     public function destroy(Request $request, int $taskId, int $commentId): JsonResponse
     {
         // Retrieve authenticated user from request

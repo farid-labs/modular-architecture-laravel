@@ -99,7 +99,7 @@ class TaskController extends Controller
                 'data' => TaskResource::collection($tasks),
                 'message' => __('workspaces.tasks_retrieved'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             $msg = $e->getMessage();
 
             // Handle project not found error
@@ -200,7 +200,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_created'),
             ], 201);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             $msg = $e->getMessage();
 
             // Handle project not found error
@@ -272,7 +272,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_retrieved'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             // Handle task not found
             if (str_contains($e->getMessage(), 'Task not found')) {
                 return response()->json(['message' => __('workspaces.task_not_found', ['id' => $id])], 404);
@@ -344,7 +344,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_completed'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             // Handle task not found
             if (str_contains($e->getMessage(), 'Task not found')) {
                 return response()->json(['message' => __('workspaces.task_not_found', ['id' => $id])], 404);
@@ -439,7 +439,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_updated'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
     }
@@ -495,7 +495,7 @@ class TaskController extends Controller
             $this->workspaceService->deleteTask($id);
 
             return response()->json(['message' => __('workspaces.task_deleted')]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
     }

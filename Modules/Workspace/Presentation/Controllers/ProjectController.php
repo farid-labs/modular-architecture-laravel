@@ -12,7 +12,6 @@ use Modules\Workspace\Domain\Entities\ProjectEntity;
 use Modules\Workspace\Presentation\Requests\StoreProjectRequest;
 use Modules\Workspace\Presentation\Requests\UpdateProjectRequest;
 use Modules\Workspace\Presentation\Resources\ProjectResource;
-use Modules\Workspace\Presentation\Resources\TaskResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
@@ -203,18 +202,15 @@ class ProjectController extends Controller
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: [
-                'application/json' => new OA\MediaType(
-                    schema: new OA\Schema(
-                        required: ['name'],
-                        properties: [
-                            new OA\Property(property: 'name', type: 'string', example: 'Website Redesign'),
-                            new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Redesign company website'),
-                            new OA\Property(property: 'status', type: 'string', enum: ['active', 'completed', 'archived'], example: 'active'),
-                        ]
-                    )
-                ),
-            ]
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['name'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', example: 'Website Redesign'),
+                    new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Redesign company website'),
+                    new OA\Property(property: 'status', type: 'string', enum: ['active', 'completed', 'archived'], example: 'active'),
+                ]
+            )
         ),
         responses: [
             new OA\Response(
@@ -342,7 +338,7 @@ class ProjectController extends Controller
      * @throws \InvalidArgumentException If project is not found
      */
     #[OA\Get(
-        path: '/api/v1/projects/{id}',
+        path: '/projects/{id}',
         summary: 'Get project by ID',
         description: 'Retrieve detailed information about a specific project by its unique identifier.',
         security: [['bearerAuth' => []]],
@@ -435,7 +431,7 @@ class ProjectController extends Controller
      * @throws \Illuminate\Validation\ValidationException If request validation fails
      */
     #[OA\Put(
-        path: '/api/v1/projects/{id}',
+        path: '/projects/{id}',
         summary: 'Update project',
         description: 'Update an existing project with new data. Supports partial updates. Requires workspace membership.',
         security: [['bearerAuth' => []]],
@@ -451,17 +447,14 @@ class ProjectController extends Controller
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: [
-                'application/json' => new OA\MediaType(
-                    schema: new OA\Schema(
-                        properties: [
-                            new OA\Property(property: 'name', type: 'string', nullable: true, example: 'Updated Project Name'),
-                            new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Updated description'),
-                            new OA\Property(property: 'status', type: 'string', enum: ['active', 'completed', 'archived'], nullable: true, example: 'active'),
-                        ]
-                    )
-                ),
-            ]
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', nullable: true, example: 'Updated Project Name'),
+                    new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Updated description'),
+                    new OA\Property(property: 'status', type: 'string', enum: ['active', 'completed', 'archived'], nullable: true, example: 'active'),
+                ]
+            )
         ),
         responses: [
             new OA\Response(
@@ -553,7 +546,7 @@ class ProjectController extends Controller
      * @throws \InvalidArgumentException If project is not found
      */
     #[OA\Delete(
-        path: '/api/v1/projects/{id}',
+        path: '/projects/{id}',
         summary: 'Delete project',
         description: 'Permanently delete a project and all its associated tasks. This action cannot be undone. Requires workspace membership.',
         security: [['bearerAuth' => []]],
@@ -599,99 +592,6 @@ class ProjectController extends Controller
             ]);
         } catch (\InvalidArgumentException $e) {
             // Handle project not found error
-            // Return 404 Not Found with error message
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 404);
-        }
-    }
-
-    // ==================== LIST TASKS BY PROJECT ====================
-
-    /**
-     * Retrieve all tasks within a specific project.
-     *
-     * Returns a collection of tasks that belong to the specified project.
-     * User must be a member of the project's workspace.
-     * Tasks are ordered by creation date (newest first).
-     *
-     * Response includes:
-     * - Task ID and title
-     * - Task description and status
-     * - Priority level and due date
-     * - Assigned user ID
-     * - Overdue, completed, and assigned status indicators
-     * - Creation and update timestamps
-     *
-     * Authorization Requirements:
-     * - User must be authenticated with valid Sanctum token
-     * - User must be a member of the project's workspace
-     * - Project must exist
-     *
-     * @param  Request  $request  The HTTP request containing authentication token
-     * @param  int  $projectId  The unique identifier of the project
-     * @return JsonResponse JSON response containing task collection and success message
-     *
-     * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If project is not found or user lacks permission
-     */
-    #[OA\Get(
-        path: '/api/v1/projects/{projectId}/tasks',
-        summary: 'List tasks in a project',
-        description: 'Retrieve all tasks belonging to a specific project. Requires workspace membership for authorization.',
-        security: [['bearerAuth' => []]],
-        tags: ['Tasks'],
-        parameters: [
-            new OA\Parameter(
-                name: 'projectId',
-                in: 'path',
-                required: true,
-                description: 'The unique identifier of the project',
-                schema: new OA\Schema(type: 'integer', example: 1)
-            ),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Tasks retrieved successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(
-                            property: 'data',
-                            type: 'array',
-                            items: new OA\Items(ref: '#/components/schemas/TaskResource')
-                        ),
-                        new OA\Property(
-                            property: 'message',
-                            type: 'string',
-                            example: 'Tasks retrieved successfully'
-                        ),
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: 'Unauthorized - Invalid or missing authentication token'),
-            new OA\Response(response: 403, description: 'Forbidden - User is not a member of this project'),
-            new OA\Response(response: 404, description: 'Project not found'),
-        ]
-    )]
-    public function indexTasks(Request $request, int $projectId): JsonResponse
-    {
-        // Get the authenticated user from the request
-        // Throws UnauthorizedHttpException if no valid token is provided
-        $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
-
-        try {
-            // Retrieve all tasks for the project from service layer
-            // Service validates project exists and user has access
-            $tasks = $this->workspaceService->getTasksByProject($projectId, $user->id);
-
-            // Return formatted JSON response with task collection
-            return response()->json([
-                'data' => TaskResource::collection($tasks),
-                'message' => __('workspaces.tasks_retrieved'),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            // Handle project not found or authorization errors
             // Return 404 Not Found with error message
             return response()->json([
                 'message' => $e->getMessage(),

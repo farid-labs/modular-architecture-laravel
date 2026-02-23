@@ -46,27 +46,6 @@ class WorkspaceController extends Controller
      * @return JsonResponse JSON response with workspace collection
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     *
-     * @OA\Get(
-     *     path="/api/v1/workspaces",
-     *     summary="List user workspaces",
-     *     description="Get all workspaces the authenticated user is a member of",
-     *     security={{"bearerAuth": {}}},
-     *     tags={"Workspaces"},
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful operation",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/WorkspaceResource")),
-     *             @OA\Property(property="message", type="string", example="Workspaces retrieved successfully")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=401, description="Unauthorized")
-     * )
      */
     #[OA\Get(
         path: '/workspaces',
@@ -433,7 +412,7 @@ class WorkspaceController extends Controller
     {
         // Validate request input
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'required|exists:users,id,deleted_at,NULL',
             'role' => 'required|in:owner,admin,member',
         ]);
 
