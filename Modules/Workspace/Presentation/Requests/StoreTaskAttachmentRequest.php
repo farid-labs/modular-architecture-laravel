@@ -3,9 +3,18 @@
 namespace Modules\Workspace\Presentation\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 
 /**
- * Request validation for uploading an attachment to a task.
+ * Form Request for storing task attachments.
+ *
+ * Validates multiple file uploads with the following rules:
+ * - Minimum 1 file, maximum 3 files per request
+ * - Each file: max 10MB
+ * - Allowed types: jpeg, png, gif, webp, pdf
+ *
+ * @author Farid Labs
+ * @copyright 2026 Farid Labs
  */
 class StoreTaskAttachmentRequest extends FormRequest
 {
@@ -14,19 +23,25 @@ class StoreTaskAttachmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return true; // Authorization handled in controller/policy
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'max:10240'], // Max 10MB
-            'file_name' => ['sometimes', 'string', 'max:255'],
+            'files'   => ['required', 'array', 'min:1', 'max:3'],
+            'files.*' => [
+                'required',
+                'file',
+                'max:10240', // 10MB in KB
+                'mimes:jpeg,png,gif,webp,pdf',
+                'mimetypes:image/jpeg,image/png,image/gif,image/webp,application/pdf',
+            ],
         ];
     }
 
@@ -38,10 +53,32 @@ class StoreTaskAttachmentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'file.required' => 'File is required.',
-            'file.file' => 'Invalid file format.',
-            'file.max' => 'File size must not exceed 10MB.',
-            'file_name.max' => 'File name must not exceed 255 characters.',
+            'files.required' => __('workspaces.attachment_required'),
+            'files.array' => __('workspaces.files_must_be_array'),
+            'files.min' => __('workspaces.attachment_min_count', ['min' => 1]),
+            'files.*.required' => __('workspaces.file_required'),
+            'files.*.file' => __('workspaces.file_must_be_file'),
+            'files.*.max' => __('workspaces.file_size_exceeds_limit', ['max' => '10MB']),
+            'files.*.mimes' => __('workspaces.invalid_file_type'),
+            'files.*.mimetypes' => __('workspaces.invalid_file_type'),
         ];
+    }
+
+    /**
+     * Get validated files as UploadedFile array.
+     *
+     * @return array<int, UploadedFile>
+     */
+    public function getFiles(): array
+    {
+        return $this->validated()['files'] ?? [];
+    }
+
+    /**
+     * Check if request has files.
+     */
+    public function hasFiles(): bool
+    {
+        return ! empty($this->getFiles());
     }
 }
