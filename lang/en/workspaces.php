@@ -70,6 +70,7 @@ return [
     'comment_min_length' => 'Comment must be at least 3 characters',
     'comment_max_length' => 'Comment must not exceed 2000 characters',
     'comment_not_owned' => 'You can only delete your own comments',
+    'comment_not_found' => 'Comment with ID :id not found',
     'comment_edit_expired' => 'Comment can only be edited within 30 minutes of creation',
     'invalid_file_type' => 'Invalid file type. Allowed types: JPEG, PNG, PDF',
     'file_size_exceeds_limit' => 'File size exceeds maximum limit of 10MB',
@@ -83,5 +84,15 @@ return [
 
     'attachment_not_found' => 'Attachment with ID :id not found',
     'attachment_delete_forbidden' => 'You are not authorized to delete this attachment. Only the uploader can delete their own attachments.',
+
+    'attachment_required' => 'At least one file is required',
+    'files_must_be_array' => 'Files must be provided as an array',
+    'file_must_be_file' => 'Each file must be a valid uploaded file',
+    'attachment_min_count' => 'Minimum :min file required',
+    'attachment_max_count' => 'Maximum :max files allowed per request. You uploaded :current',
+    'file_size_negative' => 'File size cannot be negative',
+    'invalid_file_at_index' => 'Invalid file at index :index',
+    'attachments_uploaded' => ':count attachments uploaded successfully',
+    'attachment_upload_failed' => 'Attachment upload failed. Please try again later.',
 
 ];
