@@ -4,7 +4,6 @@ namespace Modules\Workspace\Infrastructure\Repositories;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
-use InvalidArgumentException;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\DTOs\TaskDTO;
@@ -14,9 +13,11 @@ use Modules\Workspace\Domain\Entities\TaskAttachmentEntity;
 use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
 use Modules\Workspace\Domain\ValueObjects\FileName;
 use Modules\Workspace\Domain\ValueObjects\FilePath;
+use Modules\Workspace\Domain\ValueObjects\FileSize;
 use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 use Modules\Workspace\Infrastructure\Persistence\Models\ProjectModel;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskAttachmentModel;
@@ -317,12 +318,12 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
      * @param  int  $workspaceId  The workspace ID
      * @param  int  $userId  The user ID
      *
-     * @throws InvalidArgumentException if workspace does not exist
+     * @throws AuthorizationException if workspace does not exist
      */
     public function isUserMemberOfWorkspace(int $workspaceId, int $userId): bool
     {
         if (! $this->workspaceExists($workspaceId)) {
-            throw new InvalidArgumentException(__('workspaces.not_found_by_id', ['id' => $workspaceId]));
+            throw new AuthorizationException('not_found_by_id', ['id' => $workspaceId]);
         }
 
         return $this->getModel()
@@ -516,15 +517,15 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     private function mapTaskAttachmentToEntity(TaskAttachmentModel $model): TaskAttachmentEntity
     {
         return new TaskAttachmentEntity(
-            $model->id,
-            $model->task_id,
-            $model->uploaded_by,
-            $model->file_type,
-            $model->file_size,
-            $model->created_at,
-            $model->updated_at,
-            new FileName($model->file_name),
-            new FilePath($model->file_path)
+            id: $model->id,
+            taskId: $model->task_id,
+            uploadedBy: $model->uploaded_by,
+            mimeType: $model->file_type,
+            fileSize: new FileSize($model->file_size),  // Wrap int in FileSize VO
+            createdAt: $model->created_at,
+            updatedAt: $model->updated_at,
+            fileName: new FileName($model->file_name),
+            filePath: new FilePath($model->file_path)
         );
     }
 
@@ -555,20 +556,24 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
      */
     public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity
     {
-        /** @var TaskCommentModel $model */
-        $model = TaskCommentModel::findOrFail($commentId);
+        /** @var TaskCommentModel|null $model */
+        $model = TaskCommentModel::find($commentId);
+
+        if (! $model) {
+            throw new AuthorizationException('comment_not_found', ['id' => $commentId]);
+        }
 
         if ($model->user_id !== $userId) {
-            throw new InvalidArgumentException(__('workspaces.comment_not_owned'));
+            throw new AuthorizationException('comment_not_owned');
         }
 
         if ($model->created_at->lt(now()->subMinutes(30))) {
-            throw new InvalidArgumentException(__('workspaces.comment_edit_expired'));
+            throw new AuthorizationException('comment_edit_expired');
         }
 
         $model->update(['comment' => $newComment]);
 
-        // Fresh is guaranteed to return model after findOrFail()
+        // Fresh is guaranteed to return model after find()
         /** @var TaskCommentModel $freshModel */
         $freshModel = $model->fresh();
 
@@ -609,25 +614,47 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     /**
      * Delete a task comment (only owner can delete).
      *
+     * @param  int  $taskId  The task ID
      * @param  int  $commentId  The comment ID
      * @param  int  $userId  The user ID
      *
-     * @throws InvalidArgumentException if not owned by the user
+     * @throws AuthorizationException if not owned by the user
      */
-    public function deleteComment(int $commentId, int $userId): bool
+    public function deleteComment(int $taskId, int $commentId, int $userId): bool
     {
         /** @var TaskCommentModel|null $model */
         $model = TaskCommentModel::find($commentId);
 
         if (! $model) {
-            return false;
+            throw new AuthorizationException('comment_not_found', ['id' => $commentId]);
+        }
+
+        if ($model->task_id !== $taskId) {
+            throw new AuthorizationException('comment_not_found', ['id' => $commentId]);
         }
 
         if ($model->user_id !== $userId) {
-            throw new InvalidArgumentException(__('workspaces.comment_not_owned'));
+            throw new AuthorizationException('comment_not_owned');
         }
 
         return (bool) $model->delete();
+    }
+
+    /**
+     * Find a comment by its ID.
+     *
+     * Fetches a single comment entity from the database.
+     * Returns null if comment is not found.
+     *
+     * @param  int  $commentId  The comment ID
+     * @return TaskCommentEntity|null The comment entity or null if not found
+     */
+    public function findCommentById(int $commentId): ?TaskCommentEntity
+    {
+        /** @var TaskCommentModel|null $model */
+        $model = TaskCommentModel::find($commentId);
+
+        return $model ? $this->mapTaskCommentToEntity($model) : null;
     }
 
     /**
@@ -646,7 +673,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         }
 
         if ($model->uploaded_by !== $userId) {
-            throw new InvalidArgumentException(__('workspaces.attachment_not_owned'));
+            throw new AuthorizationException('attachment_not_owned');
         }
 
         if (Storage::exists($model->file_path)) {
@@ -733,7 +760,7 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
         $workspace = $this->getModel()->with(['members'])->find($workspaceId);
 
         if (! $workspace) {
-            throw new \InvalidArgumentException(__('workspaces.workspace_not_found', ['id' => $workspaceId]));
+            throw new AuthorizationException('workspace_not_found', ['id' => $workspaceId]);
         }
 
         /** @var array<int, array<string, mixed>> $members */
