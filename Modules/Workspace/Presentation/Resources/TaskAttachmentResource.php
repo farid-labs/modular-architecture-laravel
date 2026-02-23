@@ -41,14 +41,31 @@ class TaskAttachmentResource extends JsonResource
 
         // Map TaskAttachmentEntity properties to array keys
         return [
+            // Unique attachment identifier
             'id' => $this->resource->getId(),
+
+            // Associated task ID
             'task_id' => $this->resource->getTaskId(),
-            'file_name' => $this->resource->getFileNameVO(),
-            'file_path' => $this->resource->getFilePathVO(),
+
+            // Original file name (extracted from FileName value object)
+            'file_name' => $this->resource->getFileNameVO()->value(),
+
+            // Storage path (extracted from FilePath value object)
+            'file_path' => $this->resource->getFilePathVO()->value(),
+
+            // File MIME type
             'file_type' => $this->resource->getMimeType(),
+
+            // File size in bytes
             'file_size' => $this->resource->getFileSize(),
-            'uploaded_by' => $this->resource->getUserId(),
+
+            // User ID who uploaded the attachment
+            'uploaded_by' => $this->resource->getUploadedBy(),
+
+            // ISO 8601 formatted creation timestamp
             'created_at' => $this->resource->getCreatedAt()?->toIso8601String(),
+
+            // ISO 8601 formatted last update timestamp
             'updated_at' => $this->resource->getUpdatedAt()?->toIso8601String(),
         ];
     }

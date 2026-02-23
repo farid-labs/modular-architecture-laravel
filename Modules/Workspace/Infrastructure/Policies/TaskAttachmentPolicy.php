@@ -62,6 +62,6 @@ class TaskAttachmentPolicy
     public function delete(UserModel $user, TaskAttachmentEntity $attachment): bool
     {
         // Verify user is the original file uploader
-        return $attachment->getUserId() === $user->id;
+        return $attachment->getUploadedBy() === $user->id;
     }
 }
