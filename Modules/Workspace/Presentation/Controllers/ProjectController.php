@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
 use Modules\Workspace\Domain\Entities\ProjectEntity;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Presentation\Requests\StoreProjectRequest;
 use Modules\Workspace\Presentation\Requests\UpdateProjectRequest;
 use Modules\Workspace\Presentation\Resources\ProjectResource;
@@ -79,7 +80,7 @@ class ProjectController extends Controller
      * @return JsonResponse JSON response containing project collection and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If workspace is not found or user lacks permission
+     * @throws AuthorizationException If workspace is not found or user lacks permission
      */
     #[OA\Get(
         path: '/api/v1/workspaces/{workspaceId}/projects',
@@ -139,7 +140,7 @@ class ProjectController extends Controller
                 'data' => ProjectResource::collection($projects),
                 'message' => __('workspaces.projects_retrieved'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             $msg = $e->getMessage();
 
             // Handle user not being a member of the workspace
@@ -182,7 +183,7 @@ class ProjectController extends Controller
      * @return JsonResponse JSON response containing created project resource and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If workspace is not found or user lacks permission
+     * @throws AuthorizationException If workspace is not found or user lacks permission
      * @throws \Illuminate\Validation\ValidationException If request validation fails
      */
     #[OA\Post(
@@ -267,7 +268,7 @@ class ProjectController extends Controller
                 'data' => new ProjectResource($project),
                 'message' => __('workspaces.project_created'),
             ], 201);
-        } catch (\InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             $errorMessage = $e->getMessage();
 
             // Handle workspace not found error
@@ -335,7 +336,7 @@ class ProjectController extends Controller
      * @return JsonResponse JSON response containing project details and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If project is not found
+     * @throws AuthorizationException If project is not found
      */
     #[OA\Get(
         path: '/projects/{id}',
@@ -386,7 +387,7 @@ class ProjectController extends Controller
                 'data' => new ProjectResource($project),
                 'message' => __('workspaces.project_retrieved'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Handle project not found error
             // Check for specific error message pattern
             if (str_contains($e->getMessage(), 'Project not found')) {
@@ -427,7 +428,7 @@ class ProjectController extends Controller
      * @return JsonResponse JSON response containing updated project resource and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If project is not found or user lacks permission
+     * @throws AuthorizationException If project is not found or user lacks permission
      * @throws \Illuminate\Validation\ValidationException If request validation fails
      */
     #[OA\Put(
@@ -513,7 +514,7 @@ class ProjectController extends Controller
                 'data' => new ProjectResource($project),
                 'message' => __('workspaces.project_updated'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Handle project not found or authorization errors
             // Return 404 Not Found with error message
             return response()->json([
@@ -543,7 +544,7 @@ class ProjectController extends Controller
      * @return JsonResponse JSON response with success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If project is not found
+     * @throws AuthorizationException If project is not found
      */
     #[OA\Delete(
         path: '/projects/{id}',
@@ -590,7 +591,7 @@ class ProjectController extends Controller
             return response()->json([
                 'message' => __('workspaces.project_deleted'),
             ]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Handle project not found error
             // Return 404 Not Found with error message
             return response()->json([
@@ -610,7 +611,7 @@ class ProjectController extends Controller
      * @param  int  $id  The project ID to retrieve
      * @return ProjectEntity The retrieved project entity
      *
-     * @throws \InvalidArgumentException If project is not found
+     * @throws AuthorizationException If project is not found
      */
     private function getProjectById(int $id): ProjectEntity
     {

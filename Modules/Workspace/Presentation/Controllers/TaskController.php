@@ -5,9 +5,9 @@ namespace Modules\Workspace\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use InvalidArgumentException;
 use Modules\Workspace\Application\DTOs\TaskDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Presentation\Requests\StoreTaskRequest;
 use Modules\Workspace\Presentation\Requests\UpdateTaskRequest;
 use Modules\Workspace\Presentation\Resources\TaskResource;
@@ -85,7 +85,8 @@ class TaskController extends Controller
     )]
     public function index(Request $request, int $projectId): JsonResponse
     {
-        // Get the authenticated user
+        // Retrieve authenticated user from request context
+        // Throws UnauthorizedHttpException if no valid authentication token is provided
         $user = $request->user();
         if ($user === null) {
             throw new UnauthorizedHttpException('Unauthorized');
@@ -93,27 +94,42 @@ class TaskController extends Controller
 
         try {
             // Retrieve all tasks for the project
+            // Service layer validates:
+            // 1. Project existence (throws AuthorizationException if not found)
+            // 2. User membership in project's workspace (throws AuthorizationException if not member)
+            // 3. Returns collection of TaskEntity objects
             $tasks = $this->workspaceService->getTasksByProject($projectId, $user->id);
 
+            // Return formatted JSON response with task collection
             return response()->json([
                 'data' => TaskResource::collection($tasks),
                 'message' => __('workspaces.tasks_retrieved'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
+            // Capture error message for error type detection
             $msg = $e->getMessage();
 
             // Handle project not found error
+            // Returns 404 with localized error message including project ID
             if (str_contains($msg, 'Project not found') || str_contains($msg, 'project_not_found')) {
-                return response()->json(['message' => __('workspaces.project_not_found', ['id' => $projectId])], 404);
+                return response()->json([
+                    'message' => __('workspaces.project_not_found', ['id' => $projectId]),
+                ], 404);
             }
 
             // Handle user not being a member of the project
+            // Returns 403 Forbidden to indicate authorization failure
             if (str_contains($msg, 'not a member')) {
-                return response()->json(['message' => __('workspaces.not_member_of_project')], 403);
+                return response()->json([
+                    'message' => __('workspaces.not_member_of_project'),
+                ], 403);
             }
 
-            // Return other errors
-            return response()->json(['message' => $msg], 422);
+            // Return other validation or business logic errors
+            // Returns 422 Unprocessable Entity for client-side errors
+            return response()->json([
+                'message' => $msg,
+            ], 422);
         }
     }
 
@@ -200,7 +216,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_created'),
             ], 201);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             $msg = $e->getMessage();
 
             // Handle project not found error
@@ -228,7 +244,7 @@ class TaskController extends Controller
      * @param  int  $id  The task ID
      * @return JsonResponse JSON response with task details
      *
-     * @throws InvalidArgumentException If task is not found
+     * @throws AuthorizationException If task is not found
      */
     #[OA\Get(
         path: '/tasks/{id}',
@@ -272,7 +288,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_retrieved'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Handle task not found
             if (str_contains($e->getMessage(), 'Task not found')) {
                 return response()->json(['message' => __('workspaces.task_not_found', ['id' => $id])], 404);
@@ -344,7 +360,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_completed'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Handle task not found
             if (str_contains($e->getMessage(), 'Task not found')) {
                 return response()->json(['message' => __('workspaces.task_not_found', ['id' => $id])], 404);
@@ -439,7 +455,7 @@ class TaskController extends Controller
                 'data' => new TaskResource($task),
                 'message' => __('workspaces.task_updated'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
     }
@@ -454,7 +470,7 @@ class TaskController extends Controller
      * @param  int  $id  The task ID
      * @return JsonResponse JSON response with success message
      *
-     * @throws InvalidArgumentException If task is not found
+     * @throws AuthorizationException If task is not found
      */
     #[OA\Delete(
         path: '/tasks/{id}',
@@ -495,7 +511,7 @@ class TaskController extends Controller
             $this->workspaceService->deleteTask($id);
 
             return response()->json(['message' => __('workspaces.task_deleted')]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
     }

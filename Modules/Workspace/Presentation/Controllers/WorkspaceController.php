@@ -5,9 +5,9 @@ namespace Modules\Workspace\Presentation\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use InvalidArgumentException;
 use Modules\Workspace\Application\DTOs\WorkspaceDTO;
 use Modules\Workspace\Application\Services\WorkspaceService;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Presentation\Requests\StoreWorkspaceRequest;
 use Modules\Workspace\Presentation\Requests\UpdateWorkspaceRequest;
 use Modules\Workspace\Presentation\Resources\WorkspaceResource;
@@ -99,7 +99,7 @@ class WorkspaceController extends Controller
      * @param  string  $slug  The workspace slug identifier
      * @return JsonResponse JSON response with workspace details
      *
-     * @throws InvalidArgumentException If workspace is not found
+     * @throws AuthorizationException If workspace is not found
      */
     #[OA\Get(
         path: '/workspaces/{slug}',
@@ -144,7 +144,7 @@ class WorkspaceController extends Controller
                 'data' => new WorkspaceResource($workspace),
                 'message' => __('workspaces.retrieved'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Handle workspace not found
             return response()->json([
                 'message' => $e->getMessage(),
@@ -239,7 +239,7 @@ class WorkspaceController extends Controller
      * @return JsonResponse JSON response with updated workspace
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws InvalidArgumentException If user is not owner or workspace not found
+     * @throws AuthorizationException If user is not owner or workspace not found
      */
     #[OA\Put(
         path: '/workspaces/{id}',
@@ -301,7 +301,7 @@ class WorkspaceController extends Controller
                 'data' => new WorkspaceResource($workspace),
                 'message' => __('workspaces.updated'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Check if error is about ownership
             if (str_contains($e->getMessage(), 'owner')) {
                 return response()->json([
@@ -326,7 +326,7 @@ class WorkspaceController extends Controller
      * @param  int  $id  The workspace ID
      * @return JsonResponse JSON response with success message
      *
-     * @throws InvalidArgumentException If workspace is not found
+     * @throws AuthorizationException If workspace is not found
      */
     #[OA\Delete(
         path: '/workspaces/{id}',
@@ -360,7 +360,7 @@ class WorkspaceController extends Controller
             return response()->json([
                 'message' => __('workspaces.deleted'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 404);
@@ -378,7 +378,7 @@ class WorkspaceController extends Controller
      * @param  int  $workspaceId  The workspace ID
      * @return JsonResponse JSON response with success message
      *
-     * @throws InvalidArgumentException If workspace or user is not found
+     * @throws AuthorizationException If workspace or user is not found
      */
     #[OA\Post(
         path: '/workspaces/{workspaceId}/members',
@@ -433,7 +433,7 @@ class WorkspaceController extends Controller
             return response()->json([
                 'message' => __('workspaces.member_added'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 404);
@@ -451,7 +451,7 @@ class WorkspaceController extends Controller
      * @param  int  $workspaceId  The workspace ID
      * @return JsonResponse JSON response with success message
      *
-     * @throws InvalidArgumentException If membership is not found
+     * @throws AuthorizationException If membership is not found
      */
     #[OA\Delete(
         path: '/workspaces/{workspaceId}/members',
@@ -503,7 +503,7 @@ class WorkspaceController extends Controller
             return response()->json([
                 'message' => __('workspaces.member_removed'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 404);
@@ -551,7 +551,7 @@ class WorkspaceController extends Controller
                 'data' => $members,
                 'message' => __('workspaces.members_retrieved'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
     }

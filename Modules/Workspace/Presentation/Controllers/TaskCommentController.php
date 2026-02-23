@@ -8,10 +8,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Application\Services\WorkspaceService;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Presentation\Requests\StoreTaskCommentRequest;
 use Modules\Workspace\Presentation\Requests\UpdateTaskCommentRequest;
 use Modules\Workspace\Presentation\Resources\TaskCommentResource;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 /**
@@ -73,7 +75,7 @@ class TaskCommentController extends Controller
      * @return JsonResponse JSON response containing comment collection and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If task is not found or user lacks permission
+     * @throws AuthorizationException If task is not found or user lacks permission
      */
     #[OA\Get(
         path: '/tasks/{taskId}/comments',
@@ -121,16 +123,29 @@ class TaskCommentController extends Controller
         // Retrieve authenticated user from request
         // Throws UnauthorizedHttpException if no valid token provided
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+        try {
+            // Retrieve comments from service layer with authorization check
+            // Service validates user is member of task's project workspace
+            $comments = $this->service->getCommentsByTask($taskId, $user->id);
 
-        // Retrieve comments from service layer with authorization check
-        // Service validates user is member of task's project workspace
-        $comments = $this->service->getCommentsByTask($taskId, $user->id);
-
-        // Return formatted JSON response with comment collection
-        return response()->json([
-            'data' => TaskCommentResource::collection($comments),
-            'message' => __('workspaces.comments_retrieved'),
-        ]);
+            // Return formatted JSON response with comment collection
+            return response()->json([
+                'data' => TaskCommentResource::collection($comments),
+                'message' => __('workspaces.comments_retrieved'),
+            ]);
+        } catch (AuthorizationException $e) {
+            return match ($e->errorCode) {
+                'task_not_found' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 404),
+                'not_member_of_project' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 403),
+                default => response()->json([
+                    'message' => $e->getMessage(),
+                ], 422),
+            };
+        }
     }
 
     // ==================== CREATE COMMENT ====================
@@ -161,7 +176,7 @@ class TaskCommentController extends Controller
      *
      * @throws UnauthorizedHttpException If user is not authenticated
      * @throws \Illuminate\Auth\Access\AuthorizationException If user lacks comment permission
-     * @throws \InvalidArgumentException If task is not found or validation fails
+     * @throws AuthorizationException If task is not found or validation fails
      */
     #[OA\Post(
         path: '/tasks/{taskId}/comments',
@@ -226,29 +241,46 @@ class TaskCommentController extends Controller
         // Type hint helps IDE autocomplete and static analysis
         /** @var UserModel $user */
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+        try {
+            // Retrieve task to verify it exists before authorization check
+            // This ensures we're authorizing against a valid task entity
+            $task = $this->service->getTaskById($taskId);
 
-        // Retrieve task to verify it exists before authorization check
-        // This ensures we're authorizing against a valid task entity
-        $task = $this->service->getTaskById($taskId);
+            // Authorize user has permission to comment on this task
+            // Uses Laravel Policy system (TaskPolicy@comment)
+            // Validates user is member of task's project workspace
+            $this->authorize('comment', $task);
 
-        // Authorize user has permission to comment on this task
-        // Uses Laravel Policy system (TaskPolicy@comment)
-        // Validates user is member of task's project workspace
-        $this->authorize('comment', $task);
+            // Create comment via service layer
+            // Service handles validation, persistence, and event dispatching
+            $comment = $this->service->addCommentToTask(
+                $taskId,
+                $request->input('comment'),
+                $user
+            );
 
-        // Create comment via service layer
-        // Service handles validation, persistence, and event dispatching
-        $comment = $this->service->addCommentToTask(
-            $taskId,
-            $request->input('comment'),
-            $user
-        );
-
-        // Return 201 Created with comment resource and success message
-        return response()->json([
-            'data' => new TaskCommentResource($comment),
-            'message' => __('workspaces.comment_added'),
-        ], 201);
+            // Return 201 Created with comment resource and success message
+            return response()->json([
+                'data' => new TaskCommentResource($comment),
+                'message' => __('workspaces.comment_added'),
+            ], 201);
+        } catch (AuthorizationException $e) {
+            return match ($e->errorCode) {
+                'task_not_found' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 404),
+                'comment_min_length' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 422),
+                default => response()->json([
+                    'message' => $e->getMessage(),
+                ], 422),
+            };
+        } catch (AccessDeniedHttpException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 403);
+        }
     }
 
     // ==================== UPDATE COMMENT ====================
@@ -281,7 +313,7 @@ class TaskCommentController extends Controller
      * @return JsonResponse JSON response containing updated comment resource and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If comment is not found, user is not author, or time window expired
+     * @throws AuthorizationException If comment is not found, user is not author, or time window expired
      */
     #[OA\Put(
         path: '/comments/{commentId}',
@@ -344,23 +376,45 @@ class TaskCommentController extends Controller
     {
         // Retrieve authenticated user from request
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+        try {
+            // Update comment via service layer
+            // Service validates:
+            // 1. User is comment author
+            // 2. Update is within 30-minute window
+            // 3. Comment content meets validation rules
+            $comment = $this->service->updateComment(
+                $commentId,
+                $request->input('comment'),
+                $user->id
+            );
 
-        // Update comment via service layer
-        // Service validates:
-        // 1. User is comment author
-        // 2. Update is within 30-minute window
-        // 3. Comment content meets validation rules
-        $comment = $this->service->updateComment(
-            $commentId,
-            $request->input('comment'),
-            $user->id
-        );
-
-        // Return updated comment resource with success message
-        return response()->json([
-            'data' => new TaskCommentResource($comment),
-            'message' => __('workspaces.comment_updated'),
-        ]);
+            // Return updated comment resource with success message
+            return response()->json([
+                'data' => new TaskCommentResource($comment),
+                'message' => __('workspaces.comment_updated'),
+            ]);
+        } catch (AuthorizationException $e) {
+            return match ($e->errorCode) {
+                'comment_not_found' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 404),
+                'comment_not_owned' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 403),
+                'comment_edit_expired' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 403),
+                'comment_min_length' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 422),
+                'comment_max_length' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 422),
+                default => response()->json([
+                    'message' => $e->getMessage(),
+                ], 422),
+            };
+        }
     }
 
     // ==================== DELETE COMMENT ====================
@@ -387,7 +441,7 @@ class TaskCommentController extends Controller
      * @return JsonResponse JSON response with success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If comment is not found or user is not author
+     * @throws AuthorizationException If comment is not found or user is not author
      */
     #[OA\Delete(
         path: '/tasks/{taskId}/comments/{commentId}',
@@ -433,21 +487,24 @@ class TaskCommentController extends Controller
     )]
     public function destroy(Request $request, int $taskId, int $commentId): JsonResponse
     {
-        // Retrieve authenticated user from request
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
 
         try {
-            // Delete comment via service layer
-            // Service validates user is comment author before deletion
-            // Performs soft delete to maintain audit trail
-            $this->service->deleteComment($commentId, $user->id);
+            $this->service->deleteComment($taskId, $commentId, $user->id);
 
-            // Return success message
             return response()->json(['message' => __('workspaces.comment_deleted')]);
-        } catch (\InvalidArgumentException $e) {
-            // Return 403 Forbidden for authorization failures
-            // This includes: not author, comment not found
-            return response()->json(['message' => $e->getMessage()], 403);
+        } catch (AuthorizationException $e) {
+            return match ($e->errorCode) {
+                'comment_not_found' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 404),
+                'comment_not_owned' => response()->json([
+                    'message' => $e->getMessage(),
+                ], 403),
+                default => response()->json([
+                    'message' => $e->getMessage(),
+                ], 422),
+            };
         }
     }
 }

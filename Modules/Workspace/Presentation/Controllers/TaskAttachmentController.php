@@ -7,12 +7,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use InvalidArgumentException;
 use Modules\Workspace\Application\Services\WorkspaceService;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
+use Modules\Workspace\Domain\ValueObjects\AttachmentCollection;
 use Modules\Workspace\Presentation\Requests\StoreTaskAttachmentRequest;
 use Modules\Workspace\Presentation\Resources\TaskAttachmentResource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
+use Throwable;
 
 /**
  * Controller responsible for managing task attachments.
@@ -72,7 +74,7 @@ class TaskAttachmentController extends Controller
      * @return JsonResponse JSON response containing attachment collection and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If task is not found or user lacks permission
+     * @throws AuthorizationException If task is not found or user lacks permission
      */
     #[OA\Get(
         path: '/tasks/{taskId}/attachments',
@@ -116,77 +118,84 @@ class TaskAttachmentController extends Controller
     )]
     public function index(Request $request, int $taskId): JsonResponse
     {
-        // Retrieve authenticated user from request
-        // Throws UnauthorizedHttpException if no valid token provided
+        // Retrieve authenticated user from request context
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
 
-        // Retrieve attachments from service layer
-        // Service validates user has access to task's project
-        $attachments = $this->service->getAttachmentsByTask($taskId);
+        try {
+            // CRITICAL FIX: Pass user ID to service for authorization check
+            $attachments = $this->service->getAttachmentsByTask($taskId, $user->id);
 
-        // Return formatted JSON response with attachment collection
-        // Uses cached results from service layer (15 minute cache)
-        return response()->json([
-            'data' => TaskAttachmentResource::collection($attachments),
-            'message' => __('workspaces.attachments_retrieved'),
-        ]);
+            return response()->json([
+                'data' => TaskAttachmentResource::collection($attachments),
+                'message' => __('workspaces.attachments_retrieved'),
+            ]);
+        } catch (AuthorizationException $e) {
+            return match ($e->errorCode) {
+                'task_not_found' => response()->json(['message' => $e->getMessage()], 404),
+                'not_member_of_project' => response()->json(['message' => $e->getMessage()], 403),
+                default => response()->json(['message' => $e->getMessage()], 422),
+            };
+        }
     }
 
     // ==================== UPLOAD ATTACHMENT ====================
 
     /**
-     * Upload a new file attachment to the specified task.
+     * Upload multiple file attachments to the specified task.
      *
-     * Handles file upload with validation and storage:
-     * - Validates file is present and valid
-     * - Stores file in 'task-attachments' directory
-     * - Records file metadata (name, path, size, MIME type)
-     * - Associates attachment with task and uploader
-     * - Dispatches job for async processing (thumbnail, virus scan, etc.)
-     * - Dispatches event for real-time notifications
+     * Handles multiple file upload with comprehensive validation:
+     * - Validates file count (1-3 files per request)
+     * - Validates each file (max 10MB, allowed types)
+     * - Stores files in 'task-attachments' directory
+     * - Records file metadata using domain value objects
+     * - Associates attachments with task and uploader
+     * - Dispatches jobs for async processing (thumbnail, virus scan)
+     * - Dispatches events for real-time notifications
+     * - Invalidates cache for data consistency
      *
-     * Supported File Types:
-     * - Images: JPEG, PNG, GIF, WebP
-     * - Documents: PDF
-     *
-     * Validation Rules:
-     * - File is required
-     * - Maximum file size: 10MB (10240 KB)
-     * - Valid MIME type enforcement
+     * Domain Rules:
+     * - AttachmentCollection enforces max 3 files rule
+     * - FileSize value object enforces 10MB limit
+     * - AttachmentUpload validates each file individually
      *
      * Security Considerations:
      * - Requires valid Sanctum authentication token
      * - Validates user membership in project workspace
      * - Checks upload permission on task
-     * - Sanitizes file name and path
+     * - Sanitizes file names and paths
      *
-     * @param  StoreTaskAttachmentRequest  $request  The validated request containing file upload
-     * @param  int  $taskId  The unique identifier of the task to attach file to
-     * @return JsonResponse JSON response containing created attachment resource and success message
+     * @param  StoreTaskAttachmentRequest  $request  The validated request containing file uploads
+     * @param  int  $taskId  The unique identifier of the task
+     * @return JsonResponse JSON response containing created attachments and success message
      *
      * @throws UnauthorizedHttpException If user is not authenticated
-     * @throws \InvalidArgumentException If task is not found or user lacks permission
-     * @throws \Illuminate\Validation\ValidationException If file validation fails
      */
     #[OA\Post(
         path: '/tasks/{taskId}/attachments',
-        summary: 'Upload a file attachment to a task',
-        description: 'Uploads a file and links it to the specified task. Supported formats include images (jpeg, png) and PDFs. Maximum file size is enforced by validation rules.',
+        operationId: 'uploadTaskAttachments',
+        summary: 'Upload multiple file attachments to a task',
+        description: 'Uploads 1-3 files and links them to the specified task. Maximum 10MB per file. Supported formats: JPEG, PNG, GIF, WebP, PDF.',
         security: [['sanctum' => []]],
         tags: ['Task Attachments'],
         requestBody: new OA\RequestBody(
             required: true,
-            description: 'Multipart form data containing the file',
+            description: 'Multipart form data containing files',
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['file'],
+                    required: ['files'],
                     properties: [
                         new OA\Property(
-                            property: 'file',
-                            type: 'string',
-                            format: 'binary',
-                            description: 'The file to upload (jpg, png, gif, webp, pdf supported; max 10 MB)'
+                            property: 'files',
+                            type: 'array',
+                            minItems: 1,
+                            maxItems: 3,
+                            items: new OA\Items(
+                                type: 'string',
+                                format: 'binary',
+                                description: 'File to upload (max 10MB each)'
+                            ),
+                            description: 'Array of 1-3 files to upload'
                         ),
                     ]
                 )
@@ -204,102 +213,131 @@ class TaskAttachmentController extends Controller
         responses: [
             new OA\Response(
                 response: 201,
-                description: 'Attachment successfully uploaded',
+                description: 'Attachments successfully uploaded',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
                             property: 'data',
-                            ref: '#/components/schemas/TaskAttachmentResource',
-                            description: 'The newly created attachment resource'
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/TaskAttachmentResource'),
+                            description: 'Array of created attachment resources'
                         ),
                         new OA\Property(
                             property: 'message',
                             type: 'string',
-                            example: 'Attachment uploaded successfully'
+                            example: '3 attachments uploaded successfully'
                         ),
                     ]
                 )
             ),
             new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden - User lacks permission to upload'),
+            new OA\Response(response: 403, description: 'Forbidden - User lacks permission'),
             new OA\Response(response: 404, description: 'Task not found'),
-            new OA\Response(response: 422, description: 'Validation error (invalid file type, size, etc.)'),
-            new OA\Response(response: 500, description: 'Server error during file storage'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 500, description: 'Server error'),
         ]
     )]
     public function store(StoreTaskAttachmentRequest $request, int $taskId): JsonResponse
     {
-        // Retrieve authenticated user from request
-        // Type hint helps IDE autocomplete and static analysis
+        // Authenticate User
+        // Retrieve authenticated user from request context
+        // Throws UnauthorizedHttpException if no valid token provided
         $user = $request->user() ?? throw new UnauthorizedHttpException('Unauthorized');
+
+        // Validate Task Existence (Domain Rule)
+        // Ensure the parent task exists before proceeding with file uploads
+        // This prevents orphaned attachments and provides clear error messaging
         try {
             $task = $this->service->getTaskById($taskId);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
+            Log::channel('domain')->warning('Task not found for attachment upload', [
+                'task_id' => $taskId,
+                'user_id' => $user->id,
+            ]);
+
             return response()->json([
                 'message' => __('workspaces.task_not_found', ['id' => $taskId]),
             ], 404);
         }
-        // Retrieve uploaded file from request
-        // Validation already performed by StoreTaskAttachmentRequest
-        $file = $request->file('file');
 
-        // Validate file upload was successful
-        // Checks for upload errors and file integrity
-        if (! $file->isValid()) {
-            // Log file upload validation failure for debugging
-            Log::channel('domain')->warning('Invalid file upload attempt', [
+        // Create Domain Value Object for File Collection
+        // AttachmentCollection enforces domain rules:
+        // - Minimum 1 file, maximum 3 files per request
+        // - Each file validated as AttachmentUpload value object
+        // - FileSize value object enforces 10MB limit per file
+        try {
+            $attachmentCollection = new AttachmentCollection($request->getFiles());
+        } catch (AuthorizationException $e) {
+            Log::channel('domain')->warning('Attachment collection validation failed', [
                 'task_id' => $taskId,
                 'user_id' => $user->id,
-                'error' => $file->getErrorMessage(),
+                'error' => $e->getMessage(),
             ]);
 
-            return response()->json(['error' => 'Invalid file upload'], 422);
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
         }
 
-        // Store file in designated directory
-        // Returns relative path from storage root or false on failure
-        $storedPath = $file->store('task-attachments');
-
-        // Handle storage failure
-        if ($storedPath === false) {
-            // Log storage failure for investigation
-            Log::channel('domain')->error('Failed to store file attachment', [
-                'task_id' => $taskId,
-                'user_id' => $user->id,
-                'file_name' => $file->getClientOriginalName(),
-            ]);
-
-            return response()->json(['error' => 'Failed to store file'], 500);
-        }
-
-        // Detect file MIME type from uploaded file
-        // Falls back to generic octet-stream if detection fails
-        $mimeType = $file->getMimeType() ?? 'application/octet-stream';
-
-        // Create attachment record via service layer
-        // Service handles:
-        // - File type validation (images, PDFs only)
-        // - File size validation (max 10MB)
-        // - Attachment entity creation
+        // Execute Upload via Service Layer
+        // Delegate to service layer which handles:
+        // - File storage in designated directory
+        // - Attachment entity creation with value objects
         // - Job dispatch for async processing
         // - Event dispatch for real-time notifications
-        $attachment = $this->service->uploadAttachmentToTask(
-            $taskId,
-            $storedPath,
-            $file->getClientOriginalName(),
-            $mimeType,
-            $file->getSize(),
-            $user
-        );
+        // - Cache invalidation for data consistency
+        try {
+            $attachments = $this->service->uploadAttachmentsToTask(
+                $taskId,
+                $attachmentCollection,
+                $user
+            );
 
-        // Invalidate attachment cache to ensure data consistency on subsequent requests
-        Cache::forget("task:{$taskId}:attachments");
+            // Invalidate attachment cache to ensure data consistency
+            // Ensures subsequent GET requests return updated attachment list
+            Cache::forget("task:{$taskId}:attachments");
 
-        // Return 201 Created with attachment resource and success message
-        return response()->json([
-            'data' => new TaskAttachmentResource($attachment),
-            'message' => __('workspaces.attachment_uploaded'),
-        ], 201);
+            // Audit log: Record successful upload for compliance
+            Log::channel('domain')->info('Task attachments uploaded successfully', [
+                'task_id' => $taskId,
+                'user_id' => $user->id,
+                'attachment_count' => $attachmentCollection->count(),
+                'total_size' => $attachmentCollection->totalSize()->formatted(),
+            ]);
+
+            // Return 201 Created with attachment resources
+            return response()->json([
+                'data' => TaskAttachmentResource::collection($attachments),
+                'message' => __(
+                    'workspaces.attachments_uploaded',
+                    ['count' => $attachmentCollection->count()]
+                ),
+            ], 201);
+        } catch (AuthorizationException $e) {
+            // Handle business logic validation errors
+            Log::channel('domain')->warning('Attachment upload validation failed', [
+                'task_id' => $taskId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (Throwable $e) {
+            // Handle unexpected server errors
+            Log::channel('domain')->error('Unexpected error during attachment upload', [
+                'task_id' => $taskId,
+                'user_id' => $user->id,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+            ]);
+
+            return response()->json([
+                'message' => __('workspaces.attachment_upload_failed'),
+            ], 500);
+        }
     }
 
     // ==================== DELETE ATTACHMENT ====================
@@ -389,7 +427,7 @@ class TaskAttachmentController extends Controller
         // Early validation reduces unnecessary database queries and improves performance.
         try {
             $task = $this->service->getTaskById($taskId);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Log warning for security monitoring and debugging
             Log::channel('domain')->warning('Task not found for attachment deletion', [
                 'task_id' => $taskId,
@@ -424,7 +462,7 @@ class TaskAttachmentController extends Controller
                     'message' => __('workspaces.attachment_not_found', ['id' => $attachmentId]),
                 ], 404);
             }
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Attachment not found - log for monitoring
             Log::channel('domain')->warning('Attachment not found for deletion', [
                 'attachment_id' => $attachmentId,
@@ -479,7 +517,7 @@ class TaskAttachmentController extends Controller
             return response()->json([
                 'message' => __('workspaces.attachment_deleted'),
             ]);
-        } catch (InvalidArgumentException $e) {
+        } catch (AuthorizationException $e) {
             // Error handling: Log deletion failure for investigation
             Log::channel('domain')->warning('Attachment deletion failed', [
                 'attachment_id' => $attachmentId,
