@@ -2,7 +2,7 @@
 
 namespace Modules\Workspace\Domain\ValueObjects;
 
-use InvalidArgumentException;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 
 /**
  * Value object representing task comment content.
@@ -29,7 +29,7 @@ final readonly class CommentContent
      *
      * @param  string  $value  The raw comment content
      *
-     * @throws InvalidArgumentException If content length is invalid
+     * @throws AuthorizationException If content length is invalid
      */
     public function __construct(string $value)
     {
@@ -44,18 +44,18 @@ final readonly class CommentContent
      *
      * @param  string  $value  The content to validate
      *
-     * @throws InvalidArgumentException If validation fails
+     * @throws AuthorizationException If validation fails
      */
     private function ensureIsValid(string $value): void
     {
         // Enforce minimum length requirement
         if (mb_strlen($value) < 3) {
-            throw new InvalidArgumentException(__('workspaces.comment_min_length'));
+            throw new AuthorizationException('comment_min_length');
         }
 
         // Enforce maximum length requirement
         if (mb_strlen($value) > 2000) {
-            throw new InvalidArgumentException(__('workspaces.comment_max_length'));
+            throw new AuthorizationException('comment_max_length');
         }
     }
 

@@ -2,7 +2,7 @@
 
 namespace Modules\Workspace\Domain\ValueObjects;
 
-use InvalidArgumentException;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 
 /**
  * Value object representing a task title.
@@ -29,7 +29,7 @@ final readonly class TaskTitle
      *
      * @param  string  $value  The raw task title
      *
-     * @throws InvalidArgumentException If title length is invalid
+     * @throws AuthorizationException If title length is invalid
      */
     public function __construct(string $value)
     {
@@ -44,18 +44,18 @@ final readonly class TaskTitle
      *
      * @param  string  $value  The title to validate
      *
-     * @throws InvalidArgumentException If validation fails
+     * @throws AuthorizationException If validation fails
      */
     private function ensureIsValid(string $value): void
     {
         // Enforce minimum length requirement
         if (mb_strlen($value) < 3) {
-            throw new InvalidArgumentException(__('workspaces.task_title_min_length'));
+            throw new AuthorizationException('task_title_min_length');
         }
 
         // Enforce maximum length requirement
         if (mb_strlen($value) > 255) {
-            throw new InvalidArgumentException(__('workspaces.task_title_max_length'));
+            throw new AuthorizationException('task_title_max_length');
         }
     }
 

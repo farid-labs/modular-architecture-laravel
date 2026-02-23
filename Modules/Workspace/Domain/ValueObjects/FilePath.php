@@ -2,7 +2,7 @@
 
 namespace Modules\Workspace\Domain\ValueObjects;
 
-use InvalidArgumentException;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 
 /**
  * Value object representing an attachment file path.
@@ -29,7 +29,7 @@ final readonly class FilePath
      *
      * @param  string  $value  The raw file path
      *
-     * @throws InvalidArgumentException If file path is invalid
+     * @throws AuthorizationException If file path is invalid
      */
     public function __construct(string $value)
     {
@@ -45,13 +45,13 @@ final readonly class FilePath
      *
      * @param  string  $value  The file path to validate
      *
-     * @throws InvalidArgumentException If validation fails
+     * @throws AuthorizationException If validation fails
      */
     private function ensureIsValid(string $value): void
     {
         // Prevent empty paths and enforce storage location
         if (empty($value) || ! str_starts_with($value, 'task-attachments/')) {
-            throw new InvalidArgumentException(__('workspaces.invalid_file_path'));
+            throw new AuthorizationException('invalid_file_path');
         }
     }
 

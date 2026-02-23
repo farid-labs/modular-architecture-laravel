@@ -2,7 +2,7 @@
 
 namespace Modules\Workspace\Domain\ValueObjects;
 
-use InvalidArgumentException;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 
 /**
  * Value object representing a workspace name.
@@ -35,7 +35,7 @@ class WorkspaceName
      *
      * @param  string  $name  The workspace name
      *
-     * @throws InvalidArgumentException If name length is invalid
+     * @throws AuthorizationException If name length is invalid
      */
     public function __construct(string $name)
     {
@@ -51,18 +51,18 @@ class WorkspaceName
      *
      * @param  string  $name  The name to validate
      *
-     * @throws InvalidArgumentException If name is too short or too long
+     * @throws AuthorizationException If name is too short or too long
      */
     private function ensureIsValidName(string $name): void
     {
         // Enforce minimum length requirement
         if (strlen($name) < 3) {
-            throw new InvalidArgumentException('Workspace name must be at least 3 characters');
+            throw new AuthorizationException('Workspace name must be at least 3 characters');
         }
 
         // Enforce maximum length requirement
         if (strlen($name) > 100) {
-            throw new InvalidArgumentException('Workspace name must not exceed 100 characters');
+            throw new AuthorizationException('Workspace name must not exceed 100 characters');
         }
     }
 

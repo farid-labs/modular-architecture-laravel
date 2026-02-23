@@ -2,7 +2,7 @@
 
 namespace Modules\Workspace\Domain\ValueObjects;
 
-use InvalidArgumentException;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 
 /**
  * Value object representing an attachment file name.
@@ -29,7 +29,7 @@ final readonly class FileName
      *
      * @param  string  $value  The raw file name
      *
-     * @throws InvalidArgumentException If file name is invalid
+     * @throws AuthorizationException If file name is invalid
      */
     public function __construct(string $value)
     {
@@ -44,13 +44,13 @@ final readonly class FileName
      *
      * @param  string  $value  The file name to validate
      *
-     * @throws InvalidArgumentException If validation fails
+     * @throws AuthorizationException If validation fails
      */
     private function ensureIsValid(string $value): void
     {
         // Prevent empty file names
         if (empty($value) || mb_strlen($value) > 255) {
-            throw new InvalidArgumentException(__('workspaces.invalid_file_name'));
+            throw new AuthorizationException('invalid_file_name');
         }
     }
 
