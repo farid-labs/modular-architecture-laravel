@@ -240,6 +240,17 @@ interface WorkspaceRepositoryInterface
     public function getAttachmentsByTask(int $taskId): array;
 
     /**
+     * Find an attachment by its ID.
+     *
+     * Fetches a single attachment entity from the database.
+     * Returns null if attachment is not found.
+     *
+     * @param  int  $attachmentId  The attachment ID
+     * @return TaskAttachmentEntity|null The attachment entity or null if not found
+     */
+    public function findAttachmentById(int $attachmentId): ?TaskAttachmentEntity;
+
+    /**
      * Delete a task comment (only owner can delete).
      *
      * @param  int  $commentId  The comment ID

@@ -513,6 +513,28 @@ class WorkspaceService
     }
 
     /**
+     * Get a single attachment by its ID.
+     *
+     * Fetches attachment details including file metadata and uploader.
+     * Throws exception if attachment is not found.
+     *
+     * @param  int  $attachmentId  The attachment ID
+     * @return TaskAttachmentEntity The attachment entity
+     *
+     * @throws InvalidArgumentException If attachment is not found
+     */
+    public function getAttachmentById(int $attachmentId): TaskAttachmentEntity
+    {
+        $attachment = $this->workspaceRepository->findAttachmentById($attachmentId);
+
+        if (! $attachment) {
+            throw new InvalidArgumentException(__('workspaces.attachment_not_found', ['id' => $attachmentId]));
+        }
+
+        return $attachment;
+    }
+
+    /**
      * Upload attachment to task and dispatch domain event.
      *
      * Validates file type and size limits.
