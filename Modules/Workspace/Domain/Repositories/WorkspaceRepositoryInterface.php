@@ -10,6 +10,7 @@ use Modules\Workspace\Domain\Entities\TaskAttachmentEntity;
 use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 
 /**
  * Workspace repository interface.
@@ -136,7 +137,7 @@ interface WorkspaceRepositoryInterface
      * @param  int  $userId  The user ID
      * @return bool True if user is a member, false otherwise
      *
-     * @throws \InvalidArgumentException If workspace does not exist
+     * @throws AuthorizationException If workspace does not exist
      */
     public function isUserMemberOfWorkspace(int $workspaceId, int $userId): bool;
 
@@ -254,10 +255,24 @@ interface WorkspaceRepositoryInterface
      * Delete a task comment (only owner can delete).
      *
      * @param  int  $commentId  The comment ID
+     * @param  int  $taskId  The task ID (for relationship validation)
      * @param  int  $userId  The user ID
-     * @return bool True if deleted successfully, false otherwise
+     * @return bool True if deleted successfully
+     *
+     * @throws AuthorizationException If comment not found, not owned, or doesn't belong to task
      */
-    public function deleteComment(int $commentId, int $userId): bool;
+    public function deleteComment(int $taskId, int $commentId, int $userId): bool;
+
+    /**
+     * Find a comment by its ID.
+     *
+     * Fetches a single comment entity from the database.
+     * Returns null if comment is not found.
+     *
+     * @param  int  $commentId  The comment ID
+     * @return TaskCommentEntity|null The comment entity or null if not found
+     */
+    public function findCommentById(int $commentId): ?TaskCommentEntity;
 
     /**
      * Delete a task attachment (only uploader can delete).

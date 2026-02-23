@@ -5,6 +5,7 @@ namespace Modules\Workspace\Domain\Entities;
 use Carbon\CarbonInterface;
 use Modules\Workspace\Domain\ValueObjects\FileName;
 use Modules\Workspace\Domain\ValueObjects\FilePath;
+use Modules\Workspace\Domain\ValueObjects\FileSize;
 
 /**
  * Domain entity representing a task attachment.
@@ -19,6 +20,7 @@ use Modules\Workspace\Domain\ValueObjects\FilePath;
  *
  * @see FileName Value object for file name validation
  * @see FilePath Value object for file path validation
+ * @see FileSize Value object for file size validation
  *
  * @author Farid Labs
  * @copyright 2026 Farid Labs
@@ -32,7 +34,7 @@ final readonly class TaskAttachmentEntity
      * @param  int  $taskId  Related task ID (foreign key reference)
      * @param  int  $uploadedBy  User ID who uploaded the attachment (ownership)
      * @param  string  $mimeType  File MIME type for validation and display
-     * @param  int  $fileSize  File size in bytes for quota and validation
+     * @param  FileSize  $fileSize  Value object for validated file size
      * @param  CarbonInterface|null  $createdAt  Attachment creation timestamp
      * @param  CarbonInterface|null  $updatedAt  Attachment last modification timestamp
      * @param  FileName  $fileName  Value object for validated original file name
@@ -43,7 +45,7 @@ final readonly class TaskAttachmentEntity
         private int $taskId,
         private int $uploadedBy,
         private string $mimeType,
-        private int $fileSize,
+        private FileSize $fileSize,
         private ?CarbonInterface $createdAt,
         private ?CarbonInterface $updatedAt,
         private FileName $fileName,
@@ -113,11 +115,11 @@ final readonly class TaskAttachmentEntity
     }
 
     /**
-     * Get the file size in bytes.
+     * Get the file size value object.
      *
-     * @return int The file size in bytes
+     * @return FileSize The validated file size
      */
-    public function getFileSize(): int
+    public function getFileSizeVO(): FileSize
     {
         return $this->fileSize;
     }
@@ -169,7 +171,7 @@ final readonly class TaskAttachmentEntity
             'file_name' => $this->fileName->value(),
             'file_path' => $this->filePath->value(),
             'mime_type' => $this->mimeType,
-            'file_size' => $this->fileSize,
+            'file_size' => $this->fileSize->bytes(),
             'created_at' => $this->createdAt?->toIso8601String(),
             'updated_at' => $this->updatedAt?->toIso8601String(),
         ];
@@ -191,7 +193,7 @@ final readonly class TaskAttachmentEntity
             taskId: (int) $data['task_id'],
             uploadedBy: (int) $data['uploaded_by'],
             mimeType: $data['mime_type'] ?? $data['file_type'] ?? '',
-            fileSize: (int) $data['file_size'],
+            fileSize: new FileSize((int) $data['file_size']),
             createdAt: $data['created_at'] ?? null,
             updatedAt: $data['updated_at'] ?? null,
             fileName: new FileName($data['file_name']),
