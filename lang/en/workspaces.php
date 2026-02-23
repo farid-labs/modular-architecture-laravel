@@ -81,4 +81,7 @@ return [
 
     'workspace_retrieved' => 'Workspace retrieved successfully',
 
+    'attachment_not_found' => 'Attachment with ID :id not found',
+    'attachment_delete_forbidden' => 'You are not authorized to delete this attachment. Only the uploader can delete their own attachments.',
+
 ];

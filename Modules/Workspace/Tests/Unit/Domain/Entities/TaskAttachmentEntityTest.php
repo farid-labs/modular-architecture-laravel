@@ -28,7 +28,7 @@ class TaskAttachmentEntityTest extends TestCase
 
         $this->assertEquals(1, $attachment->getId());
         $this->assertEquals(10, $attachment->getTaskId());
-        $this->assertEquals(5, $attachment->getUserId());
+        $this->assertEquals(5, $attachment->getUploadedBy());
         $this->assertEquals('document.pdf', $attachment->getFileNameVO()->value());
         $this->assertEquals('application/pdf', $attachment->getMimeType());
         $this->assertEquals(102400, $attachment->getFileSize());
