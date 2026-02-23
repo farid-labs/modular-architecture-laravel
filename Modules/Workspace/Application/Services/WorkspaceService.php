@@ -4,7 +4,6 @@ namespace Modules\Workspace\Application\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use InvalidArgumentException;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Workspace\Application\DTOs\ProjectDTO;
 use Modules\Workspace\Application\DTOs\TaskDTO;
@@ -15,7 +14,9 @@ use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Domain\Events\TaskAttachmentUploaded;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
+use Modules\Workspace\Domain\ValueObjects\AttachmentCollection;
 use Modules\Workspace\Infrastructure\Jobs\ProcessTaskAttachmentJob;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -66,7 +67,7 @@ class WorkspaceService
      * @param  string  $slug  The workspace slug
      * @return WorkspaceEntity The workspace entity
      *
-     * @throws InvalidArgumentException If workspace is not found
+     * @throws AuthorizationException If workspace is not found
      */
     public function getWorkspaceBySlug(string $slug): WorkspaceEntity
     {
@@ -77,7 +78,7 @@ class WorkspaceService
 
         // Throw exception if not found
         if (! $workspace) {
-            throw new InvalidArgumentException(__('workspaces.not_found', ['slug' => $slug]));
+            throw new AuthorizationException('not_found', ['slug' => $slug]);
         }
 
         return $workspace;
@@ -131,7 +132,7 @@ class WorkspaceService
      * @param  UserModel  $user  The user attempting the update
      * @return WorkspaceEntity The updated workspace entity
      *
-     * @throws InvalidArgumentException If user is not owner or no fields to update
+     * @throws AuthorizationException If user is not owner or no fields to update
      */
     public function updateWorkspace(int $id, WorkspaceDTO $workspaceDTO, UserModel $user): WorkspaceEntity
     {
@@ -139,7 +140,7 @@ class WorkspaceService
 
         // Check if user is the workspace owner
         if ($workspace->getOwnerId() !== $user->id) {
-            throw new InvalidArgumentException(__('workspaces.not_owner'));
+            throw new AuthorizationException('not_owner');
         }
 
         // Filter out null fields (partial update support)
@@ -147,14 +148,14 @@ class WorkspaceService
         $filteredData = array_filter($data, fn ($value) => $value !== null);
 
         if (empty($filteredData)) {
-            throw new InvalidArgumentException(__('workspaces.no_fields_to_update'));
+            throw new AuthorizationException('no_fields_to_update');
         }
 
         // Perform update
         $workspace = $this->workspaceRepository->update($id, WorkspaceDTO::fromArray($filteredData));
 
         if (! $workspace) {
-            throw new InvalidArgumentException(__('workspaces.not_found_by_id', ['id' => $id]));
+            throw new AuthorizationException('not_found_by_id', ['id' => $id]);
         }
 
         return $workspace;
@@ -169,7 +170,7 @@ class WorkspaceService
      * @param  int  $id  The workspace ID
      * @return bool True if deleted successfully
      *
-     * @throws InvalidArgumentException If workspace is not found
+     * @throws AuthorizationException If workspace is not found
      */
     public function deleteWorkspace(int $id): bool
     {
@@ -181,7 +182,7 @@ class WorkspaceService
         // If not found, log warning and throw exception
         if (! $result) {
             Log::channel('domain')->warning('Workspace not found for deletion', ['workspace_id' => $id]);
-            throw new InvalidArgumentException(__('workspaces.not_found_by_id', ['id' => $id]));
+            throw new AuthorizationException('not_found_by_id', ['id' => $id]);
         }
 
         // Log success
@@ -201,7 +202,7 @@ class WorkspaceService
      * @param  string  $role  The role to assign (owner, admin, member)
      * @return bool True if added successfully
      *
-     * @throws InvalidArgumentException If role is invalid
+     * @throws AuthorizationException If role is invalid
      */
     public function addUserToWorkspace(int $workspaceId, int $userId, string $role): bool
     {
@@ -215,7 +216,7 @@ class WorkspaceService
         // Validate role
         $validRoles = ['owner', 'admin', 'member'];
         if (! in_array($role, $validRoles)) {
-            throw new InvalidArgumentException(__('workspaces.invalid_role', ['role' => $role]));
+            throw new AuthorizationException('invalid_role', ['role' => $role]);
         }
 
         return $this->workspaceRepository->addUserToWorkspace($workspaceId, $userId, $role);
@@ -268,13 +269,13 @@ class WorkspaceService
      * @param  int  $userId  The user ID requesting projects
      * @return array<int, ProjectEntity> Collection of project entities
      *
-     * @throws InvalidArgumentException If user is not a workspace member
+     * @throws AuthorizationException If user is not a workspace member
      */
     public function getProjectsByWorkspace(int $workspaceId, int $userId): array
     {
         // Ensure user is a workspace member
         if (! $this->workspaceRepository->isUserMemberOfWorkspace($workspaceId, $userId)) {
-            throw new InvalidArgumentException(__('workspaces.not_member'));
+            throw new AuthorizationException('not_member');
         }
 
         return $this->workspaceRepository->getProjectsByWorkspace($workspaceId);
@@ -290,7 +291,7 @@ class WorkspaceService
      * @param  UserModel  $user  The user creating the project
      * @return ProjectEntity The created project entity
      *
-     * @throws InvalidArgumentException If workspace doesn't exist or user is not a member
+     * @throws AuthorizationException If workspace doesn't exist or user is not a member
      */
     public function createProject(ProjectDTO $projectDTO, UserModel $user): ProjectEntity
     {
@@ -303,8 +304,9 @@ class WorkspaceService
 
         // Ensure workspace exists
         if (! $this->workspaceRepository->workspaceExists($projectDTO->workspaceId)) {
-            throw new InvalidArgumentException(
-                __('workspaces.not_found_by_id', ['id' => $projectDTO->workspaceId])
+            throw new AuthorizationException(
+                'not_found_by_id',
+                ['id' => $projectDTO->workspaceId]
             );
         }
 
@@ -313,7 +315,7 @@ class WorkspaceService
             $projectDTO->workspaceId,
             $user->id
         )) {
-            throw new InvalidArgumentException(__('workspaces.not_member'));
+            throw new AuthorizationException('not_member');
         }
 
         $project = $this->workspaceRepository->createProject($projectDTO);
@@ -336,14 +338,14 @@ class WorkspaceService
      * @param  int  $id  The project ID
      * @return ProjectEntity The project entity
      *
-     * @throws InvalidArgumentException If project is not found
+     * @throws AuthorizationException If project is not found
      */
     public function getProjectById(int $id): ProjectEntity
     {
         $project = $this->workspaceRepository->findProjectById($id);
 
         if (! $project) {
-            throw new InvalidArgumentException(__('workspaces.project_not_found', ['id' => $id]));
+            throw new AuthorizationException('project_not_found', ['id' => $id]);
         }
 
         return $project;
@@ -359,7 +361,7 @@ class WorkspaceService
      * @param  UserModel  $user  The user creating the task
      * @return TaskEntity The created task entity
      *
-     * @throws InvalidArgumentException If project doesn't exist, user is not a member, or due date is in past
+     * @throws AuthorizationException If project doesn't exist, user is not a member, or due date is in past
      */
     public function createTask(TaskDTO $taskDTO, UserModel $user): TaskEntity
     {
@@ -378,12 +380,12 @@ class WorkspaceService
             $taskDTO->projectId,
             $user->id
         )) {
-            throw new InvalidArgumentException(__('workspaces.not_member_project'));
+            throw new AuthorizationException('not_member_project');
         }
 
         // Validate due date is not in the past
         if ($taskDTO->dueDate && $taskDTO->dueDate->isPast()) {
-            throw new InvalidArgumentException(__('workspaces.date_cannot_past'));
+            throw new AuthorizationException('date_cannot_past');
         }
 
         $task = $this->workspaceRepository->createTask($taskDTO);
@@ -406,14 +408,14 @@ class WorkspaceService
      * @param  int  $id  The task ID
      * @return TaskEntity The task entity
      *
-     * @throws InvalidArgumentException If task is not found
+     * @throws AuthorizationException If task is not found
      */
     public function getTaskById(int $id): TaskEntity
     {
         $task = $this->workspaceRepository->findTaskById($id);
 
         if (! $task) {
-            throw new InvalidArgumentException(__('workspaces.task_not_found', ['id' => $id]));
+            throw new AuthorizationException('task_not_found', ['id' => $id]);
         }
 
         return $task;
@@ -429,7 +431,7 @@ class WorkspaceService
      * @param  UserModel  $user  The user completing the task
      * @return TaskEntity The completed task entity
      *
-     * @throws InvalidArgumentException If user is not a member or update fails
+     * @throws AuthorizationException If user is not a member or update fails
      */
     public function completeTask(int $taskId, UserModel $user): TaskEntity
     {
@@ -440,7 +442,7 @@ class WorkspaceService
             $task->getProjectId(),
             $user->id
         )) {
-            throw new InvalidArgumentException(__('workspaces.not_member_of_workspace'));
+            throw new AuthorizationException('not_member_of_workspace');
         }
 
         // Update domain entity state
@@ -458,7 +460,7 @@ class WorkspaceService
                 'user_id' => $user->id,
             ]);
 
-            throw new InvalidArgumentException(__('workspaces.task_update_fail', ['taskId' => $taskId]));
+            throw new AuthorizationException('task_update_fail', ['taskId' => $taskId]);
         }
 
         // Log completion
@@ -481,13 +483,13 @@ class WorkspaceService
      * @param  UserModel  $user  The user adding the comment
      * @return TaskCommentEntity The created comment entity
      *
-     * @throws InvalidArgumentException If comment is too short
+     * @throws AuthorizationException If comment is too short
      * @throws AccessDeniedHttpException If user is not a project member
      */
     public function addCommentToTask(int $taskId, string $comment, UserModel $user): TaskCommentEntity
     {
         if (strlen($comment) < 3) {
-            throw new InvalidArgumentException(__('workspaces.comment_min_length'));
+            throw new AuthorizationException('comment_min_length');
         }
 
         Log::channel('domain')->info('Adding comment to task', [
@@ -500,7 +502,7 @@ class WorkspaceService
 
         if (! $this->workspaceRepository->isUserMemberOfProject($task->getProjectId(), $user->id)) {
             throw new AccessDeniedHttpException(
-                __('workspaces.not_member_project')
+                __('not_member_project')
             );
         }
 
@@ -521,75 +523,82 @@ class WorkspaceService
      * @param  int  $attachmentId  The attachment ID
      * @return TaskAttachmentEntity The attachment entity
      *
-     * @throws InvalidArgumentException If attachment is not found
+     * @throws AuthorizationException If attachment is not found
      */
     public function getAttachmentById(int $attachmentId): TaskAttachmentEntity
     {
         $attachment = $this->workspaceRepository->findAttachmentById($attachmentId);
 
         if (! $attachment) {
-            throw new InvalidArgumentException(__('workspaces.attachment_not_found', ['id' => $attachmentId]));
+            throw new AuthorizationException('attachment_not_found', ['id' => $attachmentId]);
         }
 
         return $attachment;
     }
 
     /**
-     * Upload attachment to task and dispatch domain event.
+     * Upload multiple attachments to a task.
      *
-     * Validates file type and size limits.
-     * Dispatches ProcessTaskAttachmentJob for async processing.
-     * Dispatches TaskAttachmentUploaded event for real-time notifications.
+     * Handles multiple file upload with domain validation:
+     * - AttachmentCollection enforces max 3 files rule
+     * - FileSize value object enforces 10MB limit
+     * - Each file stored and recorded as TaskAttachmentEntity
+     * - Jobs dispatched for async processing
+     * - Events dispatched for real-time notifications
      *
      * @param  int  $taskId  The task ID
-     * @param  string  $filePath  The stored file path
-     * @param  string  $fileName  The original file name
-     * @param  string  $mimeType  The file MIME type
-     * @param  int  $fileSize  The file size in bytes
-     * @param  UserModel  $user  The user uploading the attachment
-     * @return TaskAttachmentEntity The created attachment entity
+     * @param  AttachmentCollection  $collection  The attachment collection value object
+     * @param  UserModel  $user  The user uploading the attachments
+     * @return array<int, TaskAttachmentEntity> Collection of created attachment entities
      *
-     * @throws InvalidArgumentException If file type is invalid or size exceeds limit
+     * @throws AuthorizationException If validation fails or user lacks permission
      */
-    public function uploadAttachmentToTask(
+    public function uploadAttachmentsToTask(
         int $taskId,
-        string $filePath,
-        string $fileName,
-        string $mimeType,
-        int $fileSize,
+        AttachmentCollection $collection,
         UserModel $user
-    ): TaskAttachmentEntity {
-        $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-        if (! in_array($mimeType, $allowedTypes)) {
-            throw new InvalidArgumentException(__('workspaces.invalid_file_type'));
-        }
-        if ($fileSize > 10 * 1024 * 1024) {
-            throw new InvalidArgumentException(__('workspaces.file_size_exceeds_limit'));
-        }
+    ): array {
+        // Validate task exists
+        $task = $this->getTaskById($taskId);
 
-        Log::channel('domain')->info('Uploading attachment to task', [
+        Log::channel('domain')->info('Uploading multiple attachments to task', [
             'task_id' => $taskId,
-            'file_name' => $fileName,
             'user_id' => $user->id,
+            'file_count' => $collection->count(),
+            'total_size' => $collection->totalSize()->formatted(),
         ]);
 
-        $attachmentEntity = $this->workspaceRepository->uploadAttachmentToTask(
-            $taskId,
-            $filePath,
-            $fileName,
-            $mimeType,
-            $fileSize,
-            $user->id
-        );
+        $attachments = [];
 
-        // Dispatch job (thumbnail, virus scan, move to S3, etc.)
-        dispatch(new ProcessTaskAttachmentJob($attachmentEntity, $filePath));
+        // Process each attachment in the collection
+        foreach ($collection as $upload) {
+            // Store file
+            $storedPath = $upload->getFile()->store('task-attachments');
 
-        // Dispatch event for real-time notification
-        $task = $this->getTaskById($taskId);
-        event(new TaskAttachmentUploaded($task, $attachmentEntity, $user->id));
+            if ($storedPath === false) {
+                throw new AuthorizationException('file_storage_failed');
+            }
 
-        return $attachmentEntity;
+            // Create attachment entity
+            $attachment = $this->workspaceRepository->uploadAttachmentToTask(
+                $taskId,
+                $storedPath,
+                $upload->getFileName()->value(),
+                $upload->getMimeType(),
+                $upload->getFileSize()->bytes(),
+                $user->id
+            );
+
+            $attachments[] = $attachment;
+
+            // Dispatch job for async processing
+            dispatch(new ProcessTaskAttachmentJob($attachment, $storedPath));
+        }
+
+        // Dispatch event for real-time notification (supports multiple attachments)
+        event(new TaskAttachmentUploaded($task, $attachments, $user->id));
+
+        return $attachments;
     }
 
     /**
@@ -602,14 +611,14 @@ class WorkspaceService
      * @param  int  $userId  The user ID requesting comments
      * @return array<int, TaskCommentEntity> Collection of comment entities
      *
-     * @throws InvalidArgumentException If user is not a project member
+     * @throws AuthorizationException If user is not a project member
      */
     public function getCommentsByTask(int $taskId, int $userId): array
     {
         $task = $this->getTaskById($taskId);
 
         if (! $this->workspaceRepository->isUserMemberOfProject($task->getProjectId(), $userId)) {
-            throw new InvalidArgumentException(__('workspaces.not_member_project'));
+            throw new AuthorizationException('not_member_of_project');
         }
 
         return Cache::remember(
@@ -630,28 +639,40 @@ class WorkspaceService
      * @param  int  $userId  The user ID attempting the update
      * @return TaskCommentEntity The updated comment entity
      *
-     * @throws InvalidArgumentException If comment is too short
+     * @throws AuthorizationException If comment is too short
      */
     public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity
     {
         if (strlen($newComment) < 3) {
-            throw new InvalidArgumentException(__('workspaces.comment_min_length'));
+            throw new AuthorizationException('comment_min_length');
         }
 
         return $this->workspaceRepository->updateComment($commentId, $newComment, $userId);
     }
 
     /**
-     * Get all attachments for a task.
+     * Get all attachments for a task with authorization enforcement.
      *
-     * Caches results for 15 minutes to improve performance.
-     * Returns attachments ordered by creation date.
+     * Validates user is a member of the project before returning attachments.
+     * Prevents information disclosure to unauthorized users.
      *
      * @param  int  $taskId  The task ID
+     * @param  int  $userId  The user ID requesting attachments (for authorization)
      * @return array<int, TaskAttachmentEntity> Collection of attachment entities
+     *
+     * @throws AuthorizationException If user is not authorized to view task attachments
      */
-    public function getAttachmentsByTask(int $taskId): array
+    public function getAttachmentsByTask(int $taskId, int $userId): array
     {
+        // Validate task existence first
+        $task = $this->getTaskById($taskId);
+
+        // CRITICAL AUTHORIZATION CHECK: Ensure user is member of task's project
+        if (! $this->workspaceRepository->isUserMemberOfProject($task->getProjectId(), $userId)) {
+            throw new AuthorizationException('not_member_of_project');
+        }
+
+        // Returns cached attachments after authorization passes
         return Cache::remember(
             "task:{$taskId}:attachments",
             now()->addMinutes(15),
@@ -670,7 +691,7 @@ class WorkspaceService
      * @param  UserModel  $user  The user updating the project
      * @return ProjectEntity The updated project entity
      *
-     * @throws InvalidArgumentException If user is not a member or project not found
+     * @throws AuthorizationException If user is not a member or project not found
      */
     public function updateProject(int $id, ProjectDTO $projectDTO, UserModel $user): ProjectEntity
     {
@@ -678,13 +699,13 @@ class WorkspaceService
 
         // Check if user is member of workspace
         if (! $this->workspaceRepository->isUserMemberOfWorkspace($project->getWorkspaceId(), $user->id)) {
-            throw new InvalidArgumentException(__('workspaces.not_member'));
+            throw new AuthorizationException('not_member');
         }
 
         $updatedProject = $this->workspaceRepository->updateProject($id, $projectDTO);
 
         if (! $updatedProject) {
-            throw new InvalidArgumentException(__('workspaces.project_not_found', ['id' => $id]));
+            throw new AuthorizationException('project_not_found', ['id' => $id]);
         }
 
         Log::channel('domain')->info('Project updated', [
@@ -704,7 +725,7 @@ class WorkspaceService
      * @param  int  $id  The project ID
      * @return bool True if deleted successfully
      *
-     * @throws InvalidArgumentException If project is not found
+     * @throws AuthorizationException If project is not found
      */
     public function deleteProject(int $id): bool
     {
@@ -713,7 +734,7 @@ class WorkspaceService
         $result = $this->workspaceRepository->deleteProject($id);
 
         if (! $result) {
-            throw new InvalidArgumentException(__('workspaces.project_not_found', ['id' => $id]));
+            throw new AuthorizationException('project_not_found', ['id' => $id]);
         }
 
         Log::channel('domain')->info('Project deleted', ['project_id' => $id]);
@@ -731,7 +752,7 @@ class WorkspaceService
      * @param  int  $userId  The user ID requesting tasks
      * @return array<int, TaskEntity> Collection of task entities
      *
-     * @throws InvalidArgumentException If user is not a workspace member
+     * @throws AuthorizationException If user is not a workspace member
      */
     public function getTasksByProject(int $projectId, int $userId): array
     {
@@ -740,7 +761,7 @@ class WorkspaceService
 
         // Ensure user is a member of the workspace
         if (! $this->workspaceRepository->isUserMemberOfWorkspace($project->getWorkspaceId(), $userId)) {
-            throw new InvalidArgumentException(__('workspaces.not_member_of_project'));
+            throw new AuthorizationException('not_member_of_project');
         }
 
         return $this->workspaceRepository->getTasksByProject($projectId);
@@ -757,20 +778,20 @@ class WorkspaceService
      * @param  UserModel  $user  The user updating the task
      * @return TaskEntity The updated task entity
      *
-     * @throws InvalidArgumentException If user is not a member or task not found
+     * @throws AuthorizationException If user is not a member or task not found
      */
     public function updateTask(int $id, TaskDTO $taskDTO, UserModel $user): TaskEntity
     {
         $task = $this->getTaskById($id);
 
         if (! $this->workspaceRepository->isUserMemberOfProject($task->getProjectId(), $user->id)) {
-            throw new InvalidArgumentException(__('workspaces.not_member_of_project'));
+            throw new AuthorizationException('not_member_of_project');
         }
 
         $updatedTask = $this->workspaceRepository->updateTask($id, $taskDTO);
 
         if (! $updatedTask) {
-            throw new InvalidArgumentException(__('workspaces.task_not_found', ['id' => $id]));
+            throw new AuthorizationException('task_not_found', ['id' => $id]);
         }
 
         Log::channel('domain')->info('Task updated', [
@@ -790,7 +811,7 @@ class WorkspaceService
      * @param  int  $id  The task ID
      * @return bool True if deleted successfully
      *
-     * @throws InvalidArgumentException If task is not found
+     * @throws AuthorizationException If task is not found
      */
     public function deleteTask(int $id): bool
     {
@@ -799,12 +820,33 @@ class WorkspaceService
         $result = $this->workspaceRepository->deleteTask($id);
 
         if (! $result) {
-            throw new InvalidArgumentException(__('workspaces.task_not_found', ['id' => $id]));
+            throw new AuthorizationException('task_not_found', ['id' => $id]);
         }
 
         Log::channel('domain')->info('Task deleted', ['task_id' => $id]);
 
         return true;
+    }
+
+    /**
+     * Get a single comment by its ID.
+     *
+     * Fetches comment details including author information.
+     * Throws exception if comment is not found.
+     *
+     * @param  int  $commentId  The comment ID
+     * @return TaskCommentEntity The comment entity
+     *
+     * @throws AuthorizationException If comment is not found
+     */
+    public function getCommentById(int $commentId): TaskCommentEntity
+    {
+        $comment = $this->workspaceRepository->findCommentById($commentId);
+        if (! $comment) {
+            throw new AuthorizationException('comment_not_found', ['id' => $commentId]);
+        }
+
+        return $comment;
     }
 
     /**
@@ -817,12 +859,12 @@ class WorkspaceService
      * @param  int  $userId  The user ID requesting members
      * @return array<int, array<string, mixed>> Collection of member data arrays
      *
-     * @throws InvalidArgumentException If user is not a workspace member
+     * @throws AuthorizationException If user is not a workspace member
      */
     public function getWorkspaceMembers(int $workspaceId, int $userId): array
     {
         if (! $this->workspaceRepository->isUserMemberOfWorkspace($workspaceId, $userId)) {
-            throw new InvalidArgumentException(__('workspaces.not_member'));
+            throw new AuthorizationException('not_member');
         }
 
         return $this->workspaceRepository->getWorkspaceMembers($workspaceId);
@@ -831,16 +873,23 @@ class WorkspaceService
     /**
      * Delete a comment.
      *
-     * Repository enforces ownership restriction.
-     * Only comment author can delete their own comments.
+     * Repository enforces ownership and task relationship restrictions.
      *
      * @param  int  $commentId  The comment ID
+     * @param  int  $taskId  The task ID (for validation)
      * @param  int  $userId  The user ID attempting deletion
      * @return bool True if deleted successfully
      */
-    public function deleteComment(int $commentId, int $userId): bool
+    public function deleteComment(int $taskId, int $commentId, int $userId): bool
     {
-        return $this->workspaceRepository->deleteComment($commentId, $userId);
+        $task = $this->getTaskById($taskId);
+
+        $comment = $this->workspaceRepository->findCommentById($commentId);
+        if (! $comment || $comment->getTaskId() !== $taskId) {
+            throw new AuthorizationException('comment_not_found', ['id' => $commentId]);
+        }
+
+        return $this->workspaceRepository->deleteComment($taskId, $commentId, $userId);
     }
 
     /**
@@ -867,14 +916,14 @@ class WorkspaceService
      * @param  int  $id  The workspace ID
      * @return WorkspaceEntity The workspace entity
      *
-     * @throws InvalidArgumentException If workspace is not found
+     * @throws AuthorizationException If workspace is not found
      */
     public function getWorkspaceById(int $id): WorkspaceEntity
     {
         $workspace = $this->workspaceRepository->findById($id);
 
         if (! $workspace) {
-            throw new InvalidArgumentException(__('workspaces.not_found_by_id', ['id' => $id]));
+            throw new AuthorizationException('not_found_by_id', ['id' => $id]);
         }
 
         return $workspace;

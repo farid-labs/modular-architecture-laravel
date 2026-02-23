@@ -4,6 +4,7 @@ namespace Modules\Workspace\Application\DTOs;
 
 use Carbon\CarbonInterface;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Spatie\DataTransferObject\DataTransferObject;
 
 /**
@@ -62,7 +63,7 @@ class ProjectDTO extends DataTransferObject
      *
      * @param  array<string, mixed>  $data  Associative array containing project data
      *
-     * @throws \InvalidArgumentException If workspace ID is missing or invalid
+     * @throws AuthorizationException If workspace ID is missing or invalid
      */
     public static function fromArray(array $data): self
     {
@@ -71,22 +72,23 @@ class ProjectDTO extends DataTransferObject
 
         // Ensure workspace ID is provided
         if ($workspaceId === null || $workspaceId === '') {
-            throw new \InvalidArgumentException(
-                __('workspaces.workspace_id_required')
+            throw new AuthorizationException(
+                'workspace_id_required'
             );
         }
 
         // Validate workspace ID is a positive numeric value
         if (! is_numeric($workspaceId) || (int) $workspaceId <= 0) {
-            throw new \InvalidArgumentException(
-                __('workspaces.workspace_id_invalid', ['value' => $workspaceId])
+            throw new AuthorizationException(
+                'workspace_id_invalid',
+                ['value' => $workspaceId]
             );
         }
 
         // Create and return the DTO instance
         return new self([
             // Require project name
-            'name' => $data['name'] ?? throw new \InvalidArgumentException(__('workspaces.name_required')),
+            'name' => $data['name'] ?? throw new AuthorizationException('name_required'),
 
             // Optional description
             'description' => $data['description'] ?? null,
