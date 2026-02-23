@@ -12,6 +12,7 @@ use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
+use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
 use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 use Modules\Workspace\Tests\TestCase;
@@ -151,7 +152,7 @@ class WorkspaceServiceTest extends TestCase
      */
     public function test_cannot_complete_task_if_not_member_of_project(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(AuthorizationException::class);
         $this->expectExceptionMessage(__('workspaces.not_member_of_workspace'));
 
         $taskId = 1;
@@ -188,7 +189,7 @@ class WorkspaceServiceTest extends TestCase
      */
     public function test_cannot_create_task_with_past_due_date(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(AuthorizationException::class);
         $this->expectExceptionMessage(__('workspaces.date_cannot_past'));
 
         $taskDTO = TaskDTO::fromArray([

@@ -2,265 +2,340 @@
 
 namespace Modules\Workspace\Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
+use Modules\Workspace\Application\Services\WorkspaceService;
 use Modules\Workspace\Infrastructure\Jobs\ProcessTaskAttachmentJob;
 use Modules\Workspace\Infrastructure\Persistence\Models\TaskModel;
+use Modules\Workspace\Infrastructure\Persistence\Models\WorkspaceModel;
+use Modules\Workspace\Presentation\Controllers\TaskAttachmentController;
 use Modules\Workspace\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
- * Feature test suite for Task Attachment API endpoints.
+ * Feature tests for Task Attachment API endpoints.
  *
- * Tests all attachment-related operations including:
- * - Upload file attachments to tasks
- * - List attachments for a task
- * - Delete attachments
- * - File validation (type, size)
- * - Background job queueing for processing
+ * Comprehensive test suite covering:
+ * - Attachment upload with validation (file count, size, type)
+ * - Authorization enforcement (uploader ownership, workspace membership)
+ * - Attachment lifecycle (create, list, delete)
+ * - Background job processing for uploaded files
+ * - Cache invalidation after mutations
  *
- * All tests verify proper authentication, file validation,
- * storage handling, and response structure.
+ * @covers \Modules\Workspace\Presentation\Controllers\TaskAttachmentController
+ * @covers \Modules\Workspace\Application\Services\WorkspaceService
  *
  * @author Farid Labs
  * @copyright 2026 Farid Labs
- *
- * @see \Modules\Workspace\Presentation\Controllers\TaskAttachmentController
- * @see \Modules\Workspace\Infrastructure\Jobs\ProcessTaskAttachmentJob
  */
+#[CoversClass(TaskAttachmentController::class)]
+#[CoversClass(WorkspaceService::class)]
 class TaskAttachmentTest extends TestCase
 {
-    /**
-     * The workspace member user model.
-     */
-    private UserModel $member;
+    use RefreshDatabase;
 
-    /**
-     * The task ID for testing attachments.
-     */
-    private int $taskId;
+    private UserModel $user;
 
-    /**
-     * Set up test fixtures before each test.
-     *
-     * Creates a test user (workspace member) and a task with
-     * associated project and workspace. Ensures proper membership
-     * for authorization checks on attachment operations.
-     */
+    private WorkspaceModel $workspace;
+
+    private TaskModel $task;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Create workspace member user
-        $this->member = UserModel::factory()->create();
+        // Create authenticated user
+        $this->user = UserModel::factory()->create();
 
-        // Create a task with associated project and workspace
-        $taskModel = TaskModel::factory()->create();
-        $this->taskId = $taskModel->id;
-
-        // Get the associated project
-        $project = $taskModel->project;
-
-        // Fail test if task has no project (factory configuration issue)
-        if (! $project) {
-            $this->fail('Created task has no associated project. Ensure factory sets project relation.');
-        }
-
-        // Get workspace ID from project
-        $workspaceId = $project->workspace_id;
-
-        // Attach member to workspace for authorization
-        $this->member->workspaces()->attach($workspaceId, [
-            'role' => 'member',
+        // Create workspace and add user as member with owner role
+        $this->workspace = WorkspaceModel::factory()->create(['owner_id' => $this->user->id]);
+        $this->workspace->members()->attach($this->user->id, [
+            'role' => 'owner',
             'joined_at' => now(),
+        ]);
+
+        // Create project within workspace
+        $project = $this->workspace->projects()->create([
+            'name' => 'Test Project',
+            'description' => 'Test Description',
+            'status' => 'active',
+        ]);
+
+        // Create task within project
+        $this->task = $project->tasks()->create([
+            'title' => 'Test Task',
+            'description' => 'Test Description',
+            'status' => 'pending',
+            'priority' => 'medium',
         ]);
     }
 
-    /**
-     * Test successful attachment upload with job queueing.
-     *
-     * Verifies that workspace members can upload file attachments
-     * and that the background processing job is properly queued.
-     *
-     *
-     * @test
-     */
     #[Test]
     public function test_member_can_upload_attachment_and_job_is_queued(): void
     {
-        // Fake the queue to prevent actual job execution
         Queue::fake();
 
-        // Create a fake PDF file for upload (500KB)
-        $file = UploadedFile::fake()->create('document.pdf', 500, 'application/pdf');
+        // Use PDF file to avoid GD extension dependency
+        $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
-        // Generate authentication token
-        $token = $this->member->createToken('test-token')->plainTextToken;
+        $response = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => [$file],
+            ]);
 
-        // Send POST request to upload attachment
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-            'Accept' => 'application/json',
-        ])->postJson(route('tasks.attachments.store', $this->taskId), [
-            'file' => $file,
-        ]);
-
-        // Assert successful upload and job queueing
         $response->assertCreated()
-            ->assertJsonStructure(['data' => ['id', 'file_name']]);
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'task_id',
+                        'file_name',
+                        'file_path',
+                        'file_type',
+                        'file_size',
+                        'uploaded_by',
+                        'created_at',
+                        'updated_at',
+                    ],
+                ],
+                'message',
+            ])
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.file_name', 'document.pdf')
+            ->assertJsonPath('data.0.file_type', 'application/pdf');
 
-        // Verify background processing job was queued
-        Queue::assertPushed(ProcessTaskAttachmentJob::class);
+        // Verify background processing job was queued (without accessing private property)
+        Queue::assertPushed(ProcessTaskAttachmentJob::class, function ($job) {
+            return $job instanceof ProcessTaskAttachmentJob;
+        });
+
+        $attachmentId = $response->json('data.0.id');
+        $this->assertDatabaseHas('task_attachments', [
+            'id' => $attachmentId,
+            'task_id' => $this->task->id,
+            'uploaded_by' => $this->user->id,
+            'file_name' => 'document.pdf',
+        ]);
     }
 
-    /**
-     * Test attachment upload validation.
-     *
-     * Verifies that the API properly validates file uploads:
-     * - Rejects requests without a file
-     * - Rejects files exceeding size limit (10MB)
-     *
-     *
-     * @test
-     */
     #[Test]
     public function test_upload_attachment_validation(): void
     {
-        // Generate authentication token
-        $token = $this->member->createToken('test-token')->plainTextToken;
-
-        // Test missing file - should return validation error
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-            'Accept' => 'application/json',
-        ])
-            ->postJson(route('tasks.attachments.store', $this->taskId), []);
+        // Test missing files parameter
+        $response = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), []);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors('file');
+            ->assertJsonValidationErrors(['files']);
 
-        // Test file too large (create fake file > 10MB)
-        // 10240 KB = 10MB, so 10240 * 2 = 20MB (exceeds limit)
-        $largeFile = UploadedFile::fake()->create('large.pdf', 10240 * 2, 'application/pdf');
-
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-            'Accept' => 'application/json',
-        ])
-            ->postJson(route('tasks.attachments.store', $this->taskId), [
-                'file' => $largeFile,
+        // Test file exceeding size limit (10MB = 10240KB)
+        $largeFile = UploadedFile::fake()->create('large.pdf', 10241, 'application/pdf');
+        $response = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => [$largeFile],
             ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors('file');
+            ->assertJsonValidationErrors(['files.0']);
+
+        // Test invalid file type (executable not allowed)
+        $invalidFile = UploadedFile::fake()->create('malicious.exe', 100, 'application/x-msdownload');
+        $response = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => [$invalidFile],
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['files.0']);
+
+        // Test exceeding maximum file count (4 files > max 3)
+        $files = [
+            UploadedFile::fake()->create('file1.pdf', 100, 'application/pdf'),
+            UploadedFile::fake()->create('file2.pdf', 100, 'application/pdf'),
+            UploadedFile::fake()->create('file3.pdf', 100, 'application/pdf'),
+            UploadedFile::fake()->create('file4.pdf', 100, 'application/pdf'),
+        ];
+
+        $response = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => $files,
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['files']);
+
+        // Test minimum file count violation (0 files)
+        $response = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => [],
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['files']);
     }
 
-    /**
-     * Test successful attachment deletion.
-     *
-     * Verifies that attachment uploaders can delete their own
-     * attachments and receive proper confirmation response.
-     *
-     *
-     * @test
-     */
     #[Test]
     public function test_delete_attachment_success(): void
     {
-        // Generate authentication token
-        $token = $this->member->createToken('test-token')->plainTextToken;
-
-        // Create a fake PDF file for upload
-        $file = UploadedFile::fake()->create('test.pdf', 500, 'application/pdf');
-
-        // First upload an attachment
-        $uploadResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-            'Accept' => 'application/json',
-        ])
-            ->postJson(route('tasks.attachments.store', $this->taskId), [
-                'file' => $file,
+        // Upload attachment first using allowed file type
+        $file = UploadedFile::fake()->create('to-delete.pdf', 100, 'application/pdf');
+        $uploadResponse = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => [$file],
             ]);
 
-        // Extract attachment ID from upload response
-        $attachmentId = $uploadResponse->json('data.id');
+        $uploadResponse->assertCreated();
+        $attachmentId = $uploadResponse->json('data.0.id');
+        $filePath = $uploadResponse->json('data.0.file_path');
+
+        // Verify attachment exists before deletion
+        $this->assertDatabaseHas('task_attachments', ['id' => $attachmentId]);
 
         // Delete the attachment
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-            'Accept' => 'application/json',
-        ])
+        $response = $this->actingAs($this->user)
             ->deleteJson(route('tasks.attachments.destroy', [
-                'taskId' => $this->taskId,
+                'taskId' => $this->task->id,
                 'attachmentId' => $attachmentId,
             ]));
 
-        // Assert successful deletion response
         $response->assertOk()
-            ->assertJson([
-                'message' => __('workspaces.attachment_deleted'),
-            ]);
+            ->assertJson(['message' => __('workspaces.attachment_deleted')]);
+
+        // Verify attachment was soft-deleted from database
+        $this->assertSoftDeleted('task_attachments', ['id' => $attachmentId]);
     }
 
-    /**
-     * Test listing all attachments for a task.
-     *
-     * Verifies that workspace members can retrieve all file attachments
-     * associated with a specific task they have access to.
-     * Tests response structure includes all attachment metadata fields.
-     *
-     *
-     * @test
-     */
+    #[Test]
+    public function test_non_uploader_cannot_delete_attachment(): void
+    {
+        // Create another workspace member with explicit type hint
+        /** @var UserModel $otherMember */
+        $otherMember = UserModel::factory()->create();
+        $this->workspace->members()->attach($otherMember->id, [
+            'role' => 'member',
+            'joined_at' => now(),
+        ]);
+
+        // Upload attachment as original user
+        $file = UploadedFile::fake()->create('protected.pdf', 100, 'application/pdf');
+        $uploadResponse = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => [$file],
+            ]);
+
+        $uploadResponse->assertCreated();
+        $attachmentId = $uploadResponse->json('data.0.id');
+
+        // Attempt deletion as different user (non-uploader)
+        $response = $this->actingAs($otherMember)
+            ->deleteJson(route('tasks.attachments.destroy', [
+                'taskId' => $this->task->id,
+                'attachmentId' => $attachmentId,
+            ]));
+
+        $response->assertForbidden()
+            ->assertJson(['message' => __('workspaces.attachment_delete_forbidden')]);
+
+        // Verify attachment still exists in database
+        $this->assertDatabaseHas('task_attachments', ['id' => $attachmentId]);
+    }
+
     #[Test]
     public function test_list_attachments_by_task_success(): void
     {
-        // Generate authentication token
-        $token = $this->member->createToken('test-token')->plainTextToken;
-
-        // Create multiple test files of different types
+        // Upload multiple attachments using ONLY allowed file types
         $files = [
-            UploadedFile::fake()->create('document1.pdf', 500, 'application/pdf'),
-            UploadedFile::fake()->create('image1.png', 300, 'image/png'),
-            UploadedFile::fake()->create('document2.pdf', 600, 'application/pdf'),
+            UploadedFile::fake()->create('report.pdf', 500, 'application/pdf'),
+            UploadedFile::fake()->create('diagram.png', 300, 'image/png'),
+            UploadedFile::fake()->create('notes.pdf', 50, 'application/pdf'), // Changed from .txt to .pdf
         ];
 
-        // Upload each file as an attachment
-        foreach ($files as $file) {
-            $this->withHeaders([
-                'Authorization' => "Bearer $token",
-                'Accept' => 'application/json',
-            ])
-                ->postJson(route('tasks.attachments.store', $this->taskId), [
-                    'file' => $file,
-                ]);
-        }
-
-        // List all attachments
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-            'Accept' => 'application/json',
-        ])
-            ->getJson(route('tasks.attachments.index', $this->taskId));
-
-        // Assert response contains attachment list with all metadata
-        $response->assertOk()
-            ->assertJson([
-                'message' => __('workspaces.attachments_retrieved'),
-            ])
-            ->assertJsonStructure([
-                'data' => [[
-                    'id',
-                    'task_id',
-                    'file_name',
-                    'file_path',
-                    'file_type',
-                    'file_size',
-                    'uploaded_by',
-                    'created_at',
-                    'updated_at',
-                ]],
+        $uploadResponse = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => $files,
             ]);
+
+        $uploadResponse->assertCreated();
+        $uploadResponse->assertJsonCount(3, 'data');
+
+        // List attachments
+        $response = $this->actingAs($this->user)
+            ->getJson(route('tasks.attachments.index', ['taskId' => $this->task->id]));
+
+        $response->assertOk()
+            ->assertJson(['message' => __('workspaces.attachments_retrieved')])
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'task_id',
+                        'file_name',
+                        'file_path',
+                        'file_type',
+                        'file_size',
+                        'uploaded_by',
+                        'created_at',
+                        'updated_at',
+                    ],
+                ],
+                'message',
+            ])
+            ->assertJsonCount(3, 'data');
+    }
+
+    #[Test]
+    public function test_non_member_cannot_view_attachments(): void
+    {
+        // Create user with no workspace membership
+        /** @var UserModel $nonMember */
+        $nonMember = UserModel::factory()->create();
+
+        // Attempt to list attachments without authorization
+        $response = $this->actingAs($nonMember)
+            ->getJson(route('tasks.attachments.index', ['taskId' => $this->task->id]));
+
+        // Assert forbidden response with specific error message
+        // NOW PASSES: Service layer properly enforces authorization
+        $response->assertForbidden()
+            ->assertJson(['message' => __('workspaces.not_member_of_project')]);
+    }
+
+    #[Test]
+    public function test_task_not_found_returns_404(): void
+    {
+        $file = UploadedFile::fake()->create('test.pdf', 100, 'application/pdf');
+        $response = $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => 99999]), [
+                'files' => [$file],
+            ]);
+
+        $response->assertNotFound()
+            ->assertJson(['message' => __('workspaces.task_not_found', ['id' => 99999])]);
+    }
+
+    #[Test]
+    public function test_cache_invalidated_after_upload(): void
+    {
+        // Prime the cache with initial empty state
+        $this->actingAs($this->user)
+            ->getJson(route('tasks.attachments.index', ['taskId' => $this->task->id]));
+
+        // Upload new attachment
+        $file = UploadedFile::fake()->create('new-file.pdf', 100, 'application/pdf');
+        $this->actingAs($this->user)
+            ->postJson(route('tasks.attachments.store', ['taskId' => $this->task->id]), [
+                'files' => [$file],
+            ])
+            ->assertCreated();
+
+        // Verify cache was invalidated and new attachment appears immediately
+        $response = $this->actingAs($this->user)
+            ->getJson(route('tasks.attachments.index', ['taskId' => $this->task->id]));
+
+        $response->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.file_name', 'new-file.pdf');
     }
 }
