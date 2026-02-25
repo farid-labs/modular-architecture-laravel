@@ -5,11 +5,27 @@ namespace Modules\Notifications\Infrastructure\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Log;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
+use Modules\Notifications\Domain\Enums\NotificationPriority;
 use Modules\Notifications\Domain\Enums\NotificationType;
 
+/**
+ * Class CustomNotification
+ *
+ * A custom Laravel notification that supports multiple channels
+ * (database, email, SMS, broadcast) and handles priorities, types,
+ * and localized messages.
+ *
+ * Architecture Notes:
+ * - This class lives in the Infrastructure layer
+ * - Encapsulates presentation logic (email, broadcast, DB payloads)
+ * - Domain layer provides NotificationType, Priority, Channels
+ * - Fully queueable with ShouldQueue
+ *
+ * @package Modules\Notifications\Infrastructure\Notifications
+ */
 class CustomNotification extends Notification implements ShouldQueue
 {
     use Queueable;
@@ -17,56 +33,67 @@ class CustomNotification extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      *
-     * @param  array<string, mixed>|null  $data
-     * @param  array<NotificationChannel>  $channels
+     * @param NotificationType $type Domain notification type
+     * @param string $title Notification title
+     * @param string $message Notification message
+     * @param NotificationChannel[] $channels Delivery channels
+     * @param string|null $actionUrl Optional action URL
+     * @param array|null $metadata Optional metadata
+     * @param NotificationPriority $priority Priority for badge/ordering
+     * @param string $locale Locale for localization
      */
     public function __construct(
         private NotificationType $type,
         private string $title,
         private string $message,
-        private ?array $data = null,
+        private array $channels = [NotificationChannel::DATABASE],
         private ?string $actionUrl = null,
-        private array $channels = [NotificationChannel::DATABASE]
+        private ?array $metadata = null,
+        private NotificationPriority $priority = NotificationPriority::MEDIUM,
+        private string $locale = 'fa'
     ) {
-        $this->queue = 'notifications';
+        $this->onQueue('notifications');
         $this->afterCommit();
     }
 
     /**
-     * Get the notification's delivery channels.
+     * Determine which channels the notification should be sent through.
      *
-     * @return array<int, string>
+     * @param object $notifiable
+     * @return array<string>
      */
     public function via(object $notifiable): array
     {
-        $result = [];
-        foreach ($this->channels as $channel) {
-            $result[] = match ($channel) {
-                NotificationChannel::DATABASE => 'database',
-                NotificationChannel::EMAIL => 'mail',
-                NotificationChannel::SMS => 'vonage',
-                NotificationChannel::PUSH => 'broadcast',
-            };
-        }
-
-        return $result;
+        return array_map(fn(NotificationChannel $c) => match ($c) {
+            NotificationChannel::DATABASE => 'database',
+            NotificationChannel::EMAIL => 'mail',
+            NotificationChannel::SMS => 'vonage',
+            NotificationChannel::PUSH => 'broadcast',
+        }, $this->channels);
     }
 
     /**
-     * Get the mail representation of the notification.
+     * Transform notification for email delivery.
+     *
+     * Uses MailMessage and respects the locale.
+     *
+     * @param object $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {
         $mail = (new MailMessage)
             ->subject($this->title)
-            ->greeting('Hello!')
-            ->line($this->message);
+            ->greeting($this->getGreeting())
+            ->line($this->message)
+            ->locale($this->locale);
 
-        if ($this->actionUrl !== null) {
-            $mail->action('View Details', $this->actionUrl);
+        if ($this->actionUrl) {
+            $mail->action(
+                $this->metadata['action_label'] ?? trans('notifications.default_action_label'),
+                $this->actionUrl
+            );
         }
-
-        $mail->line('Thank you for using our application!');
 
         if ($this->type === NotificationType::ERROR) {
             return $mail->error();
@@ -76,51 +103,59 @@ class CustomNotification extends Notification implements ShouldQueue
     }
 
     /**
-     * Get the array representation of the notification.
+     * Transform notification for database storage.
      *
+     * @param object $notifiable
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toDatabase(object $notifiable): array
     {
         return [
             'type' => $this->type->value,
+            'priority' => $this->priority->value,
             'title' => $this->title,
             'message' => $this->message,
-            'data' => $this->data ?? [],
             'action_url' => $this->actionUrl,
+            'metadata' => $this->metadata ?? [],
+            'badge_color' => $this->priority->badgeColor(),
             'sent_at' => now()->toIso8601String(),
         ];
     }
 
     /**
-     * Get the database representation of the notification.
+     * Transform notification for broadcasting (push).
      *
-     * @return array<string, mixed>
+     * @param object $notifiable
+     * @return BroadcastMessage
      */
-    public function toDatabase(object $notifiable): array
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return $this->toArray($notifiable);
-    }
-
-    /**
-     * Handle the notification after it has been sent.
-     */
-    public function afterSending(object $notifiable, string $channel, mixed $response): void
-    {
-        Log::info('Notification sent successfully', [
-            'notifiable_id' => $notifiable->id ?? 'unknown',
-            'notifiable_type' => get_class($notifiable),
-            'channel' => $channel,
+        return new BroadcastMessage([
+            'id' => $this->id ?? uniqid(),
             'type' => $this->type->value,
+            'priority' => $this->priority->value,
             'title' => $this->title,
+            'message' => $this->message,
+            'action_url' => $this->actionUrl,
+            'metadata' => $this->metadata ?? [],
+            'badge_color' => $this->priority->badgeColor(),
+            'read_at' => null,
+            'created_at' => now()->toIso8601String(),
         ]);
     }
 
     /**
-     * Determine if the notification should be sent.
+     * Get a localized greeting based on NotificationType.
+     *
+     * @return string
      */
-    public function shouldSend(object $notifiable, string $channel): bool
+    private function getGreeting(): string
     {
-        return true;
+        return match ($this->type) {
+            NotificationType::SUCCESS => trans('notifications.greetings.success'),
+            NotificationType::WARNING => trans('notifications.greetings.warning'),
+            NotificationType::ERROR => trans('notifications.greetings.error'),
+            default => trans('notifications.greetings.default'),
+        };
     }
 }
