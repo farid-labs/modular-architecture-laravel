@@ -9,7 +9,7 @@ use Modules\Notifications\Domain\Entities\NotificationEntity;
  * Interface: NotificationRepositoryInterface
  *
  * Defines the contract for notification data access.
- * 
+ *
  * Responsibilities:
  * - Encapsulate persistence concerns.
  * - Provide retrieval, creation, update, and deletion operations.
@@ -20,16 +20,15 @@ interface NotificationRepositoryInterface
     /**
      * Retrieve a notification by its unique identifier.
      *
-     * @param string $id Notification UUID
-     * @return NotificationEntity|null
+     * @param  string  $id  Notification UUID
      */
     public function findById(string $id): ?NotificationEntity;
 
     /**
      * Retrieve all notifications for a specific recipient, optionally filtered.
      *
-     * @param int $recipientId Recipient user ID
-     * @param NotificationFilterDTO|null $filters Optional filter DTO
+     * @param  int  $recipientId  Recipient user ID
+     * @param  NotificationFilterDTO|null  $filters  Optional filter DTO
      * @return NotificationEntity[] Array of NotificationEntity
      */
     public function findByRecipientId(int $recipientId, ?NotificationFilterDTO $filters = null): array;
@@ -37,8 +36,8 @@ interface NotificationRepositoryInterface
     /**
      * Retrieve unread notifications for a specific recipient.
      *
-     * @param int $recipientId Recipient user ID
-     * @param int|null $limit Optional maximum number of results
+     * @param  int  $recipientId  Recipient user ID
+     * @param  int|null  $limit  Optional maximum number of results
      * @return NotificationEntity[] Array of unread NotificationEntity
      */
     public function findUnreadByRecipientId(int $recipientId, ?int $limit = null): array;
@@ -46,7 +45,7 @@ interface NotificationRepositoryInterface
     /**
      * Count unread notifications for a specific recipient.
      *
-     * @param int $recipientId Recipient user ID
+     * @param  int  $recipientId  Recipient user ID
      * @return int Total unread notifications
      */
     public function countUnreadByRecipientId(int $recipientId): int;
@@ -54,7 +53,7 @@ interface NotificationRepositoryInterface
     /**
      * Persist a new notification entity.
      *
-     * @param NotificationEntity $entity Notification to persist
+     * @param  NotificationEntity  $entity  Notification to persist
      * @return NotificationEntity Persisted entity (may include database-generated fields)
      */
     public function create(NotificationEntity $entity): NotificationEntity;
@@ -62,8 +61,8 @@ interface NotificationRepositoryInterface
     /**
      * Mark a single notification as read for a recipient.
      *
-     * @param string $id Notification UUID
-     * @param int $recipientId Recipient user ID
+     * @param  string  $id  Notification UUID
+     * @param  int  $recipientId  Recipient user ID
      * @return bool True if the operation succeeded
      */
     public function markAsRead(string $id, int $recipientId): bool;
@@ -71,7 +70,7 @@ interface NotificationRepositoryInterface
     /**
      * Mark all notifications as read for a recipient.
      *
-     * @param int $recipientId Recipient user ID
+     * @param  int  $recipientId  Recipient user ID
      * @return int Number of notifications marked as read
      */
     public function markAllAsRead(int $recipientId): int;
@@ -79,8 +78,8 @@ interface NotificationRepositoryInterface
     /**
      * Delete a specific notification for a recipient.
      *
-     * @param string $id Notification UUID
-     * @param int $recipientId Recipient user ID
+     * @param  string  $id  Notification UUID
+     * @param  int  $recipientId  Recipient user ID
      * @return bool True if deletion succeeded
      */
     public function delete(string $id, int $recipientId): bool;
@@ -88,7 +87,7 @@ interface NotificationRepositoryInterface
     /**
      * Delete all notifications for a specific recipient.
      *
-     * @param int $recipientId Recipient user ID
+     * @param  int  $recipientId  Recipient user ID
      * @return int Number of deleted notifications
      */
     public function deleteAllForRecipient(int $recipientId): int;

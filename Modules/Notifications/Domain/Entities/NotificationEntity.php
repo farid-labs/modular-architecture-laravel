@@ -30,16 +30,16 @@ final readonly class NotificationEntity
     /**
      * Create a new NotificationEntity instance.
      *
-     * @param string $id Unique notification identifier (UUID recommended)
-     * @param int $recipientId User ID of the notification recipient
-     * @param NotificationType $type Notification type
-     * @param NotificationPriority $priority Notification priority level
-     * @param NotificationCategory $category Notification category
-     * @param NotificationContent $content Immutable content value object
-     * @param CarbonInterface|null $readAt Timestamp when notification was read
-     * @param CarbonInterface|null $deletedAt Soft delete timestamp
-     * @param CarbonInterface|null $createdAt Creation timestamp
-     * @param array|null $metadata Additional structured metadata
+     * @param  string  $id  Unique notification identifier (UUID recommended)
+     * @param  int  $recipientId  User ID of the notification recipient
+     * @param  NotificationType  $type  Notification type
+     * @param  NotificationPriority  $priority  Notification priority level
+     * @param  NotificationCategory  $category  Notification category
+     * @param  NotificationContent  $content  Immutable content value object
+     * @param  CarbonInterface|null  $readAt  Timestamp when notification was read
+     * @param  CarbonInterface|null  $deletedAt  Soft delete timestamp
+     * @param  CarbonInterface|null  $createdAt  Creation timestamp
+     * @param  array<string, mixed>|null  $metadata  Additional structured metadata
      */
     public function __construct(
         private string $id,
@@ -108,7 +108,11 @@ final readonly class NotificationEntity
         return $this->createdAt;
     }
 
-    /** Get optional metadata payload. */
+    /**
+     * Get optional metadata payload.
+     *
+     * @return array<string, mixed>|null
+     */
     public function getMetadata(): ?array
     {
         return $this->metadata;
@@ -119,7 +123,7 @@ final readonly class NotificationEntity
      */
     public function isRead(): bool
     {
-        return $this->readAt !== null;
+        return $this->readAt !== null;  // ← Returns true if readAt has value
     }
 
     /**
@@ -220,22 +224,24 @@ final readonly class NotificationEntity
      * - API responses
      * - Infrastructure persistence mapping
      * - Logging
+     *
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
         return [
-            'id'           => $this->id,
+            'id' => $this->id,
             'recipient_id' => $this->recipientId,
-            'type'         => $this->type->value,
-            'priority'     => $this->priority->value,
-            'category'     => $this->category->value,
-            'content'      => $this->content->toArray(),
-            'read_at'      => $this->readAt?->toIso8601String(),
-            'deleted_at'   => $this->deletedAt?->toIso8601String(),
-            'created_at'   => $this->createdAt?->toIso8601String(),
-            'metadata'     => $this->metadata,
-            'is_read'      => $this->isRead(),
-            'is_active'    => $this->isActive(),
+            'type' => $this->type->value,
+            'priority' => $this->priority->value,
+            'category' => $this->category->value,
+            'content' => $this->content->toArray(),
+            'read_at' => $this->readAt?->toIso8601String(),
+            'deleted_at' => $this->deletedAt?->toIso8601String(),
+            'created_at' => $this->createdAt?->toIso8601String(),
+            'metadata' => $this->metadata,
+            'is_read' => $this->isRead(),
+            'is_active' => $this->isActive(),
         ];
     }
 }

@@ -33,18 +33,16 @@ enum NotificationCategory: string
      *
      * Expected lang file:
      * lang/en/notification.php
-     *
-     * @return string
      */
     public function label(): string
     {
         return match ($this) {
-            self::SYSTEM    => __('notification.category.system'),
-            self::USER      => __('notification.category.user'),
+            self::SYSTEM => __('notification.category.system'),
+            self::USER => __('notification.category.user'),
             self::WORKSPACE => __('notification.category.workspace'),
-            self::PROJECT   => __('notification.category.project'),
-            self::TASK      => __('notification.category.task'),
-            self::SECURITY  => __('notification.category.security'),
+            self::PROJECT => __('notification.category.project'),
+            self::TASK => __('notification.category.task'),
+            self::SECURITY => __('notification.category.security'),
         };
     }
 }
