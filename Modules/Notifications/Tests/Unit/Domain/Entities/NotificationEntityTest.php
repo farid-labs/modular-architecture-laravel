@@ -9,6 +9,8 @@ use Modules\Notifications\Domain\Enums\NotificationPriority;
 use Modules\Notifications\Domain\Enums\NotificationType;
 use Modules\Notifications\Domain\ValueObjects\NotificationContent;
 use Modules\Notifications\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Unit tests for NotificationEntity.
@@ -17,9 +19,11 @@ use Modules\Notifications\Tests\TestCase;
  *
  * @covers \Modules\Notifications\Domain\Entities\NotificationEntity
  */
+#[CoversClass(NotificationEntityTest::class)]
 class NotificationEntityTest extends TestCase
 {
     protected NotificationContent $content;
+
     protected CarbonImmutable $now;
 
     /**
@@ -32,26 +36,30 @@ class NotificationEntityTest extends TestCase
         $this->now = CarbonImmutable::now();
 
         $this->content = new NotificationContent(
-            title: __('notifications.test_title'),
-            body: __('notifications.test_message'),
-            actionLabel: __('notifications.view_action'),
-            actionUrl: 'https://example.com'
+            __('notifications.test_title'),
+            __('notifications.test_message'),
+            __('notifications.view_action'),
+            'https://example.com'
         );
     }
 
     /**
      * Test that a notification entity can be created with all properties.
      */
+    #[Test]
     public function test_entity_can_be_created(): void
     {
         $entity = new NotificationEntity(
-            id: 'notif_test_1',
-            recipientId: 1,
-            type: NotificationType::INFO,
-            priority: NotificationPriority::MEDIUM,
-            category: NotificationCategory::SYSTEM,
-            content: $this->content,
-            createdAt: $this->now
+            'notif_test_1',           // 1. id
+            1,               // 2. recipientId
+            NotificationType::INFO, // 3. type
+            NotificationPriority::MEDIUM, // 4. priority
+            NotificationCategory::SYSTEM, // 5. category
+            $this->content,      // 6. content
+            null,                 // 7. readAt (CarbonInterface|null) ← FIX: Was $this->now
+            null,              // 8. deletedAt (CarbonInterface|null)
+            $this->now,        // 9. createdAt (CarbonInterface|null) ← FIX: Add this
+            null                // 10. metadata (?array)
         );
 
         $this->assertEquals('notif_test_1', $entity->getId());
@@ -66,17 +74,20 @@ class NotificationEntityTest extends TestCase
     /**
      * Test that an entity is marked as read when readAt is set.
      */
+    #[Test]
     public function test_entity_is_read_when_read_at_is_set(): void
     {
         $entity = new NotificationEntity(
-            id: 'notif_test_2',
-            recipientId: 1,
-            type: NotificationType::INFO,
-            priority: NotificationPriority::MEDIUM,
-            category: NotificationCategory::SYSTEM,
-            content: $this->content,
-            readAt: $this->now,
-            createdAt: $this->now
+            'notif_test_2',
+            1,
+            NotificationType::INFO,
+            NotificationPriority::MEDIUM,
+            NotificationCategory::SYSTEM,
+            $this->content,
+            $this->now,
+            $this->now,
+            $this->now,
+            null
         );
 
         $this->assertTrue($entity->isRead());
@@ -86,16 +97,20 @@ class NotificationEntityTest extends TestCase
     /**
      * Test that markAsRead returns a new immutable instance.
      */
+    #[Test]
     public function test_mark_as_read_returns_new_instance(): void
     {
         $entity = new NotificationEntity(
-            id: 'notif_test_3',
-            recipientId: 1,
-            type: NotificationType::INFO,
-            priority: NotificationPriority::MEDIUM,
-            category: NotificationCategory::SYSTEM,
-            content: $this->content,
-            createdAt: $this->now
+            'notif_test_3',
+            1,
+            NotificationType::INFO,
+            NotificationPriority::MEDIUM,
+            NotificationCategory::SYSTEM,
+            $this->content,
+            null,
+            null,
+            $this->now,
+            null
         );
 
         $updated = $entity->markAsRead();
@@ -108,17 +123,18 @@ class NotificationEntityTest extends TestCase
     /**
      * Test that markAsUnread returns a new immutable instance.
      */
+    #[Test]
     public function test_mark_as_unread_returns_new_instance(): void
     {
         $entity = new NotificationEntity(
-            id: 'notif_test_4',
-            recipientId: 1,
-            type: NotificationType::INFO,
-            priority: NotificationPriority::MEDIUM,
-            category: NotificationCategory::SYSTEM,
-            content: $this->content,
-            readAt: $this->now,
-            createdAt: $this->now
+            'notif_test_4',
+            1,
+            NotificationType::INFO,
+            NotificationPriority::MEDIUM,
+            NotificationCategory::SYSTEM,
+            $this->content,
+            $this->now,
+            $this->now
         );
 
         $updated = $entity->markAsUnread();
@@ -130,16 +146,17 @@ class NotificationEntityTest extends TestCase
     /**
      * Test soft delete sets deletedAt and marks entity inactive.
      */
+    #[Test]
     public function test_soft_delete_sets_deleted_at(): void
     {
         $entity = new NotificationEntity(
-            id: 'notif_test_5',
-            recipientId: 1,
-            type: NotificationType::INFO,
-            priority: NotificationPriority::MEDIUM,
-            category: NotificationCategory::SYSTEM,
-            content: $this->content,
-            createdAt: $this->now
+            'notif_test_5',
+            1,
+            NotificationType::INFO,
+            NotificationPriority::MEDIUM,
+            NotificationCategory::SYSTEM,
+            $this->content,
+            $this->now
         );
 
         $deleted = $entity->softDelete();
@@ -152,17 +169,20 @@ class NotificationEntityTest extends TestCase
     /**
      * Test conversion to array includes all relevant attributes.
      */
+    #[Test]
     public function test_to_array_conversion(): void
     {
         $entity = new NotificationEntity(
-            id: 'notif_test_6',
-            recipientId: 1,
-            type: NotificationType::SUCCESS,
-            priority: NotificationPriority::HIGH,
-            category: NotificationCategory::USER,
-            content: $this->content,
-            readAt: $this->now,
-            createdAt: $this->now
+            'notif_test_6',
+            1,
+            NotificationType::SUCCESS,
+            NotificationPriority::HIGH,
+            NotificationCategory::USER,
+            $this->content,
+            $this->now,
+            null,
+            $this->now,
+            null
         );
 
         $array = $entity->toArray();
@@ -181,17 +201,20 @@ class NotificationEntityTest extends TestCase
     /**
      * Test entity stores and returns metadata correctly.
      */
+    #[Test]
     public function test_entity_with_metadata(): void
     {
         $entity = new NotificationEntity(
-            id: 'notif_test_7',
-            recipientId: 1,
-            type: NotificationType::INFO,
-            priority: NotificationPriority::MEDIUM,
-            category: NotificationCategory::SYSTEM,
-            content: $this->content,
-            metadata: ['key' => 'value', 'count' => 5],
-            createdAt: $this->now
+            'notif_test_7',                          // 1. id
+            1,                              // 2. recipientId
+            NotificationType::INFO,                // 3. type
+            NotificationPriority::MEDIUM,      // 4. priority
+            NotificationCategory::SYSTEM,      // 5. category
+            $this->content,                     // 6. content
+            null,                                // 7. readAt (CarbonInterface|null)
+            null,                             // 8. deletedAt (CarbonInterface|null)
+            $this->now,                       // 9. createdAt (CarbonInterface|null)
+            ['key' => 'value', 'count' => 5]   // 10. metadata (?array)
         );
 
         $this->assertEquals(['key' => 'value', 'count' => 5], $entity->getMetadata());
