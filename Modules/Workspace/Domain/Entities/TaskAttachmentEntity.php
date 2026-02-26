@@ -189,15 +189,15 @@ final readonly class TaskAttachmentEntity
     public static function fromArray(array $data): self
     {
         return new self(
-            id: (int) $data['id'],
-            taskId: (int) $data['task_id'],
-            uploadedBy: (int) $data['uploaded_by'],
-            mimeType: $data['mime_type'] ?? $data['file_type'] ?? '',
-            fileSize: new FileSize((int) $data['file_size']),
-            createdAt: $data['created_at'] ?? null,
-            updatedAt: $data['updated_at'] ?? null,
-            fileName: new FileName($data['file_name']),
-            filePath: new FilePath($data['file_path']),
+            (int) $data['id'],
+            (int) $data['task_id'],
+            (int) $data['uploaded_by'],
+            $data['mime_type'] ?? $data['file_type'] ?? '',
+            new FileSize((int) $data['file_size']),
+            $data['created_at'] ?? null,
+            $data['updated_at'] ?? null,
+            new FileName($data['file_name']),
+            new FilePath($data['file_path']),
         );
     }
 }

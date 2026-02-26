@@ -517,15 +517,15 @@ class WorkspaceRepository implements WorkspaceRepositoryInterface
     private function mapTaskAttachmentToEntity(TaskAttachmentModel $model): TaskAttachmentEntity
     {
         return new TaskAttachmentEntity(
-            id: $model->id,
-            taskId: $model->task_id,
-            uploadedBy: $model->uploaded_by,
-            mimeType: $model->file_type,
-            fileSize: new FileSize($model->file_size),  // Wrap int in FileSize VO
-            createdAt: $model->created_at,
-            updatedAt: $model->updated_at,
-            fileName: new FileName($model->file_name),
-            filePath: new FilePath($model->file_path)
+            $model->id,
+            $model->task_id,
+            $model->uploaded_by,
+            $model->file_type,
+            new FileSize($model->file_size),  // Wrap int in FileSize VO
+            $model->created_at,
+            $model->updated_at,
+            new FileName($model->file_name),
+            new FilePath($model->file_path)
         );
     }
 
