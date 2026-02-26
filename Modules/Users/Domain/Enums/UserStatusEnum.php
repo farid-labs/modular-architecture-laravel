@@ -15,8 +15,6 @@ namespace Modules\Users\Domain\Enums;
  * - INACTIVE:  User account is disabled but not banned.
  * - BANNED:    User account is permanently or temporarily blocked.
  * - PENDING:   User account is awaiting approval or verification.
- *
- * @package Modules\Users\Domain\Enums
  */
 enum UserStatusEnum: string
 {
@@ -48,8 +46,6 @@ enum UserStatusEnum: string
      *
      * Example:
      * users.statuses.active => "Active"
-     *
-     * @return string
      */
     public function label(): string
     {

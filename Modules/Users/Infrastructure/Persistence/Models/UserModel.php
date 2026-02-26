@@ -3,6 +3,7 @@
 namespace Modules\Users\Infrastructure\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -71,9 +72,9 @@ class UserModel extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<WorkspaceModel, $this>
+     * @return BelongsToMany<WorkspaceModel, $this>
      */
-    public function workspaces()
+    public function workspaces(): BelongsToMany
     {
         return $this->belongsToMany(WorkspaceModel::class, 'workspace_members', 'user_id', 'workspace_id')
             ->withPivot('role', 'joined_at');

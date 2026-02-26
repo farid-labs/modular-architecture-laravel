@@ -8,9 +8,13 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use Modules\Notifications\Application\DTOs\SendNotificationDTO;
+use Modules\Notifications\Application\Services\NotificationService;
+use Modules\Notifications\Domain\Enums\NotificationCategory;
+use Modules\Notifications\Domain\Enums\NotificationChannel;
+use Modules\Notifications\Domain\Enums\NotificationPriority;
+use Modules\Notifications\Domain\Enums\NotificationType;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
-use Modules\Users\Infrastructure\Mail\WelcomeEmail as WelcomeEmailMailable;
 
 /**
  * Class SendWelcomeEmail
@@ -20,6 +24,7 @@ use Modules\Users\Infrastructure\Mail\WelcomeEmail as WelcomeEmailMailable;
  *
  * Architecture Notes:
  * - Lives in the Infrastructure layer (side-effect operation).
+ * - Uses NotificationService for centralized notification management.
  * - Implements ShouldQueue for asynchronous execution.
  * - Passes only primitive data (userId) to avoid model serialization issues.
  * - Designed to be retry-safe and idempotent.
@@ -29,8 +34,6 @@ use Modules\Users\Infrastructure\Mail\WelcomeEmail as WelcomeEmailMailable;
  * - Exponential backoff strategy
  * - Graceful handling when user no longer exists
  * - Structured logging for observability
- *
- * @package Modules\Users\Infrastructure\Jobs
  */
 class SendWelcomeEmail implements ShouldQueue
 {
@@ -77,8 +80,8 @@ class SendWelcomeEmail implements ShouldQueue
      * Only primitive values are passed to the job constructor.
      * Avoid passing Eloquent models to prevent serialization issues.
      *
-     * @param int $userId ID of the registered user
-     * @param string $locale Preferred email locale (default: 'en')
+     * @param  int  $userId  ID of the registered user
+     * @param  string  $locale  Preferred email locale (default: 'en')
      */
     public function __construct(
         public int $userId,
@@ -90,23 +93,42 @@ class SendWelcomeEmail implements ShouldQueue
      *
      * Responsibilities:
      * - Retrieve the user from persistence layer
-     * - Send localized welcome email
+     * - Send welcome notification via NotificationService
      * - Log success or missing user scenario
-     *
-     * @return void
      */
     public function handle(): void
     {
         $user = UserModel::find($this->userId);
 
-        if (!$user) {
+        if (! $user) {
             Log::warning("User {$this->userId} not found for welcome email");
+
             return;
         }
 
-        Mail::to($user->email)
-            ->locale($this->locale)
-            ->send(new WelcomeEmailMailable($user));
+        // FIX: Use NotificationService instead of direct Mailable
+        $notificationService = app(NotificationService::class);
+
+        $dto = SendNotificationDTO::forUser(
+            userId: $user->id,
+            type: NotificationType::SUCCESS,
+            title: __('users.welcome_title', ['name' => $user->name]),
+            message: __('users.welcome_message'),
+            channels: [
+                NotificationChannel::DATABASE,
+                NotificationChannel::EMAIL,
+            ],
+            priority: NotificationPriority::MEDIUM,
+            category: NotificationCategory::SYSTEM,
+            actionUrl: route('dashboard'),
+            actionLabel: __('users.go_to_dashboard'),
+            metadata: [
+                'event' => 'user_registered',
+                'user_email' => $user->email,
+            ]
+        );
+
+        $notificationService->sendNotification($dto);
 
         Log::info("Welcome email sent to user {$user->email}");
     }
@@ -121,9 +143,6 @@ class SendWelcomeEmail implements ShouldQueue
      * - Notify administrators
      * - Persist structured failure logs
      * - Trigger monitoring/alerting systems
-     *
-     * @param \Throwable $exception
-     * @return void
      */
     public function failed(\Throwable $exception): void
     {

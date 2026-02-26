@@ -7,10 +7,12 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Application\Services\UserService;
+use Modules\Users\Domain\Events\UserCreated;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Users\Presentation\Requests\LoginRequest;
 use Modules\Users\Presentation\Requests\RegisterRequest;
@@ -83,11 +85,18 @@ class AuthController extends Controller
     {
         try {
             $userDTO = UserDTO::fromArray($request->validated());
-
             $entity = $this->userService->createUser($userDTO);
-
             $model = UserModel::findOrFail($entity->getId());
             $token = $model->createToken('auth-token')->plainTextToken;
+
+            // Dispatch custom domain event so Notifications module can react
+            // (listener: SendWelcomeNotificationOnUserCreated)
+            Event::dispatch(new UserCreated($model));
+
+            Log::info('User registered successfully', [
+                'user_id' => $entity->getId(),
+                'email' => $entity->getEmail()->getValue(),
+            ]);
 
             return response()->json([
                 'data' => new UserResource($entity),

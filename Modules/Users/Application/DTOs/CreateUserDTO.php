@@ -18,23 +18,17 @@ use Spatie\DataTransferObject\DataTransferObject;
  *
  * ⚠ This class must not contain business logic.
  * It is strictly a data carrier.
- *
- * @package Modules\Users\Application\DTOs
  */
 class CreateUserDTO extends DataTransferObject
 {
     /**
      * Full name of the user.
-     *
-     * @var string
      */
     public string $name;
 
     /**
      * Email address of the user.
      * Must be unique in the system.
-     *
-     * @var string
      */
     public string $email;
 
@@ -44,8 +38,6 @@ class CreateUserDTO extends DataTransferObject
      * Note:
      * Password hashing must be handled in the Application service
      * or Domain layer — never inside the DTO.
-     *
-     * @var string
      */
     public string $password;
 
@@ -53,8 +45,6 @@ class CreateUserDTO extends DataTransferObject
      * Indicates whether the user has administrative privileges.
      *
      * Defaults to false when not explicitly provided.
-     *
-     * @var bool|null
      */
     public ?bool $is_admin = false;
 
@@ -72,8 +62,7 @@ class CreateUserDTO extends DataTransferObject
      *     'is_admin' => bool|null (optional)
      * ]
      *
-     * @param array<string, mixed> $data Validated request payload
-     * @return self
+     * @param  array<string, mixed>  $data  Validated request payload
      */
     public static function fromRequest(array $data): self
     {

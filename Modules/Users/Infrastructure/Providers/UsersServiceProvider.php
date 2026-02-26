@@ -15,6 +15,7 @@ class UsersServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->register(RepositoryServiceProvider::class);
+        $this->app->register(EventServiceProvider::class);
     }
 
     /**
