@@ -8,11 +8,52 @@ use Modules\Notifications\Domain\Enums\NotificationCategory;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
 use Modules\Notifications\Domain\Enums\NotificationPriority;
 use Modules\Notifications\Domain\Enums\NotificationType;
+use OpenApi\Attributes as OA;
 
 /**
  * Form request for sending a new notification.
  * Validates required fields, optional fields, and enums.
  */
+#[OA\Schema(
+    schema: 'SendNotificationRequest',
+    type: 'object',
+    required: ['recipient_id', 'type', 'title', 'message'],
+    properties: [
+        new OA\Property(property: 'recipient_id', type: 'integer', example: 1),
+        new OA\Property(
+            property: 'type',
+            type: 'string',
+            enum: ['info', 'success', 'warning', 'error', 'system'],
+            example: 'info'
+        ),
+        new OA\Property(
+            property: 'priority',
+            type: 'string',
+            enum: ['low', 'medium', 'high', 'urgent'],
+            example: 'medium'
+        ),
+        new OA\Property(
+            property: 'category',
+            type: 'string',
+            enum: ['system', 'user', 'workspace', 'project', 'task', 'security'],
+            example: 'system'
+        ),
+        new OA\Property(property: 'title', type: 'string', example: 'New Notification'),
+        new OA\Property(property: 'message', type: 'string', example: 'Notification content'),
+        new OA\Property(
+            property: 'channels',
+            type: 'array',
+            items: new OA\Items(
+                type: 'string',
+                enum: ['database', 'email', 'sms', 'push']
+            ),
+            example: ['database', 'email']
+        ),
+        new OA\Property(property: 'action_url', type: 'string', nullable: true, format: 'uri'),
+        new OA\Property(property: 'action_label', type: 'string', nullable: true),
+        new OA\Property(property: 'metadata', type: 'object', nullable: true),
+    ]
+)]
 class SendNotificationRequest extends FormRequest
 {
     /**

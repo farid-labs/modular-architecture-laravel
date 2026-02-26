@@ -30,7 +30,21 @@ class NotificationController extends Controller
         summary: 'Retrieve list of notifications',
         description: 'Retrieve all notifications for the authenticated user with filtering and pagination',
         security: [['bearerAuth' => []]],
-        tags: ['Notifications']
+        tags: ['Notifications'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Notifications retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/NotificationResource')),
+                        new OA\Property(property: 'meta', type: 'object'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Notifications retrieved'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid or missing authentication token'),
+        ]
     )]
     public function index(Request $request): JsonResponse
     {
@@ -51,7 +65,6 @@ class NotificationController extends Controller
             (int) $request->query('per_page', 15)
         );
 
-        // FIX: Return array directly without pagination methods
         return response()->json([
             'data' => NotificationResource::collection($notifications),
             'meta' => [
@@ -65,13 +78,28 @@ class NotificationController extends Controller
     }
 
     /**
-     * Get the count of unread count notifications for authenticated user.
+     * Get the count of unread notifications for authenticated user.
      */
     #[OA\Get(
         path: '/notifications/unread-count',
-        summary: 'Get unread count notifications count',
+        summary: 'Get unread notifications count',
         security: [['bearerAuth' => []]],
-        tags: ['Notifications']
+        tags: ['Notifications'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Unread count retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'object', properties: [
+                            new OA\Property(property: 'unread_count', type: 'integer', example: 5),
+                        ]),
+                        new OA\Property(property: 'message', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+        ]
     )]
     public function unreadCount(Request $request): JsonResponse
     {
@@ -93,7 +121,20 @@ class NotificationController extends Controller
         summary: 'Send a new notification',
         description: 'Send a notification to a user through specified channels',
         security: [['bearerAuth' => []]],
-        tags: ['Notifications']
+        tags: ['Notifications'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SendNotificationRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Notification created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/NotificationResource')
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
     )]
     public function send(SendNotificationRequest $request): JsonResponse
     {
@@ -104,7 +145,7 @@ class NotificationController extends Controller
             type: NotificationType::from($validated['type']),
             title: $validated['title'],
             message: $validated['message'],
-            channels: array_map(fn ($c) => NotificationChannel::from($c), $validated['channels'] ?? ['database']),
+            channels: array_map(fn($c) => NotificationChannel::from($c), $validated['channels'] ?? ['database']),
             priority: NotificationPriority::from($validated['priority'] ?? 'medium'),
             category: NotificationCategory::from($validated['category'] ?? 'system'),
             actionUrl: $validated['action_url'] ?? null,
@@ -127,7 +168,15 @@ class NotificationController extends Controller
         path: '/notifications/{id}/read',
         summary: 'Mark a notification as read',
         security: [['bearerAuth' => []]],
-        tags: ['Notifications']
+        tags: ['Notifications'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Notification marked as read'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 404, description: 'Notification not found'),
+        ]
     )]
     public function markAsRead(string $id, Request $request): JsonResponse
     {
@@ -149,7 +198,22 @@ class NotificationController extends Controller
         path: '/notifications/mark-all-read',
         summary: 'Mark all notifications as read',
         security: [['bearerAuth' => []]],
-        tags: ['Notifications']
+        tags: ['Notifications'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'All notifications marked as read',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'object', properties: [
+                            new OA\Property(property: 'marked_count', type: 'integer'),
+                        ]),
+                        new OA\Property(property: 'message', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+        ]
     )]
     public function markAllAsRead(Request $request): JsonResponse
     {
@@ -170,7 +234,15 @@ class NotificationController extends Controller
         path: '/notifications/{id}',
         summary: 'Delete a notification',
         security: [['bearerAuth' => []]],
-        tags: ['Notifications']
+        tags: ['Notifications'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Notification deleted'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 404, description: 'Notification not found'),
+        ]
     )]
     public function destroy(string $id, Request $request): JsonResponse
     {

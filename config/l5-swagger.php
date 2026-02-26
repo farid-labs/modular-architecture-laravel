@@ -45,7 +45,15 @@ return [
                  */
                 'annotations' => [
                     base_path('app'),
-                    base_path('Modules'),
+                    base_path('Modules/Notifications/Presentation/Controllers'),
+                    base_path('Modules/Notifications/Presentation/Requests'),
+                    base_path('Modules/Notifications/Presentation/Resources'),
+                    base_path('Modules/Users/Presentation/Controllers'),
+                    base_path('Modules/Users/Presentation/Requests'),
+                    base_path('Modules/Users/Presentation/Resources'),
+                    base_path('Modules/Workspace/Presentation/Controllers'),
+                    base_path('Modules/Workspace/Presentation/Requests'),
+                    base_path('Modules/Workspace/Presentation/Resources'),
                 ],
             ],
         ],
@@ -109,8 +117,8 @@ return [
              * @link https://zircote.github.io/swagger-php/reference/processors.html
              */
             'default_processors_configuration' => [
-            /** Example */
-            /**
+                /** Example */
+                /**
              * 'operationId.hash' => true,
              * 'pathFilter' => [
              * 'tags' => [
@@ -157,7 +165,15 @@ return [
              * @note This option overwrites `paths.excludes`
              * @see \OpenApi\scan
              */
-            'exclude' => [],
+            'exclude' => [
+                base_path('Tests'),
+                base_path('Modules/*/Tests'),
+                base_path('Modules/**/Tests'),
+                base_path('vendor'),
+                base_path('storage'),
+                base_path('bootstrap'),
+                base_path('config'),
+            ],
 
             /*
              * Allows to generate specs either for OpenAPI 3.0.0 or OpenAPI 3.1.0.
@@ -194,7 +210,7 @@ return [
                 ],
                 */
 
-            /* Open API 3.0 support
+                /* Open API 3.0 support
                 'passport' => [ // Unique name of security
                     'type' => 'oauth2', // The type of the security scheme. Valid values are "basic", "apiKey" or "oauth2".
                     'description' => 'Laravel passport oauth2 security.',
@@ -221,7 +237,7 @@ return [
                  * Examples of Securities
                  */
                 [
-                /*
+                    /*
                     'oauth2_security_example' => [
                         'read',
                         'write'
