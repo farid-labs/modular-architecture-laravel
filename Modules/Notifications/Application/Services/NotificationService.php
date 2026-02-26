@@ -15,14 +15,6 @@ use Modules\Users\Infrastructure\Persistence\Models\UserModel;
  * Service: NotificationService
  *
  * Orchestrates notification delivery, retrieval, and lifecycle operations.
- *
- * Responsibilities:
- * - Send notifications to users via multiple channels
- * - Retrieve and filter notifications
- * - Track read/unread state
- * - Soft-delete notifications
- *
- * Application service layer only; no domain logic should be introduced here.
  */
 class NotificationService
 {
@@ -32,11 +24,6 @@ class NotificationService
 
     /**
      * Send notification to a user via specified channels.
-     *
-     * @param SendNotificationDTO $dto
-     * @return NotificationEntity Persisted notification entity
-     *
-     * @throws \InvalidArgumentException if recipient not found
      */
     public function sendNotification(SendNotificationDTO $dto): NotificationEntity
     {
@@ -44,35 +31,37 @@ class NotificationService
             'recipient_id' => $dto->recipientId,
             'type' => $dto->type->value,
             'priority' => $dto->priority->value,
-            'channels' => array_map(fn($c) => $c->value, $dto->channels),
+            'channels' => array_map(fn ($c) => $c->value, $dto->channels),
         ]);
 
         // Verify recipient exists
         $user = UserModel::find($dto->recipientId);
         if (! $user) {
             throw new \InvalidArgumentException(
-                __("notification.errors.user_not_found", ['id' => $dto->recipientId])
+                __('notifications.errors.user_not_found', ['id' => $dto->recipientId])
             );
         }
 
         // Create content value object
         $content = new NotificationContent(
-            title: $dto->title,
-            body: $dto->message,
-            actionLabel: $dto->actionLabel,
-            actionUrl: $dto->actionUrl
+            $dto->title,
+            $dto->message,
+            $dto->actionLabel,
+            $dto->actionUrl
         );
 
         // Create immutable notification entity
         $entity = new NotificationEntity(
-            id: uniqid('notif_', true),
-            recipientId: $dto->recipientId,
-            type: $dto->type,
-            priority: $dto->priority,
-            category: $dto->category,
-            content: $content,
-            metadata: $dto->metadata,
-            createdAt: now()
+            $this->generateNotificationId(),
+            $dto->recipientId,
+            $dto->type,
+            $dto->priority,
+            $dto->category,
+            $content,
+            null,           // ← Explicitly null
+            null,        // ← Explicitly null
+            now(),       // ← Carbon instance
+            $dto->metadata // ← Array in correct position
         );
 
         // Persist entity
@@ -81,9 +70,9 @@ class NotificationService
         // Dispatch notifications to channels asynchronously
         foreach ($dto->channels as $channel) {
             DispatchNotificationJob::dispatch(
-                notificationId: $savedEntity->getId(),
-                channel: $channel,
-                locale: $user->locale ?? 'fa'
+                $savedEntity->getId(),
+                $channel->value,
+                $user->locale ?? 'en'
             )->onQueue('notifications');
         }
 
@@ -95,13 +84,27 @@ class NotificationService
     }
 
     /**
+     * Generate a valid UUID for notification ID.
+     */
+    private function generateNotificationId(): string
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0x0FFF) | 0x4000,
+            mt_rand(0, 0x3FFF) | 0x8000,
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF)
+        );
+    }
+
+    /**
      * Retrieve notifications for a user with optional filters.
      *
-     * @param int $userId
-     * @param NotificationFilterDTO|null $filters
-     * @param int $page Pagination page (not applied here, left for infrastructure)
-     * @param int $perPage Pagination size (not applied here, left for infrastructure)
-     * @return NotificationEntity[]
+     * @return array<int, NotificationEntity>
      */
     public function getUserNotifications(
         int $userId,

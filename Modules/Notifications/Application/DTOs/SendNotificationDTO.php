@@ -68,6 +68,9 @@ class SendNotificationDTO extends DataTransferObject
      * - Channel (DATABASE)
      * - Priority (MEDIUM)
      * - Category (SYSTEM)
+     *
+     * @param  array<NotificationChannel>  $channels
+     * @param  array<string, mixed>|null  $metadata
      */
     public static function forUser(
         int $userId,
@@ -83,15 +86,15 @@ class SendNotificationDTO extends DataTransferObject
     ): self {
         return new self([
             'recipientId' => $userId,
-            'type'        => $type,
-            'priority'    => $priority,
-            'category'    => $category,
-            'title'       => $title,
-            'message'     => $message,
-            'channels'    => $channels,
-            'actionUrl'   => $actionUrl,
+            'type' => $type,
+            'priority' => $priority,
+            'category' => $category,
+            'title' => $title,
+            'message' => $message,
+            'channels' => $channels,
+            'actionUrl' => $actionUrl,
             'actionLabel' => $actionLabel,
-            'metadata'    => $metadata,
+            'metadata' => $metadata,
         ]);
     }
 
@@ -102,23 +105,25 @@ class SendNotificationDTO extends DataTransferObject
      * - Job dispatching
      * - Logging
      * - Infrastructure adapters
+     *
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
         return [
             'recipient_id' => $this->recipientId,
-            'type'         => $this->type->value,
-            'priority'     => $this->priority->value,
-            'category'     => $this->category->value,
-            'title'        => $this->title,
-            'message'      => $this->message,
-            'channels'     => array_map(
-                fn(NotificationChannel $channel) => $channel->value,
+            'type' => $this->type->value,
+            'priority' => $this->priority->value,
+            'category' => $this->category->value,
+            'title' => $this->title,
+            'message' => $this->message,
+            'channels' => array_map(
+                fn (NotificationChannel $channel) => $channel->value,
                 $this->channels
             ),
-            'action_url'   => $this->actionUrl,
+            'action_url' => $this->actionUrl,
             'action_label' => $this->actionLabel,
-            'metadata'     => $this->metadata,
+            'metadata' => $this->metadata,
         ];
     }
 }

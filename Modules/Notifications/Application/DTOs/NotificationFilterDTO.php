@@ -42,6 +42,8 @@ class NotificationFilterDTO extends DataTransferObject
      * Create DTO instance from request payload.
      *
      * Safely converts string values into domain enums.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromRequest(array $data): self
     {
@@ -63,7 +65,7 @@ class NotificationFilterDTO extends DataTransferObject
                 : null,
 
             'startDate' => $data['start_date'] ?? null,
-            'endDate'   => $data['end_date'] ?? null,
+            'endDate' => $data['end_date'] ?? null,
         ]);
     }
 
@@ -73,19 +75,21 @@ class NotificationFilterDTO extends DataTransferObject
      * Notes:
      * - Preserves boolean false values.
      * - Removes only null values.
+     *
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
         return array_filter(
             [
-                'type'        => $this->type?->value,
-                'category'    => $this->category?->value,
+                'type' => $this->type?->value,
+                'category' => $this->category?->value,
                 'unread_only' => $this->unreadOnly,
-                'limit'       => $this->limit,
-                'start_date'  => $this->startDate,
-                'end_date'    => $this->endDate,
+                'limit' => $this->limit,
+                'start_date' => $this->startDate,
+                'end_date' => $this->endDate,
             ],
-            fn($value) => $value !== null
+            fn ($value) => $value !== null
         );
     }
 }
