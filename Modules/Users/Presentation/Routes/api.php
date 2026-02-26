@@ -94,7 +94,7 @@ Route::prefix('v1')
                 |
                 */
 
-                Route::prefix('user')
+                Route::prefix('auth')
                     ->name('profile.')
                     ->group(function () {
 

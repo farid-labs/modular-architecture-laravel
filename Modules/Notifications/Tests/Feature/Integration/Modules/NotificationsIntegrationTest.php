@@ -6,7 +6,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Modules\Notifications\Infrastructure\Jobs\DispatchNotificationJob;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -15,7 +14,6 @@ use Tests\TestCase;
  * Ensures that the Users module triggers the Notifications module correctly
  * when a user is registered.
  */
-#[CoversClass(NotificationsIntegrationTest::class)]
 class NotificationsIntegrationTest extends TestCase
 {
     use RefreshDatabase;
