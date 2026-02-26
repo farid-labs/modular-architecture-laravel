@@ -6,10 +6,14 @@ use Carbon\Carbon;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Domain\Enums\WorkspaceStatus;
 use Modules\Workspace\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(WorkspaceEntityTest::class)]
 class WorkspaceEntityTest extends TestCase
 {
     // Test that a WorkspaceEntity can be created and its properties are correctly set
+    #[Test]
     public function test_workspace_entity_can_be_created(): void
     {
         $now = Carbon::now();
@@ -34,6 +38,7 @@ class WorkspaceEntityTest extends TestCase
     }
 
     // Test that the withName method returns a new instance with updated name and slug, without modifying the original
+    #[Test]
     public function test_with_name_returns_new_instance_with_updated_values(): void
     {
         $now = Carbon::now();

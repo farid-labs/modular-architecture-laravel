@@ -5,13 +5,17 @@ namespace Modules\Workspace\Tests\Unit\Domain\Entities;
 use Modules\Workspace\Domain\Entities\ProjectEntity;
 use Modules\Workspace\Domain\Enums\ProjectStatus;
 use Modules\Workspace\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(ProjectEntityTest::class)]
 class ProjectEntityTest extends TestCase
 {
     /**
      * Test that a ProjectEntity can be properly instantiated
      * and that getters return the correct values.
      */
+    #[Test]
     public function test_project_entity_can_be_created(): void
     {
         $project = new ProjectEntity(
@@ -34,6 +38,7 @@ class ProjectEntityTest extends TestCase
      * Test the status helper methods (isActive, isCompleted, isArchived)
      * for each possible ProjectStatus enum value.
      */
+    #[Test]
     public function test_project_status_methods(): void
     {
         $active = new ProjectEntity(1, 'Test', null, 1, ProjectStatus::ACTIVE);

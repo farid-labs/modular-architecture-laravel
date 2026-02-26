@@ -4,13 +4,17 @@ namespace Modules\Workspace\Tests\Unit\Domain\Entities;
 
 use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(TaskCommentEntityTest::class)]
 class TaskCommentEntityTest extends TestCase
 {
     /**
      * Ensure that the entity is immutable in practice.
      * All getters return the expected values.
      */
+    #[Test]
     public function test_task_comment_entity_is_immutable(): void
     {
         $comment = new TaskCommentEntity(1, 10, 5, 'Great work!');
@@ -24,6 +28,7 @@ class TaskCommentEntityTest extends TestCase
     /**
      * Updating the comment should return a new instance, not mutate the original.
      */
+    #[Test]
     public function test_update_comment_returns_new_instance(): void
     {
         $original = new TaskCommentEntity(1, 10, 5, 'Old comment');

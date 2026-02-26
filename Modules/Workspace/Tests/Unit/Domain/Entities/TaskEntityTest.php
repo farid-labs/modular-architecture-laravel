@@ -8,10 +8,14 @@ use Modules\Workspace\Domain\Enums\TaskPriority;
 use Modules\Workspace\Domain\Enums\TaskStatus;
 use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 use Modules\Workspace\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(TaskEntityTest::class)]
 class TaskEntityTest extends TestCase
 {
     // Test that a TaskEntity can be created and all properties are correctly set
+    #[Test]
     public function test_task_entity_can_be_created(): void
     {
         $task = new TaskEntity(
@@ -36,6 +40,7 @@ class TaskEntityTest extends TestCase
     }
 
     // Test that marking a task as completed returns a new instance with updated status
+    #[Test]
     public function test_task_can_be_marked_as_completed(): void
     {
         $task = new TaskEntity(
@@ -59,6 +64,7 @@ class TaskEntityTest extends TestCase
     }
 
     // Test that a task is considered overdue when the due date has passed and it is not completed
+    #[Test]
     public function test_task_is_overdue_when_due_date_passed_and_not_completed(): void
     {
         $task = new TaskEntity(
@@ -76,6 +82,7 @@ class TaskEntityTest extends TestCase
     }
 
     // Test that a completed task is never considered overdue
+    #[Test]
     public function test_task_is_not_overdue_when_completed(): void
     {
         $task = new TaskEntity(
@@ -93,6 +100,7 @@ class TaskEntityTest extends TestCase
     }
 
     // Test that a task with a future due date is not overdue
+    #[Test]
     public function test_task_is_not_overdue_when_due_date_in_future(): void
     {
         $task = new TaskEntity(
@@ -110,6 +118,7 @@ class TaskEntityTest extends TestCase
     }
 
     // Test that the TaskEntity can be converted to an array representation correctly
+    #[Test]
     public function test_task_can_be_converted_to_array(): void
     {
         $task = new TaskEntity(
@@ -133,6 +142,7 @@ class TaskEntityTest extends TestCase
     }
 
     // Test the behavior when optional fields are null
+    #[Test]
     public function test_task_with_null_fields(): void
     {
         $task = new TaskEntity(

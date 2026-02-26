@@ -16,7 +16,10 @@ use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
 use Modules\Workspace\Domain\ValueObjects\TaskTitle;
 use Modules\Workspace\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(WorkspaceServiceTest::class)]
 class WorkspaceServiceTest extends TestCase
 {
     protected WorkspaceRepositoryInterface&MockInterface $repository;
@@ -51,6 +54,7 @@ class WorkspaceServiceTest extends TestCase
     /**
      * Test creating a task with valid data
      */
+    #[Test]
     public function test_create_task_with_valid_data(): void
     {
         $taskDTO = TaskDTO::fromArray([
@@ -104,6 +108,7 @@ class WorkspaceServiceTest extends TestCase
     /**
      * Test completing a task successfully
      */
+    #[Test]
     public function test_complete_task_successfully(): void
     {
         $taskId = 1;
@@ -150,6 +155,7 @@ class WorkspaceServiceTest extends TestCase
     /**
      * Test that completing a task fails if user is not a member
      */
+    #[Test]
     public function test_cannot_complete_task_if_not_member_of_project(): void
     {
         $this->expectException(AuthorizationException::class);
@@ -187,6 +193,7 @@ class WorkspaceServiceTest extends TestCase
     /**
      * Test that creating a task fails if due date is in the past
      */
+    #[Test]
     public function test_cannot_create_task_with_past_due_date(): void
     {
         $this->expectException(AuthorizationException::class);

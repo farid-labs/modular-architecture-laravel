@@ -31,15 +31,15 @@ class TaskAttachmentEntityTest extends TestCase
         $now = Carbon::now();
 
         $attachment = new TaskAttachmentEntity(
-            id: 1,
-            taskId: 10,
-            uploadedBy: 5,
-            mimeType: 'application/pdf',
-            fileSize: new FileSize(102400),  // Wrap int in FileSize VO
-            createdAt: $now,
-            updatedAt: $now,
-            fileName: new FileName('document.pdf'),
-            filePath: new FilePath('task-attachments/document.pdf')
+            1,
+            10,
+            5,
+            'application/pdf',
+            new FileSize(102400),  // Wrap int in FileSize VO
+            $now,
+            $now,
+            new FileName('document.pdf'),
+            new FilePath('task-attachments/document.pdf')
         );
 
         $this->assertEquals(1, $attachment->getId());
@@ -60,15 +60,15 @@ class TaskAttachmentEntityTest extends TestCase
         $now = Carbon::now();
 
         $attachment = new TaskAttachmentEntity(
-            id: 1,
-            taskId: 10,
-            uploadedBy: 5,
-            mimeType: 'image/jpeg',
-            fileSize: new FileSize(204800),  //  Wrap int in FileSize VO
-            createdAt: $now,
-            updatedAt: $now,
-            fileName: new FileName('image.jpg'),
-            filePath: new FilePath('task-attachments/image.jpg')
+            1,
+            10,
+            5,
+            'image/jpeg',
+            new FileSize(204800),  //  Wrap int in FileSize VO
+            $now,
+            $now,
+            new FileName('image.jpg'),
+            new FilePath('task-attachments/image.jpg')
         );
 
         $array = $attachment->toArray();
