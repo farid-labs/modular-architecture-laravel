@@ -8,7 +8,14 @@ use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Users\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+/**
+ * Feature tests for UserController API endpoints.
+ * Covers CRUD operations, self-management, and permission checks.
+ */
+#[CoversClass(UserControllerTest::class)]
 class UserControllerTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
@@ -19,7 +26,7 @@ class UserControllerTest extends TestCase
     }
 
     /**
-     * Authenticate a user (helper)
+     * Helper: Authenticate a user (optionally as admin).
      */
     protected function authenticate(bool $admin = false): UserModel
     {
@@ -36,30 +43,32 @@ class UserControllerTest extends TestCase
         return $user;
     }
 
+    #[Test]
     public function test_can_list_users(): void
     {
-        $auth = $this->authenticate();
+        // Admin authentication assumed for listing users
+        $this->authenticate(admin: true);
+
+        // Arrange: create additional users
         UserModel::factory()->count(3)->create();
 
-        $this->getJson('/v1/users')
+        $this->getJson(route('users.admin.index'))
             ->assertOk()
-            ->assertJsonCount(4, 'data');
+            ->assertJsonCount(4, 'data'); // 3 + 1 admin
     }
 
+    #[Test]
     public function test_can_show_single_user(): void
     {
-        $this->authenticate(admin: true); // Admin can view any user
+        // Admin can view any user
+        $this->authenticate(admin: true);
 
-        // Create factory user with explicit, predictable values
-        $user = UserModel::create([
+        $user = UserModel::factory()->create([
             'name' => 'John Doe',
             'email' => 'john.doe@example.com',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-            'is_admin' => false,
         ]);
 
-        $this->getJson("/v1/users/{$user->id}")
+        $this->getJson(route('users.admin.show', ['user' => $user->id]))
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -70,9 +79,10 @@ class UserControllerTest extends TestCase
             ]);
     }
 
+    #[Test]
     public function test_can_create_user(): void
     {
-        $this->authenticate();
+        $this->authenticate(admin: true);
 
         $data = [
             'name' => $this->faker->name(),
@@ -80,19 +90,21 @@ class UserControllerTest extends TestCase
             'password' => 'password123',
         ];
 
-        $this->postJson('/v1/users', $data)
+        $this->postJson(route('users.admin.store'), $data)
             ->assertCreated()
             ->assertJson(['data' => ['email' => $data['email']]]);
 
         $this->assertDatabaseHas('users', ['email' => $data['email']]);
     }
 
+    #[Test]
     public function test_cannot_create_user_with_existing_email(): void
     {
-        $this->authenticate();
+        $this->authenticate(admin: true);
+
         $existing = UserModel::factory()->create();
 
-        $this->postJson('/v1/users', [
+        $this->postJson(route('users.admin.store'), [
             'name' => $this->faker->name(),
             'email' => $existing->email,
             'password' => 'password123',
@@ -100,11 +112,12 @@ class UserControllerTest extends TestCase
             ->assertJsonValidationErrors('email');
     }
 
+    #[Test]
     public function test_can_update_own_user(): void
     {
         $auth = $this->authenticate();
 
-        $this->putJson("/v1/users/{$auth->id}", [
+        $this->putJson(route('users.admin.update', ['user' => $auth->id]), [
             'name' => 'My New Name',
             'email' => $this->faker->unique()->safeEmail(),
         ])->assertOk();
@@ -115,54 +128,61 @@ class UserControllerTest extends TestCase
         ]);
     }
 
+    #[Test]
     public function test_cannot_update_other_user_without_permission(): void
     {
         $this->authenticate();
         $other = UserModel::factory()->create();
 
-        $this->putJson("/v1/users/{$other->id}", [
-            'name' => 'Hacked',
+        $this->putJson(route('users.admin.update', ['user' => $other->id]), [
+            'name' => 'Hacked Name',
             'email' => $this->faker->unique()->safeEmail(),
         ])->assertForbidden();
     }
 
+    #[Test]
     public function test_can_delete_own_user(): void
     {
         $auth = $this->authenticate();
 
-        $this->deleteJson("/v1/users/{$auth->id}")
+        $this->deleteJson(route('users.admin.destroy', ['user' => $auth->id]))
             ->assertOk();
     }
 
+    #[Test]
     public function test_cannot_delete_other_user_without_permission(): void
     {
         $this->authenticate();
         $other = UserModel::factory()->create();
 
-        $this->deleteJson("/v1/users/{$other->id}")
+        $this->deleteJson(route('users.admin.destroy', ['user' => $other->id]))
             ->assertForbidden();
     }
 
+    #[Test]
     public function test_unauthenticated_user_cannot_access_protected_routes(): void
     {
-        $this->getJson('/v1/users')
+        $this->getJson(route('users.admin.index'))
             ->assertUnauthorized();
     }
 
+    #[Test]
     public function test_can_show_own_user(): void
     {
         $auth = $this->authenticate();
 
-        $this->getJson("/v1/users/{$auth->id}")
+        // Self access test via admin route (assuming policy allows self)
+        $this->getJson(route('users.admin.show', ['user' => $auth->id]))
             ->assertOk();
     }
 
+    #[Test]
     public function test_cannot_show_other_user_without_permission(): void
     {
         $this->authenticate();
         $other = UserModel::factory()->create();
 
-        $this->getJson("/v1/users/{$other->id}")
+        $this->getJson(route('users.admin.show', ['user' => $other->id]))
             ->assertForbidden();
     }
 }

@@ -5,12 +5,15 @@ namespace Modules\Users\Tests\Unit\Application\Services;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Mockery;
+use Modules\Users\Application\DTOs\UserDTO;
 use Modules\Users\Application\Services\CachedUserService;
 use Modules\Users\Application\Services\UserService;
 use Modules\Users\Domain\Entities\UserEntity;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
 use Modules\Users\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Class CachedUserServiceTest
@@ -18,12 +21,12 @@ use Modules\Users\Tests\TestCase;
  * Unit tests for CachedUserService.
  * Verifies caching behavior: first call hits service, subsequent calls hit cache.
  */
+#[CoversClass(CachedUserServiceTest::class)]
 class CachedUserServiceTest extends TestCase
 {
     /** @var UserService|Mockery\MockInterface */
     protected UserService $userServiceMock;
 
-    /** @var CachedUserService */
     protected CachedUserService $cachedService;
 
     protected function setUp(): void
@@ -51,18 +54,19 @@ class CachedUserServiceTest extends TestCase
     protected function createMockEntity(int $id = 1): UserEntity
     {
         $now = CarbonImmutable::now();
+
         return new UserEntity(
-            id: $id,
-            name: new Name('Test User'),
-            email: new Email('test@example.com'),
-            emailVerifiedAt: $now,
-            createdAt: $now,
-            updatedAt: $now,
-            isAdmin: false
+            $id,
+            new Name('Test User'),
+            new Email('test@example.com'),
+            $now,
+            $now,
+            $now,
+            false
         );
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function get_user_by_id_uses_cache_on_second_call(): void
     {
         // Arrange
@@ -90,12 +94,12 @@ class CachedUserServiceTest extends TestCase
         // $this->assertTrue(Cache::has($cacheKey));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function update_user_invalidates_cache(): void
     {
         // Arrange
         Cache::flush();
-        $fakeDto = new \Modules\Users\Application\DTOs\UserDTO(['name' => 'Updated', 'email' => 'new@example.com']);
+        $fakeDto = new UserDTO(['name' => 'Updated', 'email' => 'new@example.com']);
         $fakeEntity = $this->createMockEntity();
 
         // Mock the underlying service call for update

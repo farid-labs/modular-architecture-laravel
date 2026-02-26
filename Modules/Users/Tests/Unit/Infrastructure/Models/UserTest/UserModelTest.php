@@ -4,9 +4,13 @@ namespace Modules\Users\Tests\Unit\Infrastructure\Models\UserTest;
 
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Users\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(UserModelTest::class)]
 class UserModelTest extends TestCase
 {
+    #[Test]
     public function test_user_model_can_be_created(): void
     {
         $model = new UserModel;
@@ -17,6 +21,7 @@ class UserModelTest extends TestCase
         $this->assertEquals('john@example.com', $model->email);
     }
 
+    #[Test]
     public function test_user_model_is_admin_attribute(): void
     {
         $model = new UserModel;

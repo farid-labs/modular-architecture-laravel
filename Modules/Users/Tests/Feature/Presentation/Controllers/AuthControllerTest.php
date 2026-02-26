@@ -1,35 +1,29 @@
 <?php
 
-namespace Tests\Feature\Presentation\Controllers;
+namespace Modules\Users\Tests\Feature\Presentation\Controllers;
 
-use PHPUnit\Framework\Attributes\Test;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
-use Modules\Users\Infrastructure\Jobs\SendWelcomeEmail;
+use Modules\Notifications\Infrastructure\Jobs\DispatchNotificationJob;
+use Modules\Users\Domain\Events\UserCreated;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 use Modules\Users\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
- * Class AuthControllerTest
- *
- * Feature tests for user registration endpoint.
- *
- * Verifies that:
- * - Registration endpoint returns HTTP 201
- * - JSON response contains expected structure
- * - Welcome email job is dispatched
- * - User is persisted in database
+ * Feature tests for AuthController.
+ * Covers user registration and dispatching of welcome email notifications.
  */
+#[CoversClass(AuthControllerTest::class)]
 class AuthControllerTest extends TestCase
 {
-    /**
-     * Ensure that successful registration:
-     * 1. Dispatches SendWelcomeEmail job
-     * 2. Returns authentication token
-     * 3. Persists user in database
-     */
     #[Test]
     public function registration_dispatches_welcome_job_and_returns_token(): void
     {
+        // Arrange: Fake queue and event system
         Queue::fake();
+        // Event::fake([UserCreated::class]); // ← REMOVE THIS LINE
 
         $payload = [
             'name' => 'Test User',
@@ -38,21 +32,25 @@ class AuthControllerTest extends TestCase
             'password_confirmation' => 'password123',
         ];
 
-        $response = $this->postJson('/v1/auth/register', $payload);
+        $response = $this->postJson(route('users.auth.register'), $payload);
 
         $response->assertCreated()
             ->assertJsonStructure([
                 'data' => ['id', 'email'],
-                'token'
+                'token',
             ]);
 
-        Queue::assertPushed(SendWelcomeEmail::class, function ($job) {
-            return $job->userId === 1;
-            // Better: fetch user by email instead of hardcoding ID (see improvement below)
+        $user = UserModel::where('email', 'test@example.com')->first();
+        $this->assertNotNull($user);
+
+        // DispatchNotificationJob has: notificationId, channel, locale (NOT recipientId)
+        Queue::assertPushed(DispatchNotificationJob::class, function ($job) {
+            return $job->notificationId !== null
+                && $job->channel !== null;
         });
 
         $this->assertDatabaseHas('users', [
-            'email' => 'test@example.com'
+            'email' => 'test@example.com',
         ]);
     }
 }

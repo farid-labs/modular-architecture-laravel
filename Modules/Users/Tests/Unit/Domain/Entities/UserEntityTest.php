@@ -7,9 +7,13 @@ use Modules\Users\Domain\Entities\UserEntity;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
 use Modules\Users\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(UserEntityTest::class)]
 class UserEntityTest extends TestCase
 {
+    #[Test]
     public function test_user_entity_can_be_created(): void
     {
         $now = CarbonImmutable::now();
@@ -29,6 +33,7 @@ class UserEntityTest extends TestCase
         $this->assertFalse($entity->isActive()); // emailVerifiedAt = null
     }
 
+    #[Test]
     public function test_user_entity_is_active_when_email_verified(): void
     {
         $now = CarbonImmutable::now();
@@ -45,6 +50,7 @@ class UserEntityTest extends TestCase
         $this->assertTrue($entity->isActive());
     }
 
+    #[Test]
     public function test_user_entity_update_name(): void
     {
         $now = CarbonImmutable::now();

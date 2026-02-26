@@ -12,7 +12,10 @@ use Modules\Users\Domain\Repositories\UserRepositoryInterface;
 use Modules\Users\Domain\ValueObjects\Email;
 use Modules\Users\Domain\ValueObjects\Name;
 use Modules\Users\Tests\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
+#[CoversClass(UserServiceTest::class)]
 class UserServiceTest extends TestCase
 {
     protected UserRepositoryInterface&MockInterface $userRepository;
@@ -32,6 +35,7 @@ class UserServiceTest extends TestCase
         parent::tearDown();
     }
 
+    #[Test]
     public function test_create_user_calls_repository(): void
     {
         $userDTO = UserDTO::fromArray([
@@ -67,6 +71,7 @@ class UserServiceTest extends TestCase
         $this->assertSame($entity, $result);
     }
 
+    #[Test]
     public function test_get_user_by_id_returns_user(): void
     {
         $now = CarbonImmutable::now();
@@ -90,6 +95,7 @@ class UserServiceTest extends TestCase
         $this->assertEquals($entity, $result);
     }
 
+    #[Test]
     public function test_get_user_by_id_throws_exception_when_not_found(): void
     {
         $this->expectException(UserNotFoundException::class);
