@@ -39,6 +39,7 @@ return [
         'message_required' => 'The notification message is required.',
         'message_max' => 'The notification message may not exceed :max characters.',
         'channel_invalid' => 'The specified notification channel is invalid.',
+
     ],
 
     'created' => 'Notification has been created successfully.',
@@ -48,7 +49,8 @@ return [
     'all_marked_read' => 'All notifications marked as read.',
     'unread_count_retrieved' => 'Unread notification count retrieved successfully.',
     'not_found' => 'Notification not found.',
-
+    'not_found_or_unauthorized' => 'Notification not found or you do not have permission to access it',
+    'invalid_id_format' => 'Invalid notification ID format',
     // Test-specific translations
     'test_title' => 'Test Notification',
     'test_message' => 'This is a test notification message.',
