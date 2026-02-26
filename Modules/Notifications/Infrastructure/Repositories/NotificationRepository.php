@@ -10,36 +10,23 @@ use Modules\Notifications\Domain\Enums\NotificationType;
 use Modules\Notifications\Domain\Repositories\NotificationRepositoryInterface;
 use Modules\Notifications\Domain\ValueObjects\NotificationContent;
 use Modules\Notifications\Infrastructure\Persistence\Models\NotificationModel;
-use Illuminate\Support\Collection;
+use Modules\Users\Infrastructure\Persistence\Models\UserModel;
 
 /**
  * Repository: NotificationRepository
  *
  * Eloquent implementation of NotificationRepositoryInterface.
  * Handles all database operations for notifications.
- *
- * Responsibilities:
- * - Map database models to domain entities
- * - Apply filters, pagination, and soft deletes
- * - Maintain domain purity by returning NotificationEntity
  */
 class NotificationRepository implements NotificationRepositoryInterface
 {
     public function findById(string $id): ?NotificationEntity
     {
         $model = NotificationModel::find($id);
+
         return $model ? $this->mapToEntity($model) : null;
     }
 
-    /**
-     * Find notifications for a recipient with optional filters.
-     *
-     * @param int $recipientId
-     * @param NotificationFilterDTO|null $filters
-     * @param int $page
-     * @param int $perPage
-     * @return NotificationEntity[]
-     */
     public function findByRecipientId(
         int $recipientId,
         ?NotificationFilterDTO $filters = null,
@@ -47,7 +34,7 @@ class NotificationRepository implements NotificationRepositoryInterface
         int $perPage = 15
     ): array {
         $query = NotificationModel::query()
-            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $recipientId)
             ->whereNull('deleted_at');
 
@@ -72,13 +59,13 @@ class NotificationRepository implements NotificationRepositoryInterface
         $models = $query->orderBy('created_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        return $models->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $models->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function findUnreadByRecipientId(int $recipientId, ?int $limit = null): array
     {
         $query = NotificationModel::query()
-            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $recipientId)
             ->whereNull('read_at')
             ->whereNull('deleted_at')
@@ -88,13 +75,13 @@ class NotificationRepository implements NotificationRepositoryInterface
             $query->limit($limit);
         }
 
-        return $query->get()->map(fn($m) => $this->mapToEntity($m))->toArray();
+        return $query->get()->map(fn ($m) => $this->mapToEntity($m))->toArray();
     }
 
     public function countUnreadByRecipientId(int $recipientId): int
     {
         return NotificationModel::query()
-            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $recipientId)
             ->whereNull('read_at')
             ->whereNull('deleted_at')
@@ -108,12 +95,12 @@ class NotificationRepository implements NotificationRepositoryInterface
             'type' => $entity->getType()->value,
             'priority' => $entity->getPriority()->value,
             'category' => $entity->getCategory()->value,
-            'notifiable_type' => 'App\\Models\\User',
+            'notifiable_type' => UserModel::class, // FIX: Use UserModel::class instead of hardcoded string
             'notifiable_id' => $entity->getRecipientId(),
             'data' => $entity->getContent()->toArray(),
             'read_at' => $entity->getReadAt()?->toDateTimeString(),
             'deleted_at' => $entity->getDeletedAt()?->toDateTimeString(),
-            'locale' => 'fa',
+            'locale' => 'en',
             'channels' => ['database'],
             'created_at' => $entity->getCreatedAt()?->toDateTimeString(),
             'updated_at' => now()->toDateTimeString(),
@@ -128,7 +115,7 @@ class NotificationRepository implements NotificationRepositoryInterface
     {
         $affected = NotificationModel::query()
             ->where('id', $id)
-            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $recipientId)
             ->whereNull('deleted_at')
             ->update(['read_at' => now()]);
@@ -139,7 +126,7 @@ class NotificationRepository implements NotificationRepositoryInterface
     public function markAllAsRead(int $recipientId): int
     {
         return NotificationModel::query()
-            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $recipientId)
             ->whereNull('read_at')
             ->whereNull('deleted_at')
@@ -150,7 +137,7 @@ class NotificationRepository implements NotificationRepositoryInterface
     {
         $affected = NotificationModel::query()
             ->where('id', $id)
-            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $recipientId)
             ->update(['deleted_at' => now()]);
 
@@ -160,37 +147,31 @@ class NotificationRepository implements NotificationRepositoryInterface
     public function deleteAllForRecipient(int $recipientId): int
     {
         return NotificationModel::query()
-            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('notifiable_type', UserModel::class)
             ->where('notifiable_id', $recipientId)
             ->update(['deleted_at' => now()]);
     }
 
-    /**
-     * Map an Eloquent model to a domain NotificationEntity.
-     *
-     * @param NotificationModel $model
-     * @return NotificationEntity
-     */
     private function mapToEntity(NotificationModel $model): NotificationEntity
     {
         $data = $model->data ?? [];
 
         return new NotificationEntity(
-            id: $model->id,
-            recipientId: $model->notifiable_id,
-            type: NotificationType::from($model->type ?? 'info'),
-            priority: NotificationPriority::from($model->priority ?? 'medium'),
-            category: NotificationCategory::from($model->category ?? 'system'),
-            content: new NotificationContent(
-                title: $data['title'] ?? 'Notification',
-                body: $data['message'] ?? '',
-                actionLabel: $data['action_label'] ?? null,
-                actionUrl: $data['action_url'] ?? null
+            $model->id,
+            $model->notifiable_id,
+            NotificationType::from($model->type ?? 'info'),
+            NotificationPriority::from($model->priority ?? 'medium'),
+            NotificationCategory::from($model->category ?? 'system'),
+            new NotificationContent(
+                $data['title'] ?? 'Notification',
+                $data['message'] ?? '',
+                $data['action_label'] ?? null,
+                $data['action_url'] ?? null
             ),
-            readAt: $model->read_at,
-            deletedAt: $model->deleted_at,
-            createdAt: $model->created_at,
-            metadata: $data['metadata'] ?? null
+            $model->read_at,
+            $model->deleted_at,
+            $model->created_at,
+            $data['metadata'] ?? null
         );
     }
 }

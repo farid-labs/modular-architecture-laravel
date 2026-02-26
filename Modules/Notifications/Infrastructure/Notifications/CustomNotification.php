@@ -4,8 +4,8 @@ namespace Modules\Notifications\Infrastructure\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
 use Modules\Notifications\Domain\Enums\NotificationPriority;
@@ -23,48 +23,158 @@ use Modules\Notifications\Domain\Enums\NotificationType;
  * - Encapsulates presentation logic (email, broadcast, DB payloads)
  * - Domain layer provides NotificationType, Priority, Channels
  * - Fully queueable with ShouldQueue
- *
- * @package Modules\Notifications\Infrastructure\Notifications
  */
 class CustomNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     /**
+     * Notification title
+     */
+    private string $title;
+
+    /**
+     * Notification message
+     */
+    private string $message;
+
+    /**
+     * Delivery channels
+     *
+     * @var NotificationChannel[]
+     */
+    private array $channels;
+
+    /**
+     * Optional action URL
+     */
+    private ?string $actionUrl;
+
+    /**
+     * Optional metadata payload
+     *
+     * @var array<string, mixed>|null
+     */
+    private ?array $metadata;
+
+    /**
+     * Notification type
+     */
+    private NotificationType $type;
+
+    /**
+     * Notification priority
+     */
+    private NotificationPriority $priority;
+
+    /**
+     * Locale for localization (use parent property)
+     */
+    private string $notificationLocale;
+
+    /**
      * Create a new notification instance.
      *
-     * @param NotificationType $type Domain notification type
-     * @param string $title Notification title
-     * @param string $message Notification message
-     * @param NotificationChannel[] $channels Delivery channels
-     * @param string|null $actionUrl Optional action URL
-     * @param array|null $metadata Optional metadata
-     * @param NotificationPriority $priority Priority for badge/ordering
-     * @param string $locale Locale for localization
+     * @param  NotificationType  $type  Domain notification type
+     * @param  string  $title  Notification title
+     * @param  string  $message  Notification message
+     * @param  NotificationChannel[]  $channels  Delivery channels
+     * @param  string|null  $actionUrl  Optional action URL
+     * @param  array<string, mixed>|null  $metadata  Optional metadata
+     * @param  NotificationPriority  $priority  Priority for badge/ordering
+     * @param  string  $locale  Locale for localization
      */
     public function __construct(
-        private NotificationType $type,
-        private string $title,
-        private string $message,
-        private array $channels = [NotificationChannel::DATABASE],
-        private ?string $actionUrl = null,
-        private ?array $metadata = null,
-        private NotificationPriority $priority = NotificationPriority::MEDIUM,
-        private string $locale = 'fa'
+        NotificationType $type,
+        string $title,
+        string $message,
+        array $channels = [NotificationChannel::DATABASE],
+        ?string $actionUrl = null,
+        ?array $metadata = null,
+        NotificationPriority $priority = NotificationPriority::MEDIUM,
+        string $locale = 'en'
     ) {
+        $this->type = $type;
+        $this->title = $title;
+        $this->message = $message;
+        $this->channels = $channels;
+        $this->actionUrl = $actionUrl;
+        $this->metadata = $metadata;
+        $this->priority = $priority;
+        $this->notificationLocale = $locale;
+
         $this->onQueue('notifications');
         $this->afterCommit();
     }
 
     /**
+     * Get notification title.
+     */
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    /**
+     * Get notification message.
+     */
+    public function getMessage(): string
+    {
+        return $this->message;
+    }
+
+    /**
+     * Get notification type.
+     */
+    public function getType(): NotificationType
+    {
+        return $this->type;
+    }
+
+    /**
+     * Get notification priority.
+     */
+    public function getPriority(): NotificationPriority
+    {
+        return $this->priority;
+    }
+
+    /**
+     * Get delivery channels.
+     *
+     * @return NotificationChannel[]
+     */
+    public function getChannels(): array
+    {
+        return $this->channels;
+    }
+
+    /**
+     * Get action URL.
+     */
+    public function getActionUrl(): ?string
+    {
+        return $this->actionUrl;
+    }
+
+    /**
+     * Get metadata.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getMetadata(): ?array
+    {
+        return $this->metadata;
+    }
+
+    /**
      * Determine which channels the notification should be sent through.
      *
-     * @param object $notifiable
      * @return array<string>
      */
     public function via(object $notifiable): array
     {
-        return array_map(fn(NotificationChannel $c) => match ($c) {
+        return array_map(fn (NotificationChannel $c) => match ($c) {
             NotificationChannel::DATABASE => 'database',
             NotificationChannel::EMAIL => 'mail',
             NotificationChannel::SMS => 'vonage',
@@ -76,17 +186,16 @@ class CustomNotification extends Notification implements ShouldQueue
      * Transform notification for email delivery.
      *
      * Uses MailMessage and respects the locale.
-     *
-     * @param object $notifiable
-     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {
         $mail = (new MailMessage)
             ->subject($this->title)
             ->greeting($this->getGreeting())
-            ->line($this->message)
-            ->locale($this->locale);
+            ->line($this->message);
+
+        // FIX: Set locale on mail message using parent property
+        $this->locale = $this->notificationLocale;
 
         if ($this->actionUrl) {
             $mail->action(
@@ -105,7 +214,6 @@ class CustomNotification extends Notification implements ShouldQueue
     /**
      * Transform notification for database storage.
      *
-     * @param object $notifiable
      * @return array<string, mixed>
      */
     public function toDatabase(object $notifiable): array
@@ -124,14 +232,11 @@ class CustomNotification extends Notification implements ShouldQueue
 
     /**
      * Transform notification for broadcasting (push).
-     *
-     * @param object $notifiable
-     * @return BroadcastMessage
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
         return new BroadcastMessage([
-            'id' => $this->id ?? uniqid(),
+            'id' => uniqid(),
             'type' => $this->type->value,
             'priority' => $this->priority->value,
             'title' => $this->title,
@@ -146,8 +251,6 @@ class CustomNotification extends Notification implements ShouldQueue
 
     /**
      * Get a localized greeting based on NotificationType.
-     *
-     * @return string
      */
     private function getGreeting(): string
     {

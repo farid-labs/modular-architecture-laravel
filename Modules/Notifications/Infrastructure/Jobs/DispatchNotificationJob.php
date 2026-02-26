@@ -9,6 +9,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
+use Modules\Notifications\Domain\Enums\NotificationPriority;
+use Modules\Notifications\Domain\Enums\NotificationType;
 use Modules\Notifications\Infrastructure\Notifications\CustomNotification;
 use Modules\Notifications\Infrastructure\Persistence\Models\NotificationModel;
 use Modules\Users\Infrastructure\Persistence\Models\UserModel;
@@ -31,27 +33,25 @@ class DispatchNotificationJob implements ShouldQueue
     /** @var int Number of attempts before failing */
     public $tries = 3;
 
-    /** @var array Backoff intervals in seconds */
+    /** @var array<int> Backoff intervals in seconds */
     public $backoff = [10, 30, 60];
 
     /** @var bool Automatically delete job if model is missing */
     public $deleteWhenMissingModels = true;
 
     /**
-     * @param string $notificationId UUID of the notification
-     * @param string $channel Notification channel (database, email, push, etc.)
-     * @param string $locale Language/locale code for translations
+     * @param  string  $notificationId  UUID of the notification
+     * @param  string  $channel  Notification channel (database, email, push, etc.)
+     * @param  string  $locale  Language/locale code for translations
      */
     public function __construct(
-        private string $notificationId,
-        private string $channel,
-        private string $locale = 'fa'
+        public string $notificationId,
+        public string $channel,
+        public string $locale = 'en'
     ) {}
 
     /**
      * Execute the queued job.
-     *
-     * @return void
      */
     public function handle(): void
     {
@@ -59,6 +59,7 @@ class DispatchNotificationJob implements ShouldQueue
 
         if (! $notification) {
             Log::warning("Notification {$this->notificationId} not found for dispatch");
+
             return;
         }
 
@@ -66,20 +67,22 @@ class DispatchNotificationJob implements ShouldQueue
 
         if (! $user) {
             Log::warning("User {$notification->notifiable_id} not found for notification");
+
             return;
         }
 
         $data = $notification->data ?? [];
 
+        // FIX: Convert string values from database to domain enums
         $customNotification = new CustomNotification(
-            type: $notification->type,
-            title: $data['title'] ?? 'Notification',
-            message: $data['message'] ?? '',
-            channels: [NotificationChannel::from($this->channel)],
-            actionUrl: $data['action_url'] ?? null,
-            metadata: $data['metadata'] ?? null,
-            priority: $notification->priority,
-            locale: $this->locale
+            NotificationType::from($notification->type),
+            $data['title'] ?? 'Notification',
+            $data['message'] ?? '',
+            [NotificationChannel::from($this->channel)],
+            $data['action_url'] ?? null,
+            $data['metadata'] ?? null,
+            NotificationPriority::from($notification->priority),
+            $this->locale
         );
 
         $user->notify($customNotification);
@@ -93,13 +96,10 @@ class DispatchNotificationJob implements ShouldQueue
 
     /**
      * Handle a failed job.
-     *
-     * @param \Throwable $exception
-     * @return void
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error("Notification dispatch failed", [
+        Log::error('Notification dispatch failed', [
             'notification_id' => $this->notificationId,
             'channel' => $this->channel,
             'error' => $exception->getMessage(),

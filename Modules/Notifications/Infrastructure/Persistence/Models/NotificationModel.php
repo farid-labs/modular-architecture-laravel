@@ -2,9 +2,11 @@
 
 namespace Modules\Notifications\Infrastructure\Persistence\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Notifications\Infrastructure\Database\Factories\NotificationFactory;
 
 /**
  * Class NotificationModel
@@ -17,22 +19,23 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $category
  * @property string $notifiable_type
  * @property int $notifiable_id
- * @property array $data
+ * @property array<string, mixed> $data
  * @property \Carbon\Carbon|null $read_at
  * @property \Carbon\Carbon|null $deleted_at
  * @property string $locale
- * @property array $channels
+ * @property array<string> $channels
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
 class NotificationModel extends Model
 {
-    use SoftDeletes;
+    /** @use HasFactory<NotificationFactory> */
+    use HasFactory, SoftDeletes;
 
     /** @var string Database table name */
     protected $table = 'notifications';
 
-    /** @var array Mass assignable fields */
+    /** @var list<string> Mass assignable fields */
     protected $fillable = [
         'id',
         'type',
@@ -47,7 +50,7 @@ class NotificationModel extends Model
         'channels',
     ];
 
-    /** @var array Cast attributes to native types */
+    /** @var array<string, string> Cast attributes to native types */
     protected $casts = [
         'data' => 'array',
         'channels' => 'array',
@@ -64,9 +67,17 @@ class NotificationModel extends Model
     public $incrementing = false;
 
     /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): NotificationFactory
+    {
+        return NotificationFactory::new();
+    }
+
+    /**
      * Get the owning notifiable entity (User, Workspace, etc.)
      *
-     * @return MorphTo
+     * @return MorphTo<Model, $this>
      */
     public function notifiable(): MorphTo
     {
@@ -75,18 +86,14 @@ class NotificationModel extends Model
 
     /**
      * Check if the notification has been read.
-     *
-     * @return bool
      */
     public function isRead(): bool
     {
-        return $this->read_at !== null;
+        return $this->read_at !== null; // ← Returns true if readAt has value
     }
 
     /**
      * Check if the notification is unread.
-     *
-     * @return bool
      */
     public function isUnread(): bool
     {
