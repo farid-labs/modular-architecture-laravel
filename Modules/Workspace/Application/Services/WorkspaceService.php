@@ -14,6 +14,7 @@ use Modules\Workspace\Domain\Entities\TaskCommentEntity;
 use Modules\Workspace\Domain\Entities\TaskEntity;
 use Modules\Workspace\Domain\Entities\WorkspaceEntity;
 use Modules\Workspace\Domain\Events\TaskAttachmentUploaded;
+use Modules\Workspace\Domain\Events\TaskCommentAdded;
 use Modules\Workspace\Domain\Exceptions\AuthorizationException;
 use Modules\Workspace\Domain\Repositories\WorkspaceRepositoryInterface;
 use Modules\Workspace\Domain\ValueObjects\AttachmentCollection;
@@ -122,17 +123,30 @@ class WorkspaceService
     }
 
     /**
-     * Update an existing workspace.
+     * Update an existing workspace using partial update semantics.
      *
-     * Only workspace owner can perform updates.
-     * Supports partial updates by filtering null values.
+     * Authorization:
+     * - Only workspace owner may perform update.
      *
-     * @param  int  $id  The workspace ID
-     * @param  WorkspaceDTO  $workspaceDTO  The workspace data transfer object
-     * @param  UserModel  $user  The user attempting the update
-     * @return WorkspaceEntity The updated workspace entity
+     * Update Strategy:
+     * - Null values inside DTO are ignored.
+     * - At least one non-null field must be provided.
      *
-     * @throws AuthorizationException If user is not owner or no fields to update
+     * Repository Contract:
+     * - Repository may return null if workspace no longer exists.
+     * - Null is converted into AuthorizationException.
+     *
+     * @param  int  $id  Workspace identifier
+     * @param  WorkspaceDTO  $workspaceDTO  DTO containing updated fields
+     * @param  UserModel  $user  Acting authenticated user
+     * @return WorkspaceEntity Updated workspace entity (never null)
+     *
+     * @phpstan-return WorkspaceEntity
+     *
+     * @throws AuthorizationException If:
+     *                                - User is not owner
+     *                                - No fields provided for update
+     *                                - Workspace no longer exists
      */
     public function updateWorkspace(int $id, WorkspaceDTO $workspaceDTO, UserModel $user): WorkspaceEntity
     {
@@ -473,17 +487,29 @@ class WorkspaceService
     }
 
     /**
-     * Add a comment to a task and dispatch domain event.
+     * Add a new comment to a task.
      *
-     * Validates comment length and user membership.
-     * Dispatches TaskCommentAdded event for real-time notifications.
+     * Business Rules:
+     * - Comment must be at least 3 characters long.
+     * - User must be a member of the task's project.
      *
-     * @param  int  $taskId  The task ID
-     * @param  string  $comment  The comment content
-     * @param  UserModel  $user  The user adding the comment
-     * @return TaskCommentEntity The created comment entity
+     * Side Effects:
+     * - Persists TaskCommentEntity
+     * - Invalidates cache key: task:{taskId}:comments
+     * - Dispatches TaskCommentAdded domain event
+     * - Writes audit log entry
      *
-     * @throws AuthorizationException If comment is too short
+     * Domain Events:
+     * - TaskCommentAdded
+     *
+     * @param  int  $taskId  Task identifier
+     * @param  string  $comment  Comment body (min length: 3)
+     * @param  UserModel  $user  Authenticated user model
+     * @return TaskCommentEntity Newly created comment entity
+     *
+     * @phpstan-return TaskCommentEntity
+     *
+     * @throws AuthorizationException If comment length is invalid
      * @throws AccessDeniedHttpException If user is not a project member
      */
     public function addCommentToTask(int $taskId, string $comment, UserModel $user): TaskCommentEntity
@@ -507,9 +533,9 @@ class WorkspaceService
         }
 
         $commentEntity = $this->workspaceRepository->addCommentToTask($taskId, $comment, $user->id);
-
+        Cache::forget("task:{$taskId}:comments");
         // Dispatch event for real-time notification
-        event(new \Modules\Workspace\Domain\Events\TaskCommentAdded($task, $commentEntity, $user->id));
+        event(new TaskCommentAdded($task, $commentEntity, $user->id));
 
         return $commentEntity;
     }
@@ -602,14 +628,24 @@ class WorkspaceService
     }
 
     /**
-     * Get all comments for a task with authorization.
+     * Retrieve all comments for a task.
      *
-     * Caches results for 10 minutes to improve performance.
-     * Validates user is a member of the project.
+     * Authorization:
+     * - User must be a member of the associated project.
      *
-     * @param  int  $taskId  The task ID
-     * @param  int  $userId  The user ID requesting comments
-     * @return array<int, TaskCommentEntity> Collection of comment entities
+     * Caching Strategy:
+     * - Cache key: task:{taskId}:comments
+     * - TTL: 10 minutes
+     * - Invalidated on comment create, update, or delete
+     *
+     * Performance Note:
+     * - Authorization check is performed BEFORE cache access.
+     *
+     * @param  int  $taskId  Task identifier
+     * @param  int  $userId  Requesting user identifier
+     * @return array<int, TaskCommentEntity> Indexed list of comment entities
+     *
+     * @phpstan-return array<int, TaskCommentEntity>
      *
      * @throws AuthorizationException If user is not a project member
      */
@@ -629,17 +665,29 @@ class WorkspaceService
     }
 
     /**
-     * Update comment (only owner within 30 minutes).
+     * Update an existing task comment.
      *
-     * Repository enforces ownership and time window restrictions.
-     * Validates comment length before update.
+     * Business Rules:
+     * - Comment must be at least 3 characters long.
+     * - Ownership and 30-minute edit window are enforced at repository level.
      *
-     * @param  int  $commentId  The comment ID
-     * @param  string  $newComment  The new comment content
-     * @param  int  $userId  The user ID attempting the update
-     * @return TaskCommentEntity The updated comment entity
+     * Side Effects:
+     * - Invalidates cache key: task:{taskId}:comments (if comment exists).
      *
-     * @throws AuthorizationException If comment is too short
+     * Contract Guarantees:
+     * - Returns a non-null TaskCommentEntity.
+     * - Repository MUST throw or return a valid entity.
+     *
+     * @param  int  $commentId  Comment identifier (primary key)
+     * @param  string  $newComment  Updated comment content (min length: 3)
+     * @param  int  $userId  Acting user identifier
+     * @return TaskCommentEntity Updated comment entity (never null)
+     *
+     * @phpstan-return TaskCommentEntity
+     *
+     * @throws AuthorizationException If:
+     *                                - Comment length is invalid
+     *                                - Repository denies ownership or time restriction
      */
     public function updateComment(int $commentId, string $newComment, int $userId): TaskCommentEntity
     {
@@ -647,7 +695,14 @@ class WorkspaceService
             throw new AuthorizationException('comment_min_length');
         }
 
-        return $this->workspaceRepository->updateComment($commentId, $newComment, $userId);
+        $result = $this->workspaceRepository->updateComment($commentId, $newComment, $userId);
+
+        $comment = $this->workspaceRepository->findCommentById($commentId);
+        if ($comment) {
+            Cache::forget("task:{$comment->getTaskId()}:comments");
+        }
+
+        return $result;
     }
 
     /**
@@ -883,13 +938,20 @@ class WorkspaceService
     public function deleteComment(int $taskId, int $commentId, int $userId): bool
     {
         $task = $this->getTaskById($taskId);
-
         $comment = $this->workspaceRepository->findCommentById($commentId);
+
         if (! $comment || $comment->getTaskId() !== $taskId) {
             throw new AuthorizationException('comment_not_found', ['id' => $commentId]);
         }
 
-        return $this->workspaceRepository->deleteComment($taskId, $commentId, $userId);
+        $result = $this->workspaceRepository->deleteComment($taskId, $commentId, $userId);
+
+        // ✅ FIX: Invalidate comments cache after deleting comment
+        if ($result) {
+            Cache::forget("task:{$taskId}:comments");
+        }
+
+        return $result;
     }
 
     /**

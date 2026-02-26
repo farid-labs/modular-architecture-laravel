@@ -2,6 +2,7 @@
 
 namespace Modules\Notifications\Infrastructure\Repositories;
 
+use Illuminate\Support\Facades\Log;
 use Modules\Notifications\Application\DTOs\NotificationFilterDTO;
 use Modules\Notifications\Domain\Entities\NotificationEntity;
 use Modules\Notifications\Domain\Enums\NotificationCategory;
@@ -113,12 +114,37 @@ class NotificationRepository implements NotificationRepositoryInterface
 
     public function markAsRead(string $id, int $recipientId): bool
     {
+
+        // Find notification first for logging
+        $notification = NotificationModel::find($id);
+
+        if (! $notification) {
+            Log::channel('domain')->warning('Notification not found', [
+                'id' => $id,
+                'recipient_id' => $recipientId,
+            ]);
+
+            return false;
+        }
+
+        Log::channel('domain')->info('Notification found', [
+            'id' => $id,
+            'notifiable_id' => $notification->notifiable_id,
+            'notifiable_type' => $notification->notifiable_type,
+            'expected_recipient' => $recipientId,
+            'matches' => $notification->notifiable_id === $recipientId,
+        ]);
+
         $affected = NotificationModel::query()
             ->where('id', $id)
             ->where('notifiable_type', UserModel::class)
-            ->where('notifiable_id', $recipientId)
+            ->where('notifiable_id', $recipientId)  // ← Security check
             ->whereNull('deleted_at')
             ->update(['read_at' => now()]);
+
+        Log::channel('domain')->info('Update result', [
+            'affected' => $affected,
+        ]);
 
         return $affected > 0;
     }
