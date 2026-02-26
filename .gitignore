@@ -26,3 +26,4 @@ Thumbs.db
 npm-debug.log
 yarn-error.log/storage/api-docs/
 /storage/api-docs/
+*/_dump.txt
