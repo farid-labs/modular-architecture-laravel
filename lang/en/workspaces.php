@@ -95,4 +95,10 @@ return [
     'attachments_uploaded' => ':count attachments uploaded successfully',
     'attachment_upload_failed' => 'Attachment upload failed. Please try again later.',
 
+    'task_completed_title' => 'Task Completed',
+    'task_completed_message' => "Task ':title' has been completed",
+    'task_assigned_completed_title' => 'Your Task Completed',
+    'task_assigned_completed_message' => "Task ':title' assigned to you has been completed",
+    'view_task' => 'View Task',
+
 ];

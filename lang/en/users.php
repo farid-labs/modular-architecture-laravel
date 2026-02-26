@@ -21,7 +21,6 @@ return [
     'email_unique' => 'The email has already been taken',
     'password_required' => 'The password field is required',
 
-
     'statuses' => [
         'active' => 'Active',
         'inactive' => 'Inactive',

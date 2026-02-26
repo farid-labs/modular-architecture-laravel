@@ -134,6 +134,12 @@ return [
             'path' => storage_path('logs/domain.log'),
             'level' => 'debug',
         ],
+        'auth' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auth.log'),
+            'level' => 'debug',
+            'days' => 14,
+        ],
     ],
 
 ];
