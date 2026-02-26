@@ -4,10 +4,10 @@ namespace Modules\Notifications\Presentation\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Notifications\Domain\Enums\NotificationType;
-use Modules\Notifications\Domain\Enums\NotificationPriority;
 use Modules\Notifications\Domain\Enums\NotificationCategory;
 use Modules\Notifications\Domain\Enums\NotificationChannel;
+use Modules\Notifications\Domain\Enums\NotificationPriority;
+use Modules\Notifications\Domain\Enums\NotificationType;
 
 /**
  * Form request for sending a new notification.
@@ -17,8 +17,6 @@ class SendNotificationRequest extends FormRequest
 {
     /**
      * Authorize all users to send notifications.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {

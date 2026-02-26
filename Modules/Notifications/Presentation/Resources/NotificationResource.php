@@ -33,13 +33,13 @@ class NotificationResource extends JsonResource
     /**
      * Transform the notification entity into a JSON-friendly array.
      *
-     * @param Request $request
-     * @return array
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
         // Ensure resource is a domain entity
-        if (!$this->resource instanceof NotificationEntity) {
+        if (! $this->resource instanceof NotificationEntity) {
+            /** @var array<string, mixed> */
             return parent::toArray($request);
         }
 
@@ -50,8 +50,8 @@ class NotificationResource extends JsonResource
             'type' => $this->resource->getType()->value,
             'priority' => $this->resource->getPriority()->value,
             'category' => $this->resource->getCategory()->value,
-            'title' => $content->title(),           // Could later use __('notifications.title') for translation
-            'message' => $content->body(),          // Could later use __('notifications.message')
+            'title' => $content->title(),
+            'message' => $content->body(),
             'action_url' => $content->actionUrl(),
             'action_label' => $content->actionLabel(),
             'is_read' => $this->resource->isRead(),

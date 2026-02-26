@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Modules\Notifications\Application\DTOs\NotificationFilterDTO;
 use Modules\Notifications\Application\DTOs\SendNotificationDTO;
 use Modules\Notifications\Application\Services\NotificationService;
-use Modules\Notifications\Domain\Enums\NotificationChannel;
 use Modules\Notifications\Domain\Enums\NotificationCategory;
+use Modules\Notifications\Domain\Enums\NotificationChannel;
 use Modules\Notifications\Domain\Enums\NotificationPriority;
 use Modules\Notifications\Domain\Enums\NotificationType;
 use Modules\Notifications\Presentation\Requests\SendNotificationRequest;
@@ -24,12 +24,9 @@ class NotificationController extends Controller
 
     /**
      * List notifications for authenticated user with optional filters.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     #[OA\Get(
-        path: '/api/v1/notifications',
+        path: '/notifications',
         summary: 'Retrieve list of notifications',
         description: 'Retrieve all notifications for the authenticated user with filtering and pagination',
         security: [['bearerAuth' => []]],
@@ -48,17 +45,18 @@ class NotificationController extends Controller
         ]);
 
         $notifications = $this->service->getUserNotifications(
-            userId: $user->id,
-            filters: $filters,
-            page: (int) $request->query('page', 1),
-            perPage: (int) $request->query('per_page', 15)
+            $user->id,
+            $filters,
+            (int) $request->query('page', 1),
+            (int) $request->query('per_page', 15)
         );
 
+        // FIX: Return array directly without pagination methods
         return response()->json([
-            'data' => $notifications,
+            'data' => NotificationResource::collection($notifications),
             'meta' => [
-                'current_page' => $notifications->currentPage() ?? 1,
-                'per_page' => $notifications->perPage() ?? 15,
+                'current_page' => 1,
+                'per_page' => count($notifications),
                 'total' => count($notifications),
                 'has_more' => false,
             ],
@@ -67,14 +65,11 @@ class NotificationController extends Controller
     }
 
     /**
-     * Get the count of unread notifications for authenticated user.
-     *
-     * @param Request $request
-     * @return JsonResponse
+     * Get the count of unread count notifications for authenticated user.
      */
     #[OA\Get(
-        path: '/api/v1/notifications/unread-count',
-        summary: 'Get unread notifications count',
+        path: '/notifications/unread-count',
+        summary: 'Get unread count notifications count',
         security: [['bearerAuth' => []]],
         tags: ['Notifications']
     )]
@@ -92,12 +87,9 @@ class NotificationController extends Controller
 
     /**
      * Send a new notification to a user via specified channels.
-     *
-     * @param SendNotificationRequest $request
-     * @return JsonResponse
      */
     #[OA\Post(
-        path: '/api/v1/notifications/send',
+        path: '/notifications/send',
         summary: 'Send a new notification',
         description: 'Send a notification to a user through specified channels',
         security: [['bearerAuth' => []]],
@@ -112,7 +104,7 @@ class NotificationController extends Controller
             type: NotificationType::from($validated['type']),
             title: $validated['title'],
             message: $validated['message'],
-            channels: array_map(fn($c) => NotificationChannel::from($c), $validated['channels'] ?? ['database']),
+            channels: array_map(fn ($c) => NotificationChannel::from($c), $validated['channels'] ?? ['database']),
             priority: NotificationPriority::from($validated['priority'] ?? 'medium'),
             category: NotificationCategory::from($validated['category'] ?? 'system'),
             actionUrl: $validated['action_url'] ?? null,
@@ -130,13 +122,9 @@ class NotificationController extends Controller
 
     /**
      * Mark a specific notification as read.
-     *
-     * @param string $id
-     * @param Request $request
-     * @return JsonResponse
      */
     #[OA\Patch(
-        path: '/api/v1/notifications/{id}/read',
+        path: '/notifications/{id}/read',
         summary: 'Mark a notification as read',
         security: [['bearerAuth' => []]],
         tags: ['Notifications']
@@ -147,7 +135,7 @@ class NotificationController extends Controller
 
         $success = $this->service->markAsRead(notificationId: $id, userId: $user->id);
 
-        if (!$success) {
+        if (! $success) {
             return response()->json(['message' => __('notifications.not_found')], 404);
         }
 
@@ -156,12 +144,9 @@ class NotificationController extends Controller
 
     /**
      * Mark all notifications as read for authenticated user.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     #[OA\Post(
-        path: '/api/v1/notifications/mark-all-read',
+        path: '/notifications/mark-all-read',
         summary: 'Mark all notifications as read',
         security: [['bearerAuth' => []]],
         tags: ['Notifications']
@@ -180,13 +165,9 @@ class NotificationController extends Controller
 
     /**
      * Soft-delete a specific notification.
-     *
-     * @param string $id
-     * @param Request $request
-     * @return JsonResponse
      */
     #[OA\Delete(
-        path: '/api/v1/notifications/{id}',
+        path: '/notifications/{id}',
         summary: 'Delete a notification',
         security: [['bearerAuth' => []]],
         tags: ['Notifications']
@@ -197,7 +178,7 @@ class NotificationController extends Controller
 
         $success = $this->service->deleteNotification(notificationId: $id, userId: $user->id);
 
-        if (!$success) {
+        if (! $success) {
             return response()->json(['message' => __('notifications.not_found')], 404);
         }
 

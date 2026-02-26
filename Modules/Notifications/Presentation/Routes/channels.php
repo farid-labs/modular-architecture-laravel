@@ -19,8 +19,8 @@ use Modules\Users\Infrastructure\Persistence\Models\UserModel;
  *
  * Example channel name: notifications.123 (for user ID 123)
  *
- * @param UserModel $user The currently authenticated user
- * @param int $userId The ID of the channel
+ * @param  UserModel  $user  The currently authenticated user
+ * @param  int  $userId  The ID of the channel
  * @return bool True if authorized to listen
  */
 Broadcast::channel('notifications.{userId}', function (UserModel $user, int $userId) {
@@ -34,8 +34,8 @@ Broadcast::channel('notifications.{userId}', function (UserModel $user, int $use
  * Members of a workspace can listen to its private notification channel.
  * Example channel name: workspace.42 (for workspace ID 42)
  *
- * @param UserModel $user The currently authenticated user
- * @param int $workspaceId The ID of the workspace
+ * @param  UserModel  $user  The currently authenticated user
+ * @param  int  $workspaceId  The ID of the workspace
  * @return bool True if the user belongs to the workspace
  */
 Broadcast::channel('workspace.{workspaceId}', function (UserModel $user, int $workspaceId) {
